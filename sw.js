@@ -1,38 +1,17 @@
-// App-shell caching only. Anything going to Firebase (or any non-GET
-// request) is deliberately left alone -- messages must always hit the
-// network live, never be served from cache.
-const CACHE_NAME = "flip-relay-shell-v1";
-const SHELL_FILES = [
-  "./",
-  "./index.html",
-  "./styles.css",
-  "./app.js",
-  "./manifest.json",
-  "./icon.svg",
-];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_FILES))
-  );
+// Offline caching was causing more harm than good -- it kept serving
+// outdated copies of the page after every update. This version replaces
+// it: it wipes any cache a previous install left behind and unregisters
+// itself, so the page just loads fresh from the network like a normal site.
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
-    )
-  );
-  self.clients.claim();
-});
-
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET" || !req.url.startsWith(self.location.origin)) {
-    return; // let Firebase / non-GET requests pass straight through
-  }
-  event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req))
+    caches.keys()
+      .then((names) => Promise.all(names.map((n) => caches.delete(n))))
+      .then(() => self.registration.unregister())
+      .then(() => self.clients.matchAll())
+      .then((clients) => clients.forEach((client) => client.navigate(client.url)))
   );
 });
