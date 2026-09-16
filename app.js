@@ -9,7 +9,11 @@
 const DATABASE_URL = "https://flip-relay-default-rtdb.firebaseio.com/";
 
 const ROOM_KEY = "flip_relay_room";
-const CACHE_KEY_PREFIX = "flip_relay_cache_";
+// Bumping this suffix invalidates every existing saved cache app-wide, so a
+// fix to how a message is parsed/normalized (e.g. phone number formatting)
+// actually applies retroactively instead of being stuck baked into old
+// locally-cached data forever. Forces one fresh re-fetch from Firebase.
+const CACHE_KEY_PREFIX = "flip_relay_cache_v2_";
 
 let roomId = null;
 let messages = []; // merged incoming + sent + scheduled (all from Firebase) + local optimistic sends
@@ -38,6 +42,13 @@ function loadCache() {
     messages = raw ? JSON.parse(raw) : [];
   } catch (e) {
     messages = [];
+  }
+  // Re-normalize on every load (cheap, idempotent for already-correct data)
+  // so a future fix to normalizeNumber applies to already-cached messages
+  // too, instead of staying wrong until someone thinks to bump the cache
+  // version key.
+  for (const m of messages) {
+    if (m.number) m.number = normalizeNumber(m.number);
   }
   seenIncomingKeys = new Set(
     messages.filter((m) => m.direction === "in").map((m) => m.id)
