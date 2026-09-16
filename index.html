@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Flip Relay</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#0f1720" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Screen 1: enter the pairing code shown on the flip phone -->
+  <section id="screen-pairing" class="screen">
+    <div class="pairing-card">
+      <h1>Flip Relay</h1>
+
+      <div id="pairing-form">
+        <p>Enter the pairing code shown on the flip phone to connect this tablet to it.</p>
+        <input id="code-input" maxlength="6" autocapitalize="characters" autocomplete="off"
+               inputmode="text" placeholder="ABC123" />
+        <button id="connect-btn" class="btn-primary">Connect</button>
+        <div id="pairing-error"></div>
+      </div>
+
+      <div id="pairing-progress" class="hidden">
+        <div class="spinner"></div>
+        <p id="pairing-progress-text">Connecting...</p>
+      </div>
+
+      <div id="debug-log" class="hidden"></div>
+    </div>
+  </section>
+
+  <!-- Screen 2: list of conversations -->
+  <section id="screen-conversations" class="screen hidden">
+    <div class="topbar">
+      <span id="conv-status-dot" class="status-dot"></span>
+      <div>
+        <h2>Flip Relay</h2>
+        <div id="conv-status-text" class="sub">Connecting...</div>
+      </div>
+      <button id="forget-btn" class="icon-btn" title="Disconnect this tablet">&#9881;</button>
+    </div>
+    <div id="conversation-list"></div>
+    <div id="empty-state" class="hidden">No messages yet. Text the flip phone from another number and it'll show up here.</div>
+  </section>
+
+  <!-- Screen 3: one conversation thread -->
+  <section id="screen-chat" class="screen hidden">
+    <div class="topbar">
+      <button id="back-btn" class="icon-btn" title="Back">&#8592;</button>
+      <div>
+        <h2 id="chat-title">&nbsp;</h2>
+        <div id="chat-subtitle" class="sub"></div>
+      </div>
+    </div>
+    <div id="message-list"></div>
+    <div class="composer">
+      <textarea id="compose-input" rows="1" placeholder="Text message"></textarea>
+      <button id="send-btn">Send</button>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
