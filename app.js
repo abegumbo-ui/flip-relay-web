@@ -368,11 +368,11 @@ function onSendClick() {
 }
 
 function onScheduleButtonClick() {
-  if (!el("compose-input").value.trim()) return;
   const picker = el("schedule-picker");
   const opening = picker.classList.contains("hidden");
   picker.classList.toggle("hidden");
   if (opening) {
+    el("schedule-error").textContent = "";
     const soon = new Date(Date.now() + 5 * 60000); // default: 5 min from now
     soon.setSeconds(0, 0);
     el("schedule-time").value = new Date(soon.getTime() - soon.getTimezoneOffset() * 60000)
@@ -384,7 +384,14 @@ function onScheduleConfirmClick() {
   const body = el("compose-input").value.trim();
   const timeVal = el("schedule-time").value;
   const errorEl = el("schedule-error");
-  if (!body || !currentChatNumber || !timeVal) return;
+  if (!body) {
+    errorEl.textContent = "Type a message first.";
+    return;
+  }
+  if (!timeVal) {
+    errorEl.textContent = "Pick a time.";
+    return;
+  }
 
   const sendAt = new Date(timeVal).getTime();
   if (isNaN(sendAt) || sendAt <= Date.now()) {
