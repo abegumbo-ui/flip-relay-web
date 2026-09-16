@@ -23,12 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Inject Firebase config
-        env:
-          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
-        run: |
-          sed -i "s#__FIREBASE_DATABASE_URL__#${FIREBASE_DATABASE_URL}#g" app.js
-
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

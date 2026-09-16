@@ -1,11 +1,12 @@
-// Filled in at CI build time from the FIREBASE_DATABASE_URL GitHub Actions
-// secret -- this placeholder is what actually lives in source control (see
-// .github/workflows/deploy.yml). Deliberately no database secret is
-// embedded here, since this page is served publicly: as of this writing
-// the Firebase Realtime Database is wide open to anyone with the URL
-// regardless of any secret (still in "test mode" -- see the main repo's
-// README), so the old ?auth= parameter wasn't adding real protection.
-const DATABASE_URL = "__FIREBASE_DATABASE_URL__";
+// The database URL isn't sensitive on its own (it's visible in this page's
+// own network requests to anyone who opens dev tools regardless), so unlike
+// the Android app's build it's just committed directly rather than injected
+// from a secret. Deliberately no database *secret* is embedded here, since
+// this page is served publicly: as of this writing the Firebase Realtime
+// Database is wide open to anyone with the URL regardless of any secret
+// (still in "test mode" -- see the main repo's README), so the old ?auth=
+// parameter wasn't adding real protection anyway.
+const DATABASE_URL = "https://flip-relay-default-rtdb.firebaseio.com/";
 
 const ROOM_KEY = "flip_relay_room";
 const CACHE_KEY_PREFIX = "flip_relay_cache_";
