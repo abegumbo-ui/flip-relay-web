@@ -57,7 +57,17 @@
       </div>
     </div>
     <div id="message-list"></div>
+
+    <div id="schedule-picker" class="schedule-picker hidden">
+      <label for="schedule-time">Send at:</label>
+      <input id="schedule-time" type="datetime-local" />
+      <button id="schedule-confirm-btn" class="btn-primary">Schedule</button>
+      <button id="schedule-cancel-btn" class="icon-btn">Cancel</button>
+      <div id="schedule-error"></div>
+    </div>
+
     <div class="composer">
+      <button id="schedule-btn" class="icon-btn" title="Schedule for later">&#128337;</button>
       <textarea id="compose-input" rows="1" placeholder="Text message"></textarea>
       <button id="send-btn">Send</button>
     </div>

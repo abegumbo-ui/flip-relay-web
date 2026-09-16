@@ -12,13 +12,16 @@ const ROOM_KEY = "flip_relay_room";
 const CACHE_KEY_PREFIX = "flip_relay_cache_";
 
 let roomId = null;
-let messages = []; // merged incoming + sent (both from Firebase) + local optimistic sends
+let messages = []; // merged incoming + sent + scheduled (all from Firebase) + local optimistic sends
 let seenIncomingKeys = new Set();
 let seenSentKeys = new Set();
+let seenScheduledKeys = new Set();
 let incomingStream = null;
 let sentStream = null;
+let scheduledStream = null;
 let incomingConnected = false;
 let sentConnected = false;
+let scheduledConnected = false;
 let currentChatNumber = null;
 
 const el = (id) => document.getElementById(id);
@@ -42,6 +45,9 @@ function loadCache() {
   seenSentKeys = new Set(
     messages.filter((m) => m.direction === "out" && !m.id.startsWith("local-")).map((m) => m.id)
   );
+  seenScheduledKeys = new Set(
+    messages.filter((m) => m.direction === "scheduled").map((m) => m.id)
+  );
 }
 
 function saveCache() {
@@ -52,9 +58,18 @@ function saveCache() {
   }
 }
 
+// Numbers show up in different formats depending on where they came from --
+// the carrier delivers incoming senders as bare digits ("7322765687"), but
+// the phone's own SMS log stores sent-to addresses with a country code
+// ("+17322765687"). Without normalizing both to the same 10-digit form,
+// the same person shows up as two separate conversations.
 function normalizeNumber(n) {
   if (!n) return "";
-  return n.replace(/[^\d+]/g, "");
+  const digits = n.replace(/[^\d]/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return digits.slice(1);
+  }
+  return digits;
 }
 
 // ---------- pairing ----------
@@ -80,6 +95,12 @@ function init() {
       onSendClick();
     }
   });
+  el("schedule-btn").addEventListener("click", onScheduleButtonClick);
+  el("schedule-confirm-btn").addEventListener("click", onScheduleConfirmClick);
+  el("schedule-cancel-btn").addEventListener("click", () => {
+    el("schedule-picker").classList.add("hidden");
+    el("schedule-error").textContent = "";
+  });
 }
 
 function onConnectClick() {
@@ -101,16 +122,18 @@ async function connectToRoom(code, persist) {
   setPairingProgress(true, "Connecting to " + code + "...");
 
   try {
-    const [incomingRes, sentRes] = await Promise.all([
+    const [incomingRes, sentRes, scheduledRes] = await Promise.all([
       fetch(roomUrl("messages/incoming")),
       fetch(roomUrl("messages/sent")),
+      fetch(roomUrl("messages/scheduled")),
     ]);
-    if (!incomingRes.ok || !sentRes.ok) {
-      const badStatus = !incomingRes.ok ? incomingRes.status : sentRes.status;
+    if (!incomingRes.ok || !sentRes.ok || !scheduledRes.ok) {
+      const badStatus = !incomingRes.ok ? incomingRes.status : (!sentRes.ok ? sentRes.status : scheduledRes.status);
       throw new Error("Firebase replied with an error (HTTP " + badStatus + "). " +
           "Double check the pairing code matches exactly what's on the flip phone.");
     }
-    const [incomingSnapshot, sentSnapshot] = await Promise.all([incomingRes.json(), sentRes.json()]);
+    const [incomingSnapshot, sentSnapshot, scheduledSnapshot] =
+        await Promise.all([incomingRes.json(), sentRes.json(), scheduledRes.json()]);
 
     if (persist) localStorage.setItem(ROOM_KEY, code);
     loadCache();
@@ -119,6 +142,9 @@ async function connectToRoom(code, persist) {
     }
     if (sentSnapshot && typeof sentSnapshot === "object") {
       for (const key of Object.keys(sentSnapshot)) upsertSent(key, sentSnapshot[key]);
+    }
+    if (scheduledSnapshot && typeof scheduledSnapshot === "object") {
+      for (const key of Object.keys(scheduledSnapshot)) upsertScheduled(key, scheduledSnapshot[key]);
     }
     saveCache();
 
@@ -165,8 +191,10 @@ function onForgetClick() {
   if (!confirm("Disconnect this tablet? You'll need the pairing code again to reconnect.")) return;
   if (incomingStream) incomingStream.close();
   if (sentStream) sentStream.close();
+  if (scheduledStream) scheduledStream.close();
   incomingConnected = false;
   sentConnected = false;
+  scheduledConnected = false;
   localStorage.removeItem(ROOM_KEY);
   roomId = null;
   messages = [];
@@ -205,6 +233,13 @@ function startStreams() {
     seenSentKeys.delete(key);
     return messages.length !== before;
   }, (connected) => { sentConnected = connected; updateConnectionStatus(); });
+
+  scheduledStream = openStream("messages/scheduled", upsertScheduled, (key) => {
+    const before = messages.length;
+    messages = messages.filter((m) => !(m.direction === "scheduled" && m.id === key));
+    seenScheduledKeys.delete(key);
+    return messages.length !== before;
+  }, (connected) => { scheduledConnected = connected; updateConnectionStatus(); });
 }
 
 function openStream(path, upsertFn, deleteFn, onConnectedChange) {
@@ -242,7 +277,7 @@ function openStream(path, upsertFn, deleteFn, onConnectedChange) {
 }
 
 function updateConnectionStatus() {
-  const connected = incomingConnected && sentConnected;
+  const connected = incomingConnected && sentConnected && scheduledConnected;
   const dot = el("conv-status-dot");
   if (dot) dot.classList.toggle("connected", connected);
   const statusText = el("conv-status-text");
@@ -288,6 +323,22 @@ function upsertSent(key, data) {
   return true;
 }
 
+function upsertScheduled(key, data) {
+  if (!data) return false;
+  if (seenScheduledKeys.has(key)) return false;
+  seenScheduledKeys.add(key);
+  messages.push({
+    id: key,
+    direction: "scheduled",
+    number: normalizeNumber(data.to),
+    contactName: null,
+    body: data.body || "",
+    timestamp: data.sendAt || Date.now(), // sorts/previews by when it WILL send
+    sendAt: data.sendAt || Date.now(),
+  });
+  return true;
+}
+
 // ---------- sending ----------
 
 function onSendClick() {
@@ -314,6 +365,42 @@ function onSendClick() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ to: currentChatNumber, body, timestamp: msg.timestamp }),
   }).catch((e) => console.error("send failed", e));
+}
+
+function onScheduleButtonClick() {
+  if (!el("compose-input").value.trim()) return;
+  const picker = el("schedule-picker");
+  const opening = picker.classList.contains("hidden");
+  picker.classList.toggle("hidden");
+  if (opening) {
+    const soon = new Date(Date.now() + 5 * 60000); // default: 5 min from now
+    soon.setSeconds(0, 0);
+    el("schedule-time").value = new Date(soon.getTime() - soon.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 16);
+  }
+}
+
+function onScheduleConfirmClick() {
+  const body = el("compose-input").value.trim();
+  const timeVal = el("schedule-time").value;
+  const errorEl = el("schedule-error");
+  if (!body || !currentChatNumber || !timeVal) return;
+
+  const sendAt = new Date(timeVal).getTime();
+  if (isNaN(sendAt) || sendAt <= Date.now()) {
+    errorEl.textContent = "Pick a time in the future.";
+    return;
+  }
+  errorEl.textContent = "";
+
+  fetch(roomUrl("messages/scheduled"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ to: currentChatNumber, body, sendAt }),
+  }).catch((e) => logDebug("Schedule failed: " + (e && e.stack ? e.stack : e)));
+
+  el("compose-input").value = "";
+  el("schedule-picker").classList.add("hidden");
 }
 
 // ---------- rendering ----------
@@ -350,9 +437,10 @@ function renderConversationList() {
   for (const { number, last } of convos) {
     const item = document.createElement("div");
     item.className = "conversation-item";
+    const prefix = last.direction === "out" ? "You: " : last.direction === "scheduled" ? "Scheduled: " : "";
     item.innerHTML = `
       <div class="name">${escapeHtml(displayName(number))}</div>
-      <div class="preview">${last.direction === "out" ? "You: " : ""}${escapeHtml(last.body)}</div>
+      <div class="preview">${prefix}${escapeHtml(last.body)}</div>
       <div class="time">${formatTime(last.timestamp)}</div>
     `;
     item.addEventListener("click", () => openChat(number));
@@ -377,8 +465,12 @@ function renderChat(number) {
 
   for (const m of thread) {
     const row = document.createElement("div");
-    row.className = "bubble-row " + m.direction;
-    row.innerHTML = `<div class="bubble">${escapeHtml(m.body)}<span class="meta">${formatTime(m.timestamp)}</span></div>`;
+    const isScheduled = m.direction === "scheduled";
+    row.className = "bubble-row " + (isScheduled ? "out" : m.direction);
+    const meta = isScheduled
+        ? "⏰ Scheduled for " + formatTime(m.sendAt)
+        : formatTime(m.timestamp);
+    row.innerHTML = `<div class="bubble${isScheduled ? " scheduled" : ""}">${escapeHtml(m.body)}<span class="meta">${meta}</span></div>`;
     list.appendChild(row);
   }
   list.scrollTop = list.scrollHeight;
