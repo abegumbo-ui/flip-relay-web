@@ -66,7 +66,14 @@
       <div id="schedule-error"></div>
     </div>
 
+    <div id="attachment-preview" class="attachment-preview hidden">
+      <img id="attachment-thumb" alt="Attached picture" />
+      <button id="attachment-remove-btn" class="icon-btn" title="Remove">&times;</button>
+    </div>
+
     <div class="composer">
+      <button id="attach-btn" class="icon-btn" title="Attach a picture">&#128247;</button>
+      <input id="attach-input" type="file" accept="image/*" class="hidden" />
       <textarea id="compose-input" rows="1" placeholder="Text message"></textarea>
       <button id="schedule-btn" class="icon-btn" title="Schedule for later">&#128337;</button>
       <button id="send-btn">Send</button>

@@ -7,6 +7,9 @@
 // (still in "test mode" -- see the main repo's README), so the old ?auth=
 // parameter wasn't adding real protection anyway.
 const DATABASE_URL = "https://flip-relay-default-rtdb.firebaseio.com/";
+// Matches FirebaseStorageClient.java on the phone -- confirmed against the
+// actual project, not the older "<project>.appspot.com" convention.
+const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
 
 const ROOM_KEY = "flip_relay_room";
 // Bumping this suffix invalidates every existing saved cache app-wide, so a
@@ -27,6 +30,7 @@ let incomingConnected = false;
 let sentConnected = false;
 let scheduledConnected = false;
 let currentChatNumber = null;
+let pendingAttachmentFile = null;
 
 const el = (id) => document.getElementById(id);
 
@@ -112,6 +116,22 @@ function init() {
     el("schedule-picker").classList.add("hidden");
     el("schedule-error").textContent = "";
   });
+
+  el("attach-btn").addEventListener("click", () => el("attach-input").click());
+  el("attach-input").addEventListener("change", () => {
+    const file = el("attach-input").files[0];
+    if (!file) return;
+    pendingAttachmentFile = file;
+    el("attachment-thumb").src = URL.createObjectURL(file);
+    el("attachment-preview").classList.remove("hidden");
+  });
+  el("attachment-remove-btn").addEventListener("click", clearAttachment);
+}
+
+function clearAttachment() {
+  pendingAttachmentFile = null;
+  el("attach-input").value = "";
+  el("attachment-preview").classList.add("hidden");
 }
 
 function onConnectClick() {
@@ -361,30 +381,62 @@ function upsertScheduled(key, data) {
 
 // ---------- sending ----------
 
-function onSendClick() {
+// Uploads straight from the browser to Firebase Storage, same REST API the
+// phone's FirebaseStorageClient uses -- no server-side code needed.
+async function uploadToStorage(file, path) {
+  const encodedPath = encodeURIComponent(path);
+  const res = await fetch(
+    `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o?uploadType=media&name=${encodedPath}`,
+    { method: "POST", headers: { "Content-Type": file.type || "image/jpeg" }, body: file }
+  );
+  if (!res.ok) throw new Error("Storage upload failed: HTTP " + res.status);
+  return `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o/${encodedPath}?alt=media`;
+}
+
+async function onSendClick() {
   const input = el("compose-input");
   const body = input.value.trim();
-  if (!body || !currentChatNumber) return;
+  const file = pendingAttachmentFile;
+  if (!body && !file) return;
+  if (!currentChatNumber) return;
+
+  const timestamp = Date.now();
+  // Shown immediately from the local file, before the upload even starts --
+  // gets replaced with the real Firebase-hosted image once the "sent"
+  // confirmation comes back through upsertSent().
+  const localImageUrl = file ? URL.createObjectURL(file) : null;
 
   const msg = {
-    id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+    id: "local-" + timestamp + "-" + Math.random().toString(36).slice(2, 8),
     direction: "out",
     number: currentChatNumber,
     contactName: null,
     body,
-    timestamp: Date.now(),
+    imageUrl: localImageUrl,
+    timestamp,
   };
   messages.push(msg);
   saveCache();
   input.value = "";
+  clearAttachment();
   renderChat(currentChatNumber);
   renderConversationList();
 
-  fetch(roomUrl("messages/outgoing"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ to: currentChatNumber, body, timestamp: msg.timestamp }),
-  }).catch((e) => console.error("send failed", e));
+  try {
+    let imageUrl = null;
+    let imagePath = null;
+    if (file) {
+      imagePath = `attachments/${roomId}/${timestamp}.jpg`;
+      imageUrl = await uploadToStorage(file, imagePath);
+    }
+    await fetch(roomUrl("messages/outgoing"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: currentChatNumber, body, imageUrl, imagePath, timestamp }),
+    });
+  } catch (e) {
+    console.error("send failed", e);
+  }
 }
 
 function onScheduleButtonClick() {
