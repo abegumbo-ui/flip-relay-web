@@ -302,6 +302,7 @@ body {
   background: var(--panel-2);
   color: var(--text);
   border: 1px dashed var(--border);
+  cursor: pointer;
 }
 
 .schedule-picker {

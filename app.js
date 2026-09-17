@@ -723,6 +723,19 @@ function onScheduleConfirmClick() {
   el("schedule-picker").classList.add("hidden");
 }
 
+// Tapping a scheduled message's bubble is the only way to cancel it --
+// there was previously no way to at all.
+function cancelScheduled(messageId) {
+  if (!confirm("Cancel this scheduled message? It won't be sent.")) return;
+  fetch(roomUrl("messages/scheduled/" + messageId), { method: "DELETE" })
+      .catch((e) => logDebug("Cancel scheduled failed: " + (e && e.stack ? e.stack : e)));
+  messages = messages.filter((m) => !(m.direction === "scheduled" && m.id === messageId));
+  seenScheduledKeys.delete(messageId);
+  saveCache();
+  renderConversationList();
+  if (currentChatNumber) renderChat(currentChatNumber);
+}
+
 // ---------- rendering ----------
 
 function conversationsByNumber() {
@@ -807,6 +820,10 @@ function renderChat(number) {
         : "";
     const bodyHtml = m.body ? escapeHtml(m.body) : "";
     row.innerHTML = `<div class="bubble${isScheduled ? " scheduled" : ""}">${imageHtml}${attachmentHtml}${bodyHtml}<span class="meta">${meta}</span></div>`;
+    if (isScheduled) {
+      const messageId = m.id;
+      row.querySelector(".bubble").addEventListener("click", () => cancelScheduled(messageId));
+    }
     list.appendChild(row);
   }
   list.scrollTop = list.scrollHeight;
