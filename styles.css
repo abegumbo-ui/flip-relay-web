@@ -282,6 +282,15 @@ body {
   margin-bottom: 6px;
 }
 
+.bubble-video {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  background: black;
+}
+
 .bubble .meta {
   display: block;
   font-size: 11px;

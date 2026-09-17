@@ -797,10 +797,13 @@ function renderChat(number) {
     const imageHtml = m.imageUrl
         ? `<img class="bubble-image" src="${escapeHtml(m.imageUrl)}" alt="Picture" />`
         : "";
+    // A video plays inline with the browser's own controls, same as a
+    // picture renders inline -- a contact card has no in-page "player"
+    // equivalent, so that one stays a plain link to open/import it.
     const attachmentHtml = (!m.imageUrl && m.attachmentUrl && m.attachmentKind)
-        ? `<a class="bubble-attachment" href="${escapeHtml(m.attachmentUrl)}" target="_blank" rel="noopener">${
-            m.attachmentKind === "video" ? "🎥 Open video" : "👤 " + escapeHtml(m.attachmentName || "Open contact")
-          }</a>`
+        ? (m.attachmentKind === "video"
+            ? `<video class="bubble-video" src="${escapeHtml(m.attachmentUrl)}" controls preload="metadata"></video>`
+            : `<a class="bubble-attachment" href="${escapeHtml(m.attachmentUrl)}" target="_blank" rel="noopener">👤 ${escapeHtml(m.attachmentName || "Open contact")}</a>`)
         : "";
     const bodyHtml = m.body ? escapeHtml(m.body) : "";
     row.innerHTML = `<div class="bubble${isScheduled ? " scheduled" : ""}">${imageHtml}${attachmentHtml}${bodyHtml}<span class="meta">${meta}</span></div>`;
