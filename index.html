@@ -67,18 +67,27 @@
     </div>
 
     <div id="attachment-preview" class="attachment-preview hidden">
-      <img id="attachment-thumb" alt="Attached picture" />
+      <img id="attachment-thumb" alt="Attached picture" class="hidden" />
+      <span id="attachment-label" class="attachment-label hidden"></span>
       <button id="attachment-remove-btn" class="icon-btn" title="Remove">&times;</button>
     </div>
 
     <div class="composer">
-      <button id="attach-btn" class="icon-btn" title="Attach a picture">&#128247;</button>
-      <input id="attach-input" type="file" accept="image/*" class="hidden" />
+      <button id="attach-btn" class="icon-btn" title="Attach">&#128206;</button>
       <textarea id="compose-input" rows="1" placeholder="Text message"></textarea>
       <button id="schedule-btn" class="icon-btn" title="Schedule for later">&#128337;</button>
       <button id="send-btn">Send</button>
     </div>
   </section>
+
+  <!-- Reusable action sheet: attach-type choice, then live-vs-gallery choice -->
+  <div id="action-sheet-overlay" class="action-sheet-overlay hidden">
+    <div class="action-sheet">
+      <div id="action-sheet-title" class="action-sheet-title"></div>
+      <div id="action-sheet-options"></div>
+      <button id="action-sheet-cancel" class="action-sheet-cancel">Cancel</button>
+    </div>
+  </div>
 
   <script src="app.js?v=__BUILD_VERSION__"></script>
 </body>

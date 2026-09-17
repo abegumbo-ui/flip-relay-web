@@ -31,6 +31,9 @@ let sentConnected = false;
 let scheduledConnected = false;
 let currentChatNumber = null;
 let pendingAttachmentFile = null;
+let pendingAttachmentKind = null; // "photo" | "video" | "contact" | null
+let pendingAttachmentName = null; // display name, only meaningful for "contact"
+let readState = {}; // number -> lastRead timestamp (localStorage-backed, mirrors the tablet app's ReadState)
 
 const el = (id) => document.getElementById(id);
 
@@ -87,6 +90,67 @@ function normalizeNumber(n) {
   return digits;
 }
 
+// ---------- read state (mirrors the tablet app's ReadState) ----------
+
+function readStateKey() {
+  return "flip_relay_web_read_" + roomId;
+}
+
+function loadReadState() {
+  try {
+    readState = JSON.parse(localStorage.getItem(readStateKey())) || {};
+  } catch (e) {
+    readState = {};
+  }
+}
+
+function saveReadState() {
+  try {
+    localStorage.setItem(readStateKey(), JSON.stringify(readState));
+  } catch (e) {
+    // not fatal -- worst case unread sorting resets next load
+  }
+}
+
+function markRead(number) {
+  if (!number) return;
+  readState[number] = Date.now();
+  saveReadState();
+}
+
+function isUnread(convo) {
+  return convo.last.direction === "in" && convo.last.timestamp > (readState[convo.number] || 0);
+}
+
+// ---------- notifications ----------
+
+function requestNotificationPermission() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "default") {
+    Notification.requestPermission().catch(() => {});
+  }
+}
+
+// Fired only for a genuinely new incoming push (not the initial bulk load
+// on connect/reconnect) -- there's no server-side infrastructure for real
+// closed-app Web Push here, so this is best-effort: it only fires while
+// this tab is actually open.
+function notifyIncoming(data) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  const number = normalizeNumber(data.sender);
+  if (number && number === currentChatNumber && !document.hidden) return; // already looking at it
+  const title = data.contactName || number || "New message";
+  const body = data.imageUrl ? "📷 Picture" : (data.attachmentType === "video" ? "🎥 Video"
+      : data.attachmentType === "vcard" ? "👤 Contact" : (data.body || ""));
+  try {
+    const n = new Notification(title, { body, tag: "flip-relay-" + number });
+    n.onclick = () => { window.focus(); if (number) openChat(number); };
+  } catch (e) {
+    // Notification constructor can throw on some mobile browsers that only
+    // support notifications via a service worker -- not worth failing over.
+  }
+}
+
 // ---------- pairing ----------
 
 function init() {
@@ -102,7 +166,11 @@ function init() {
     if (e.key === "Enter") onConnectClick();
   });
   el("forget-btn").addEventListener("click", onForgetClick);
-  el("back-btn").addEventListener("click", () => showScreen("conversations"));
+  el("back-btn").addEventListener("click", () => {
+    currentChatNumber = null;
+    showScreen("conversations");
+    renderConversationList();
+  });
   el("send-btn").addEventListener("click", onSendClick);
   el("compose-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -117,21 +185,156 @@ function init() {
     el("schedule-error").textContent = "";
   });
 
-  el("attach-btn").addEventListener("click", () => el("attach-input").click());
-  el("attach-input").addEventListener("change", () => {
-    const file = el("attach-input").files[0];
-    if (!file) return;
-    pendingAttachmentFile = file;
-    el("attachment-thumb").src = URL.createObjectURL(file);
-    el("attachment-preview").classList.remove("hidden");
-  });
+  el("attach-btn").addEventListener("click", onAttachClick);
   el("attachment-remove-btn").addEventListener("click", clearAttachment);
 }
 
 function clearAttachment() {
   pendingAttachmentFile = null;
-  el("attach-input").value = "";
+  pendingAttachmentKind = null;
+  pendingAttachmentName = null;
   el("attachment-preview").classList.add("hidden");
+  el("attachment-thumb").classList.add("hidden");
+  el("attachment-label").classList.add("hidden");
+}
+
+// ---------- action sheet (attach-type / live-vs-gallery pickers) ----------
+
+function showActionSheet(title, options) {
+  return new Promise((resolve) => {
+    const overlay = el("action-sheet-overlay");
+    el("action-sheet-title").textContent = title;
+    const optsEl = el("action-sheet-options");
+    optsEl.innerHTML = "";
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      overlay.classList.add("hidden");
+      overlay.onclick = null;
+      resolve(value);
+    };
+    for (const opt of options) {
+      const btn = document.createElement("button");
+      btn.className = "action-sheet-option";
+      btn.textContent = opt.label;
+      btn.addEventListener("click", () => finish(opt.value));
+      optsEl.appendChild(btn);
+    }
+    el("action-sheet-cancel").onclick = () => finish(null);
+    overlay.onclick = (e) => { if (e.target === overlay) finish(null); };
+    overlay.classList.remove("hidden");
+  });
+}
+
+// Creates a throwaway <input type=file>, with "capture" set for the live
+// camera/camcorder path or left off for a plain gallery/file pick, and
+// resolves with whatever the user chose (or null if they backed out).
+function pickFile({ accept, capture }) {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = accept;
+    if (capture) input.capture = capture;
+    let resolved = false;
+    input.addEventListener("change", () => {
+      resolved = true;
+      resolve(input.files[0] || null);
+    }, { once: true });
+    // No reliable "cancel" event for <input type=file> -- if the picker
+    // closes without a change event, treat it as a cancel after it's had
+    // a chance to fire.
+    window.addEventListener("focus", function onFocus() {
+      window.removeEventListener("focus", onFocus);
+      setTimeout(() => { if (!resolved) resolve(null); }, 300);
+    }, { once: true });
+    input.click();
+  });
+}
+
+async function onAttachClick() {
+  const type = await showActionSheet("Attach", [
+    { label: "📷 Photo", value: "photo" },
+    { label: "🎥 Video", value: "video" },
+    { label: "👤 Contact", value: "contact" },
+  ]);
+  if (!type) return;
+
+  if (type === "contact") {
+    await attachContact();
+    return;
+  }
+
+  const mode = await showActionSheet(type === "photo" ? "Photo" : "Video", [
+    { label: type === "photo" ? "Take Photo" : "Take Video", value: "live" },
+    { label: "Choose From Gallery", value: "gallery" },
+  ]);
+  if (!mode) return;
+
+  const file = await pickFile({
+    accept: type === "photo" ? "image/*" : "video/*",
+    capture: mode === "live" ? "environment" : null,
+  });
+  if (!file) return;
+  if (file.size > 15 * 1024 * 1024) {
+    alert("That file is too large to send (over 15MB).");
+    return;
+  }
+  setPendingAttachment(file, type, null);
+}
+
+// Uses the Contact Picker API where it's available (Android Chrome, this
+// tablet's actual browser) and falls back to a couple of plain prompts on
+// browsers that don't support it at all, so attaching a contact never just
+// silently does nothing.
+async function attachContact() {
+  if (navigator.contacts && navigator.contacts.select) {
+    try {
+      const supported = await navigator.contacts.getProperties();
+      const props = ["name", "tel"].filter((p) => supported.includes(p));
+      const [contact] = await navigator.contacts.select(
+        props.length ? props : ["name", "tel"], { multiple: false });
+      if (!contact) return;
+      const name = (contact.name && contact.name[0]) || "Contact";
+      const tel = (contact.tel && contact.tel[0]) || "";
+      buildAndAttachVcard(name, tel);
+    } catch (e) {
+      // User cancelled the picker, or it's not actually usable here --
+      // either way, nothing to attach.
+      logDebug("Contact picker unavailable/cancelled: " + e);
+    }
+    return;
+  }
+  const name = prompt("Contact name?");
+  if (!name) return;
+  const tel = prompt("Phone number?");
+  if (!tel) return;
+  buildAndAttachVcard(name, tel);
+}
+
+function buildAndAttachVcard(name, tel) {
+  const vcard = "BEGIN:VCARD\nVERSION:3.0\nN:" + name + "\nFN:" + name
+      + (tel ? "\nTEL:" + tel : "") + "\nEND:VCARD\n";
+  const file = new File([vcard], name + ".vcf", { type: "text/x-vcard" });
+  setPendingAttachment(file, "contact", name);
+}
+
+function setPendingAttachment(file, kind, name) {
+  pendingAttachmentFile = file;
+  pendingAttachmentKind = kind;
+  pendingAttachmentName = name;
+  if (kind === "photo") {
+    el("attachment-thumb").src = URL.createObjectURL(file);
+    el("attachment-thumb").classList.remove("hidden");
+    el("attachment-label").classList.add("hidden");
+  } else {
+    el("attachment-thumb").classList.add("hidden");
+    el("attachment-label").textContent = kind === "video"
+        ? "🎥 Video attached"
+        : "👤 " + (name || "Contact");
+    el("attachment-label").classList.remove("hidden");
+  }
+  el("attachment-preview").classList.remove("hidden");
 }
 
 function onConnectClick() {
@@ -168,6 +371,7 @@ async function connectToRoom(code, persist) {
 
     if (persist) localStorage.setItem(ROOM_KEY, code);
     loadCache();
+    loadReadState();
     if (incomingSnapshot && typeof incomingSnapshot === "object") {
       for (const key of Object.keys(incomingSnapshot)) upsertIncoming(key, incomingSnapshot[key]);
     }
@@ -185,6 +389,7 @@ async function connectToRoom(code, persist) {
     showScreen("conversations");
     renderConversationList();
     startStreams();
+    requestNotificationPermission();
   } catch (e) {
     setPairingProgress(false);
     const message = e instanceof TypeError
@@ -256,7 +461,7 @@ function startStreams() {
     messages = messages.filter((m) => !(m.direction === "in" && m.id === key));
     seenIncomingKeys.delete(key);
     return messages.length !== before;
-  }, (connected) => { incomingConnected = connected; updateConnectionStatus(); });
+  }, (connected) => { incomingConnected = connected; updateConnectionStatus(); }, notifyIncoming);
 
   sentStream = openStream("messages/sent", upsertSent, (key) => {
     const before = messages.length;
@@ -273,7 +478,7 @@ function startStreams() {
   }, (connected) => { scheduledConnected = connected; updateConnectionStatus(); });
 }
 
-function openStream(path, upsertFn, deleteFn, onConnectedChange) {
+function openStream(path, upsertFn, deleteFn, onConnectedChange, onSingleItemUpserted) {
   const es = new EventSource(roomUrl(path));
 
   es.addEventListener("open", () => onConnectedChange(true));
@@ -284,6 +489,8 @@ function openStream(path, upsertFn, deleteFn, onConnectedChange) {
       const parsed = JSON.parse(event.data);
       let changed = false;
       if (parsed.path === "/") {
+        // Bulk snapshot (sent on first connect/reconnect) -- never treated
+        // as "new" for notification purposes, only individual pushes are.
         if (parsed.data && typeof parsed.data === "object") {
           for (const key of Object.keys(parsed.data)) {
             if (upsertFn(key, parsed.data[key])) changed = true;
@@ -291,10 +498,16 @@ function openStream(path, upsertFn, deleteFn, onConnectedChange) {
         }
       } else {
         const key = parsed.path.slice(1);
-        changed = parsed.data === null ? deleteFn(key) : upsertFn(key, parsed.data);
+        if (parsed.data === null) {
+          changed = deleteFn(key);
+        } else {
+          changed = upsertFn(key, parsed.data);
+          if (changed && onSingleItemUpserted) onSingleItemUpserted(parsed.data);
+        }
       }
       if (changed) {
         saveCache();
+        if (currentChatNumber) markRead(currentChatNumber);
         renderConversationList();
         if (currentChatNumber) renderChat(currentChatNumber);
       }
@@ -326,6 +539,9 @@ function upsertIncoming(key, data) {
     contactName: data.contactName || null,
     body: data.body || "",
     imageUrl: data.imageUrl || null,
+    attachmentUrl: data.attachmentUrl || null,
+    attachmentKind: data.attachmentType || null,
+    attachmentName: data.attachmentName || null,
     timestamp: data.timestamp || Date.now(),
   });
   return true;
@@ -358,6 +574,9 @@ function upsertSent(key, data) {
     contactName: null,
     body,
     imageUrl: data.imageUrl || null,
+    attachmentUrl: data.attachmentUrl || null,
+    attachmentKind: data.attachmentType || null,
+    attachmentName: data.attachmentName || null,
     timestamp,
   });
   return true;
@@ -395,16 +614,24 @@ async function uploadToStorage(file, path) {
 
 async function onSendClick() {
   const input = el("compose-input");
-  const body = input.value.trim();
+  const rawBody = input.value.trim();
   const file = pendingAttachmentFile;
-  if (!body && !file) return;
+  const kind = pendingAttachmentKind; // "photo" | "video" | "contact" | null
+  const attachmentName = pendingAttachmentName;
+  if (!rawBody && !file) return;
   if (!currentChatNumber) return;
 
   const timestamp = Date.now();
+  // Same marker convention the tablet app's ChatActivity uses for its own
+  // local echo, so upsertSent()'s dedup match (which compares body text)
+  // lines up with what the phone actually confirms back as "sent".
+  const label = kind === "video" ? "🎥 Video" : kind === "contact" ? "👤 " + (attachmentName || "Contact") : null;
+  const body = label ? (label + (rawBody ? ": " + rawBody : "")) : rawBody;
+
   // Shown immediately from the local file, before the upload even starts --
-  // gets replaced with the real Firebase-hosted image once the "sent"
+  // gets replaced with the real Firebase-hosted copy once the "sent"
   // confirmation comes back through upsertSent().
-  const localImageUrl = file ? URL.createObjectURL(file) : null;
+  const localImageUrl = kind === "photo" ? URL.createObjectURL(file) : null;
 
   const msg = {
     id: "local-" + timestamp + "-" + Math.random().toString(36).slice(2, 8),
@@ -413,6 +640,9 @@ async function onSendClick() {
     contactName: null,
     body,
     imageUrl: localImageUrl,
+    attachmentUrl: null,
+    attachmentKind: kind === "photo" ? null : kind,
+    attachmentName,
     timestamp,
   };
   messages.push(msg);
@@ -425,14 +655,25 @@ async function onSendClick() {
   try {
     let imageUrl = null;
     let imagePath = null;
-    if (file) {
+    let attachmentType = null;
+    let attachmentUrl = null;
+    if (kind === "photo") {
       imagePath = `attachments/${roomId}/${timestamp}.jpg`;
       imageUrl = await uploadToStorage(file, imagePath);
+    } else if (kind === "video" || kind === "contact") {
+      if (file.size > 15 * 1024 * 1024) throw new Error("Attachment too large");
+      attachmentType = kind === "video" ? "video" : "vcard";
+      const ext = kind === "video" ? (file.name.split(".").pop() || "mp4") : "vcf";
+      const path = `attachments/${roomId}/${timestamp}.${ext}`;
+      attachmentUrl = await uploadToStorage(file, path);
     }
     await fetch(roomUrl("messages/outgoing"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: currentChatNumber, body, imageUrl, imagePath, timestamp }),
+      body: JSON.stringify({
+        to: currentChatNumber, body: rawBody, imageUrl, imagePath,
+        attachmentType, attachmentUrl, attachmentName, timestamp,
+      }),
     });
   } catch (e) {
     console.error("send failed", e);
@@ -499,7 +740,8 @@ function conversationsByNumber() {
   }
   return [...byNumber.entries()]
     .map(([number, last]) => ({ number, last }))
-    .sort((a, b) => b.last.timestamp - a.last.timestamp);
+    .map((c) => ({ ...c, unread: isUnread(c) }))
+    .sort((a, b) => a.unread !== b.unread ? (a.unread ? -1 : 1) : b.last.timestamp - a.last.timestamp);
 }
 
 function displayName(number) {
@@ -513,15 +755,13 @@ function renderConversationList() {
   list.innerHTML = "";
   el("empty-state").classList.toggle("hidden", convos.length > 0);
 
-  for (const { number, last } of convos) {
+  for (const { number, last, unread } of convos) {
     const item = document.createElement("div");
-    item.className = "conversation-item";
+    item.className = "conversation-item" + (unread ? " unread" : "");
     const prefix = last.direction === "out" ? "You: " : last.direction === "scheduled" ? "Scheduled: " : "";
-    const preview = last.imageUrl
-        ? "📷 Picture" + (last.body ? ": " + last.body : "")
-        : last.body;
+    const preview = last.imageUrl ? "📷 Picture" + (last.body ? ": " + last.body : "") : last.body;
     item.innerHTML = `
-      <div class="name">${escapeHtml(displayName(number))}</div>
+      <div class="name">${unread ? '<span class="unread-dot">●</span>' : ""}${escapeHtml(displayName(number))}</div>
       <div class="preview">${prefix}${escapeHtml(preview)}</div>
       <div class="time">${formatTime(last.timestamp)}</div>
     `;
@@ -536,6 +776,8 @@ function openChat(number) {
   el("chat-subtitle").textContent = number;
   showScreen("chat");
   renderChat(number);
+  markRead(number);
+  renderConversationList();
 }
 
 function renderChat(number) {
@@ -555,8 +797,13 @@ function renderChat(number) {
     const imageHtml = m.imageUrl
         ? `<img class="bubble-image" src="${escapeHtml(m.imageUrl)}" alt="Picture" />`
         : "";
+    const attachmentHtml = (!m.imageUrl && m.attachmentUrl && m.attachmentKind)
+        ? `<a class="bubble-attachment" href="${escapeHtml(m.attachmentUrl)}" target="_blank" rel="noopener">${
+            m.attachmentKind === "video" ? "🎥 Open video" : "👤 " + escapeHtml(m.attachmentName || "Open contact")
+          }</a>`
+        : "";
     const bodyHtml = m.body ? escapeHtml(m.body) : "";
-    row.innerHTML = `<div class="bubble${isScheduled ? " scheduled" : ""}">${imageHtml}${bodyHtml}<span class="meta">${meta}</span></div>`;
+    row.innerHTML = `<div class="bubble${isScheduled ? " scheduled" : ""}">${imageHtml}${attachmentHtml}${bodyHtml}<span class="meta">${meta}</span></div>`;
     list.appendChild(row);
   }
   list.scrollTop = list.scrollHeight;

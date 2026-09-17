@@ -203,6 +203,19 @@ body {
   font-size: 16px;
 }
 
+.conversation-item.unread .name {
+  font-weight: 800;
+}
+
+.conversation-item.unread .preview {
+  color: var(--text);
+}
+
+.unread-dot {
+  color: var(--accent);
+  margin-right: 4px;
+}
+
 .conversation-item .preview {
   color: var(--text-dim);
   font-size: 14px;
@@ -334,6 +347,19 @@ body {
   border-radius: 8px;
 }
 
+.attachment-label {
+  flex: 1;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.bubble-attachment {
+  display: block;
+  color: inherit;
+  text-decoration: underline;
+  margin-bottom: 4px;
+}
+
 .composer {
   display: flex;
   gap: 8px;
@@ -369,3 +395,61 @@ body {
 }
 
 #send-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ---------- Action sheet (attach-type / live-vs-gallery pickers) ---------- */
+.action-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 50;
+}
+
+.action-sheet {
+  width: 100%;
+  background: var(--panel);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  padding: 12px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.action-sheet-title {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+#action-sheet-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.action-sheet-option {
+  padding: 14px;
+  font-size: 16px;
+  text-align: center;
+  background: var(--panel-2);
+  color: var(--text);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.action-sheet-option:active { opacity: 0.8; }
+
+.action-sheet-cancel {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  background: var(--panel-2);
+  color: var(--danger);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
