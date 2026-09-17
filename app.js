@@ -305,6 +305,7 @@ function upsertIncoming(key, data) {
     number: normalizeNumber(data.sender),
     contactName: data.contactName || null,
     body: data.body || "",
+    imageUrl: data.imageUrl || null,
     timestamp: data.timestamp || Date.now(),
   });
   return true;
@@ -330,7 +331,15 @@ function upsertSent(key, data) {
   );
   if (localIdx !== -1) messages.splice(localIdx, 1);
 
-  messages.push({ id: key, direction: "out", number, contactName: null, body, timestamp });
+  messages.push({
+    id: key,
+    direction: "out",
+    number,
+    contactName: null,
+    body,
+    imageUrl: data.imageUrl || null,
+    timestamp,
+  });
   return true;
 }
 
@@ -456,9 +465,12 @@ function renderConversationList() {
     const item = document.createElement("div");
     item.className = "conversation-item";
     const prefix = last.direction === "out" ? "You: " : last.direction === "scheduled" ? "Scheduled: " : "";
+    const preview = last.imageUrl
+        ? "📷 Picture" + (last.body ? ": " + last.body : "")
+        : last.body;
     item.innerHTML = `
       <div class="name">${escapeHtml(displayName(number))}</div>
-      <div class="preview">${prefix}${escapeHtml(last.body)}</div>
+      <div class="preview">${prefix}${escapeHtml(preview)}</div>
       <div class="time">${formatTime(last.timestamp)}</div>
     `;
     item.addEventListener("click", () => openChat(number));
@@ -488,7 +500,11 @@ function renderChat(number) {
     const meta = isScheduled
         ? "⏰ Scheduled for " + formatTime(m.sendAt)
         : formatTime(m.timestamp);
-    row.innerHTML = `<div class="bubble${isScheduled ? " scheduled" : ""}">${escapeHtml(m.body)}<span class="meta">${meta}</span></div>`;
+    const imageHtml = m.imageUrl
+        ? `<img class="bubble-image" src="${escapeHtml(m.imageUrl)}" alt="Picture" />`
+        : "";
+    const bodyHtml = m.body ? escapeHtml(m.body) : "";
+    row.innerHTML = `<div class="bubble${isScheduled ? " scheduled" : ""}">${imageHtml}${bodyHtml}<span class="meta">${meta}</span></div>`;
     list.appendChild(row);
   }
   list.scrollTop = list.scrollHeight;

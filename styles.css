@@ -262,6 +262,13 @@ body {
   border-bottom-right-radius: 4px;
 }
 
+.bubble-image {
+  display: block;
+  max-width: 100%;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+
 .bubble .meta {
   display: block;
   font-size: 11px;
