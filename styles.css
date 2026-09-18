@@ -351,6 +351,13 @@ body {
   cursor: pointer;
 }
 
+.chat-connection-warning {
+  padding: 6px 16px;
+  color: var(--danger);
+  font-size: 13px;
+  background: var(--panel);
+}
+
 .schedule-picker {
   display: flex;
   flex-wrap: wrap;

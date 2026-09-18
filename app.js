@@ -629,6 +629,26 @@ function updatePhoneStatus(connected) {
   phoneStatusEl.textContent = connected ? "Phone is connected to Firebase" : "Phone not reachable right now";
   phoneStatusEl.classList.toggle("connected", connected);
   phoneStatusEl.classList.toggle("disconnected", !connected);
+  updateChatConnectionWarning();
+}
+
+// Names specifically which side is down (this browser's own connection to
+// Firebase, vs. the phone itself being unreachable) rather than a generic
+// "not connected", since they call for different reactions -- a dead phone
+// means "wait" no matter what this device does, while a dead Firebase
+// connection is this device's own wifi/data to fix.
+function updateChatConnectionWarning() {
+  const warningEl = el("chat-connection-warning");
+  if (!warningEl) return;
+  const firebaseConnected = incomingConnected && sentConnected && scheduledConnected;
+  const phoneConnected = lastHeartbeatSeenAt > 0 && (Date.now() - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS;
+  const text = !firebaseConnected
+      ? "Not connected to Firebase — this may take a while to send."
+      : !phoneConnected
+      ? "Phone not reachable — this may take a while to send."
+      : null;
+  warningEl.textContent = text || "";
+  warningEl.classList.toggle("hidden", !text);
 }
 
 // How long a stream may go with zero events (not just data -- Firebase's
@@ -719,6 +739,7 @@ function updateConnectionStatus() {
   if (dot) dot.classList.toggle("connected", connected);
   const statusText = el("conv-status-text");
   if (statusText) statusText.textContent = connected ? "You're connected to Firebase" : "Reconnecting to Firebase...";
+  updateChatConnectionWarning();
 }
 
 function upsertIncoming(key, data) {
@@ -993,6 +1014,7 @@ function openChat(number) {
   renderChat(number);
   markRead(number);
   renderConversationList();
+  updateChatConnectionWarning();
 }
 
 function renderChat(number) {
