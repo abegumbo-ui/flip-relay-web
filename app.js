@@ -847,10 +847,20 @@ function renderChat(number) {
   for (const m of thread) {
     const row = document.createElement("div");
     const isScheduled = m.direction === "scheduled";
+    const isOut = m.direction === "out";
     row.className = "bubble-row " + (isScheduled ? "out" : m.direction);
+    // A "local-" id is this browser's own optimistic echo, shown the
+    // instant Send was clicked, before the phone has confirmed anything --
+    // upsertSent() replaces it with the real Firebase record (a normal
+    // push-key id) once the phone actually reports the send. Matches
+    // asking "did this actually reach the phone, or are we still in
+    // limbo" at a glance.
+    const deliveryStatus = isOut && !isScheduled
+        ? (m.id.startsWith("local-") ? " · Sending..." : " · ✓ Sent")
+        : "";
     const meta = isScheduled
         ? "⏰ Scheduled for " + formatTime(m.sendAt)
-        : formatTime(m.timestamp);
+        : formatTime(m.timestamp) + deliveryStatus;
     const imageHtml = m.imageUrl
         ? `<img class="bubble-image" src="${escapeHtml(m.imageUrl)}" alt="Picture" />`
         : "";
