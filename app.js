@@ -187,6 +187,99 @@ function init() {
 
   el("attach-btn").addEventListener("click", onAttachClick);
   el("attachment-remove-btn").addEventListener("click", clearAttachment);
+
+  el("search-toggle-btn").addEventListener("click", toggleSearch);
+  el("conv-search-input").addEventListener("input", (e) => {
+    conversationSearchQuery = e.target.value;
+    renderConversationList();
+  });
+  el("new-message-btn").addEventListener("click", onNewMessageClick);
+  setupPullToRefresh();
+}
+
+function toggleSearch() {
+  const input = el("conv-search-input");
+  const showing = !input.classList.contains("hidden");
+  if (showing) {
+    input.value = "";
+    conversationSearchQuery = "";
+    input.classList.add("hidden");
+    renderConversationList();
+  } else {
+    input.classList.remove("hidden");
+    input.focus();
+  }
+}
+
+// Starts a fresh conversation with a typed number -- openChat() already
+// handles a number with no existing messages fine (an empty thread is
+// exactly what a brand-new conversation looks like), so no changes were
+// needed there.
+function onNewMessageClick() {
+  const number = prompt("Phone number?");
+  if (!number) return;
+  const normalized = normalizeNumber(number);
+  if (!normalized) return;
+  openChat(normalized);
+}
+
+// Pull-to-refresh on the conversation list: re-fetches the room's current
+// incoming/sent/scheduled state from Firebase directly (the same one-shot
+// GETs connectToRoom() already does on first load), instead of just
+// trusting the live EventSource connections. Mostly a manual "force
+// resync" fallback and a way to visibly confirm the page is actually
+// talking to Firebase, since the streams here already update the list on
+// their own in normal operation.
+function setupPullToRefresh() {
+  const list = el("conversation-list");
+  const indicator = el("pull-refresh-indicator");
+  let startY = null;
+  let pulling = false;
+
+  list.addEventListener("touchstart", (e) => {
+    if (list.scrollTop <= 0) startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  list.addEventListener("touchmove", (e) => {
+    if (startY == null) return;
+    const delta = e.touches[0].clientY - startY;
+    pulling = delta > 60 && list.scrollTop <= 0;
+    indicator.classList.toggle("hidden", !pulling);
+  }, { passive: true });
+
+  list.addEventListener("touchend", () => {
+    if (pulling) refreshFromFirebase();
+    startY = null;
+    pulling = false;
+    indicator.classList.add("hidden");
+  });
+}
+
+async function refreshFromFirebase() {
+  if (!roomId) return;
+  try {
+    const [incomingRes, sentRes, scheduledRes] = await Promise.all([
+      fetch(roomUrl("messages/incoming")),
+      fetch(roomUrl("messages/sent")),
+      fetch(roomUrl("messages/scheduled")),
+    ]);
+    const [incomingSnapshot, sentSnapshot, scheduledSnapshot] =
+        await Promise.all([incomingRes.json(), sentRes.json(), scheduledRes.json()]);
+    if (incomingSnapshot && typeof incomingSnapshot === "object") {
+      for (const key of Object.keys(incomingSnapshot)) upsertIncoming(key, incomingSnapshot[key]);
+    }
+    if (sentSnapshot && typeof sentSnapshot === "object") {
+      for (const key of Object.keys(sentSnapshot)) upsertSent(key, sentSnapshot[key]);
+    }
+    if (scheduledSnapshot && typeof scheduledSnapshot === "object") {
+      for (const key of Object.keys(scheduledSnapshot)) upsertScheduled(key, scheduledSnapshot[key]);
+    }
+    saveCache();
+    renderConversationList();
+    if (currentChatNumber) renderChat(currentChatNumber);
+  } catch (e) {
+    logDebug("Manual refresh failed: " + (e && e.stack ? e.stack : e));
+  }
 }
 
 function clearAttachment() {
@@ -806,9 +899,18 @@ function displayName(number) {
   return (withName && withName.contactName) || number;
 }
 
+let conversationSearchQuery = "";
+
 function renderConversationList() {
   const list = el("conversation-list");
-  const convos = conversationsByNumber();
+  let convos = conversationsByNumber();
+  const q = conversationSearchQuery.trim().toLowerCase();
+  if (q) {
+    convos = convos.filter(({ number }) => {
+      const name = (displayName(number) || "").toLowerCase();
+      return name.includes(q) || number.includes(q);
+    });
+  }
   list.innerHTML = "";
   el("empty-state").classList.toggle("hidden", convos.length > 0);
 

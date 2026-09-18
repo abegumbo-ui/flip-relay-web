@@ -189,6 +189,45 @@ body {
 }
 
 /* ---------- Conversation list ---------- */
+.conv-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.toolbar-btn {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.toolbar-btn:active { opacity: 0.8; }
+
+#conv-search-input {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 0 16px 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.pull-refresh {
+  text-align: center;
+  padding: 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
 #conversation-list {
   flex: 1;
   overflow-y: auto;
