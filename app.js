@@ -575,26 +575,45 @@ function startStreams() {
   startPhoneHeartbeatPoll();
 }
 
-// How stale the phone's last heartbeat can be before it's treated as
-// offline -- comfortable margin above the phone's own ~30s write interval
-// so one slow/dropped beat doesn't flicker the status.
-const PHONE_HEARTBEAT_STALE_MS = 90 * 1000;
+// How long the heartbeat value can go unchanged before it's treated as
+// stale -- comfortable margin above the phone's own ~30s write interval
+// so one slow/dropped beat, or this poll landing right before the phone's
+// next write, doesn't flicker the status.
+const PHONE_HEARTBEAT_STALE_MS = 120 * 1000;
 let phoneHeartbeatTimer = null;
+let lastHeartbeatValue = null;
+let lastHeartbeatSeenAt = 0;
 
-// Polled with a plain fetch() every 30s rather than a fourth EventSource
-// -- this is just a status indicator, not something needing sub-second
-// delivery, and phoneHeartbeat is a single value the phone overwrites in
-// place, not a path full of individually-pushed child items the way
-// messages/incoming etc. are, so it doesn't fit the existing stream
-// handling here anyway.
+/**
+ * Polled with a plain fetch() every 30s rather than a fourth EventSource
+ * -- this is just a status indicator, not something needing sub-second
+ * delivery, and phoneHeartbeat is a single value the phone overwrites in
+ * place, not a path full of individually-pushed child items the way
+ * messages/incoming etc. are, so it doesn't fit the existing stream
+ * handling here anyway.
+ *
+ * Deliberately never compares the phone's embedded timestamp against this
+ * browser's own clock -- confirmed the wrong way to do this: doing that
+ * made a genuinely-online phone show as unreachable simply because its
+ * clock was off from this device's, which is a real, plausible situation
+ * on a phone this old. Instead, this only cares whether the value the
+ * phone is writing keeps *changing*, measured entirely against this
+ * browser's own clock -- self-consistent, and immune to the phone's clock
+ * being wrong in either direction.
+ */
 function startPhoneHeartbeatPoll() {
   if (phoneHeartbeatTimer) clearInterval(phoneHeartbeatTimer);
   const poll = async () => {
     try {
       const res = await fetch(roomUrl("phoneHeartbeat"));
       const data = res.ok ? await res.json() : null;
-      const timestamp = data && typeof data.timestamp === "number" ? data.timestamp : null;
-      const connected = timestamp != null && (Date.now() - timestamp) < PHONE_HEARTBEAT_STALE_MS;
+      const value = data && typeof data.timestamp === "number" ? data.timestamp : null;
+      const now = Date.now();
+      if (value != null && value !== lastHeartbeatValue) {
+        lastHeartbeatValue = value;
+        lastHeartbeatSeenAt = now;
+      }
+      const connected = lastHeartbeatSeenAt > 0 && (now - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS;
       updatePhoneStatus(connected);
     } catch (e) {
       updatePhoneStatus(false);
