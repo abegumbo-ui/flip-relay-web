@@ -631,46 +631,83 @@ function updatePhoneStatus(connected) {
   phoneStatusEl.classList.toggle("disconnected", !connected);
 }
 
+// How long a stream may go with zero events (not just data -- Firebase's
+// SSE also sends periodic keep-alives) before it's treated as dead and
+// force-reconnected. This exists because a plain EventSource can end up
+// silently stuck: if the underlying connection dies without a clean
+// TCP close -- exactly what happens on a real device after a wifi/cell
+// drop-and-reconnect -- the browser never fires another "error" (so
+// onConnectedChange(false) never even runs) or "open" event, and just
+// sits there forever looking like it's still trying. Writes (sending a
+// message, a picture upload) go over their own separate one-shot
+// fetch() calls, so they keep working fine the whole time -- which is
+// exactly why this can show "Reconnecting..." while pictures still send.
+// This is the same class of bug already fixed on the Android side (see
+// the phone/tablet apps' stream client and its finite read timeout);
+// EventSource has no equivalent built-in protection, so it's handled here.
+const STREAM_STALE_MS = 60 * 1000;
+
 function openStream(path, upsertFn, deleteFn, onConnectedChange, onSingleItemUpserted) {
-  const es = new EventSource(roomUrl(path));
+  let es = null;
+  let lastEventAt = Date.now();
+  const bump = () => { lastEventAt = Date.now(); };
 
-  es.addEventListener("open", () => onConnectedChange(true));
-  es.addEventListener("error", () => onConnectedChange(false));
+  function connect() {
+    es = new EventSource(roomUrl(path));
 
-  const handle = (event) => {
-    try {
-      const parsed = JSON.parse(event.data);
-      let changed = false;
-      if (parsed.path === "/") {
-        // Bulk snapshot (sent on first connect/reconnect) -- never treated
-        // as "new" for notification purposes, only individual pushes are.
-        if (parsed.data && typeof parsed.data === "object") {
-          for (const key of Object.keys(parsed.data)) {
-            if (upsertFn(key, parsed.data[key])) changed = true;
+    es.addEventListener("open", () => { bump(); onConnectedChange(true); });
+    es.addEventListener("error", () => onConnectedChange(false));
+    // Catches any keep-alive/unnamed event too, so idle-but-healthy rooms
+    // don't get mistaken for dead ones.
+    es.addEventListener("message", bump);
+
+    const handle = (event) => {
+      bump();
+      try {
+        const parsed = JSON.parse(event.data);
+        let changed = false;
+        if (parsed.path === "/") {
+          // Bulk snapshot (sent on first connect/reconnect) -- never treated
+          // as "new" for notification purposes, only individual pushes are.
+          if (parsed.data && typeof parsed.data === "object") {
+            for (const key of Object.keys(parsed.data)) {
+              if (upsertFn(key, parsed.data[key])) changed = true;
+            }
+          }
+        } else {
+          const key = parsed.path.slice(1);
+          if (parsed.data === null) {
+            changed = deleteFn(key);
+          } else {
+            changed = upsertFn(key, parsed.data);
+            if (changed && onSingleItemUpserted) onSingleItemUpserted(parsed.data);
           }
         }
-      } else {
-        const key = parsed.path.slice(1);
-        if (parsed.data === null) {
-          changed = deleteFn(key);
-        } else {
-          changed = upsertFn(key, parsed.data);
-          if (changed && onSingleItemUpserted) onSingleItemUpserted(parsed.data);
+        if (changed) {
+          saveCache();
+          if (currentChatNumber) markRead(currentChatNumber);
+          renderConversationList();
+          if (currentChatNumber) renderChat(currentChatNumber);
         }
+      } catch (e) {
+        logDebug("Stream event error (" + path + "): " + (e && e.stack ? e.stack : e));
       }
-      if (changed) {
-        saveCache();
-        if (currentChatNumber) markRead(currentChatNumber);
-        renderConversationList();
-        if (currentChatNumber) renderChat(currentChatNumber);
-      }
-    } catch (e) {
-      logDebug("Stream event error (" + path + "): " + (e && e.stack ? e.stack : e));
+    };
+    es.addEventListener("put", handle);
+    es.addEventListener("patch", handle);
+  }
+
+  connect();
+
+  const watchdog = setInterval(() => {
+    if (Date.now() - lastEventAt > STREAM_STALE_MS) {
+      es.close();
+      onConnectedChange(false);
+      connect();
     }
-  };
-  es.addEventListener("put", handle);
-  es.addEventListener("patch", handle);
-  return es;
+  }, 15000);
+
+  return { close: () => { clearInterval(watchdog); es.close(); } };
 }
 
 function updateConnectionStatus() {
