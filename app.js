@@ -428,6 +428,8 @@ function onForgetClick() {
   if (incomingStream) incomingStream.close();
   if (sentStream) sentStream.close();
   if (scheduledStream) scheduledStream.close();
+  if (phoneHeartbeatTimer) clearInterval(phoneHeartbeatTimer);
+  phoneHeartbeatTimer = null;
   incomingConnected = false;
   sentConnected = false;
   scheduledConnected = false;
@@ -476,6 +478,45 @@ function startStreams() {
     seenScheduledKeys.delete(key);
     return messages.length !== before;
   }, (connected) => { scheduledConnected = connected; updateConnectionStatus(); });
+
+  startPhoneHeartbeatPoll();
+}
+
+// How stale the phone's last heartbeat can be before it's treated as
+// offline -- comfortable margin above the phone's own ~30s write interval
+// so one slow/dropped beat doesn't flicker the status.
+const PHONE_HEARTBEAT_STALE_MS = 90 * 1000;
+let phoneHeartbeatTimer = null;
+
+// Polled with a plain fetch() every 30s rather than a fourth EventSource
+// -- this is just a status indicator, not something needing sub-second
+// delivery, and phoneHeartbeat is a single value the phone overwrites in
+// place, not a path full of individually-pushed child items the way
+// messages/incoming etc. are, so it doesn't fit the existing stream
+// handling here anyway.
+function startPhoneHeartbeatPoll() {
+  if (phoneHeartbeatTimer) clearInterval(phoneHeartbeatTimer);
+  const poll = async () => {
+    try {
+      const res = await fetch(roomUrl("phoneHeartbeat"));
+      const data = res.ok ? await res.json() : null;
+      const timestamp = data && typeof data.timestamp === "number" ? data.timestamp : null;
+      const connected = timestamp != null && (Date.now() - timestamp) < PHONE_HEARTBEAT_STALE_MS;
+      updatePhoneStatus(connected);
+    } catch (e) {
+      updatePhoneStatus(false);
+    }
+  };
+  poll();
+  phoneHeartbeatTimer = setInterval(poll, 30000);
+}
+
+function updatePhoneStatus(connected) {
+  const phoneStatusEl = el("phone-status-text");
+  if (!phoneStatusEl) return;
+  phoneStatusEl.textContent = connected ? "Phone is connected to Firebase" : "Phone not reachable right now";
+  phoneStatusEl.classList.toggle("connected", connected);
+  phoneStatusEl.classList.toggle("disconnected", !connected);
 }
 
 function openStream(path, upsertFn, deleteFn, onConnectedChange, onSingleItemUpserted) {
@@ -521,11 +562,14 @@ function openStream(path, upsertFn, deleteFn, onConnectedChange, onSingleItemUps
 }
 
 function updateConnectionStatus() {
+  // Only ever reflects this browser's own connection to Firebase -- see
+  // updatePhoneStatus() for whether the phone itself is actually online,
+  // which is a separate thing this never used to distinguish.
   const connected = incomingConnected && sentConnected && scheduledConnected;
   const dot = el("conv-status-dot");
   if (dot) dot.classList.toggle("connected", connected);
   const statusText = el("conv-status-text");
-  if (statusText) statusText.textContent = connected ? "Connected" : "Reconnecting...";
+  if (statusText) statusText.textContent = connected ? "You're connected to Firebase" : "Reconnecting to Firebase...";
 }
 
 function upsertIncoming(key, data) {

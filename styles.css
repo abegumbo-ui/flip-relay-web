@@ -161,6 +161,13 @@ body {
   font-size: 13px;
 }
 
+.phone-status {
+  font-size: 12px;
+}
+
+.phone-status.connected { color: var(--good); }
+.phone-status.disconnected { color: var(--danger); }
+
 .status-dot {
   width: 9px;
   height: 9px;
