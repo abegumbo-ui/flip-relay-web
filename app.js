@@ -531,6 +531,7 @@ function onForgetClick() {
   lastHeartbeatValue = null;
   lastHeartbeatSeenAt = 0;
   hasPolledHeartbeatOnce = false;
+  try { localStorage.removeItem(heartbeatStateKey()); } catch (e) {}
   incomingConnected = false;
   sentConnected = false;
   scheduledConnected = false;
@@ -620,8 +621,48 @@ let hasPolledHeartbeatOnce = false;
  * was actually watching, so the first poll only records a baseline and
  * never counts as evidence of a change by itself.
  */
+// A page refresh destroys this whole script's state, unlike the tablet's
+// background service, which keeps running (and keeps this same baseline)
+// across the app's screen being closed and reopened -- confirmed as the
+// reason a tablet reopen "knows right away" while a PWA refresh has to
+// re-earn a full "have I seen the value change yet" cycle from scratch.
+// Persisting the same three fields the tablet keeps in memory closes that
+// gap: a refresh restores exactly where the last tab left off instead of
+// resetting the wait every time.
+function heartbeatStateKey() {
+  return "flip_relay_heartbeat_" + roomId;
+}
+
+function loadHeartbeatState() {
+  try {
+    const raw = localStorage.getItem(heartbeatStateKey());
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    lastHeartbeatValue = typeof parsed.lastHeartbeatValue === "number" ? parsed.lastHeartbeatValue : null;
+    lastHeartbeatSeenAt = typeof parsed.lastHeartbeatSeenAt === "number" ? parsed.lastHeartbeatSeenAt : 0;
+    hasPolledHeartbeatOnce = !!parsed.hasPolledHeartbeatOnce;
+  } catch (e) {
+    // corrupt/unavailable storage -- just start fresh, same as before this existed
+  }
+}
+
+function saveHeartbeatState() {
+  try {
+    localStorage.setItem(heartbeatStateKey(), JSON.stringify({
+      lastHeartbeatValue, lastHeartbeatSeenAt, hasPolledHeartbeatOnce,
+    }));
+  } catch (e) {
+    // storage full/unavailable -- not fatal, just means a refresh resets the wait
+  }
+}
+
 function startPhoneHeartbeatPoll() {
   if (phoneHeartbeatTimer) clearInterval(phoneHeartbeatTimer);
+  loadHeartbeatState();
+  // Reflect the restored state immediately instead of waiting for the
+  // first poll to complete, same reasoning as the tablet reading
+  // UpdateBus's last-known status on resume.
+  updatePhoneStatus(lastHeartbeatSeenAt > 0 && (Date.now() - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS);
   const poll = async () => {
     try {
       const res = await fetch(roomUrl("phoneHeartbeat"));
@@ -635,6 +676,7 @@ function startPhoneHeartbeatPoll() {
         lastHeartbeatValue = value;
       }
       hasPolledHeartbeatOnce = true;
+      saveHeartbeatState();
       const connected = lastHeartbeatSeenAt > 0 && (now - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS;
       updatePhoneStatus(connected);
     } catch (e) {
@@ -959,6 +1001,19 @@ function onScheduleConfirmClick() {
   el("schedule-picker").classList.add("hidden");
 }
 
+// Tapping a still-"Sending..." bubble offers to delete it -- there was
+// previously no way to clear one that's stuck because there's no
+// connection to actually send it. Only ever removes the local echo; if
+// the send does eventually go through anyway, the real "sent" record
+// just shows up as a new message.
+function deletePending(messageId) {
+  if (!confirm("Delete this message? It hasn't gone through yet.")) return;
+  messages = messages.filter((m) => !(m.id === messageId && m.id.startsWith("local-")));
+  saveCache();
+  renderConversationList();
+  if (currentChatNumber) renderChat(currentChatNumber);
+}
+
 // Tapping a scheduled message's bubble is the only way to cancel it --
 // there was previously no way to at all.
 function cancelScheduled(messageId) {
@@ -1079,6 +1134,9 @@ function renderChat(number) {
     if (isScheduled) {
       const messageId = m.id;
       row.querySelector(".bubble").addEventListener("click", () => cancelScheduled(messageId));
+    } else if (isOut && m.id.startsWith("local-")) {
+      const messageId = m.id;
+      row.querySelector(".bubble").addEventListener("click", () => deletePending(messageId));
     }
     list.appendChild(row);
   }
