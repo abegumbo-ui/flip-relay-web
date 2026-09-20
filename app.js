@@ -1,12 +1,8 @@
-// The database URL isn't sensitive on its own (it's visible in this page's
-// own network requests to anyone who opens dev tools regardless), so unlike
-// the Android app's build it's just committed directly rather than injected
-// from a secret. Deliberately no database *secret* is embedded here, since
-// this page is served publicly: as of this writing the Firebase Realtime
-// Database is wide open to anyone with the URL regardless of any secret
-// (still in "test mode" -- see the main repo's README), so the old ?auth=
-// parameter wasn't adding real protection anyway.
-const DATABASE_URL = "https://flip-relay-default-rtdb.firebaseio.com/";
+// Filled in at CI build time from the FIREBASE_DATABASE_URL /
+// FIREBASE_DATABASE_SECRET GitHub Actions secrets -- these placeholders are
+// what actually lives in source control (see .github/workflows/build.yml).
+const DATABASE_URL = "__FIREBASE_DATABASE_URL__";
+const DATABASE_SECRET = "__FIREBASE_DATABASE_SECRET__";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -34,6 +30,7 @@ let pendingAttachmentFile = null;
 let pendingAttachmentKind = null; // "photo" | "video" | "contact" | null
 let pendingAttachmentName = null; // display name, only meaningful for "contact"
 let readState = {}; // number -> lastRead timestamp (localStorage-backed, mirrors the tablet app's ReadState)
+let pinnedState = {}; // number -> true (localStorage-backed, mirrors the tablet app's pin/unpin)
 
 const el = (id) => document.getElementById(id);
 
@@ -122,6 +119,39 @@ function isUnread(convo) {
   return convo.last.direction === "in" && convo.last.timestamp > (readState[convo.number] || 0);
 }
 
+// ---------- pinned conversations (mirrors the tablet app's pin/unpin) ----------
+
+function pinnedStateKey() {
+  return "flip_relay_web_pinned_" + roomId;
+}
+
+function loadPinnedState() {
+  try {
+    pinnedState = JSON.parse(localStorage.getItem(pinnedStateKey())) || {};
+  } catch (e) {
+    pinnedState = {};
+  }
+}
+
+function savePinnedState() {
+  try {
+    localStorage.setItem(pinnedStateKey(), JSON.stringify(pinnedState));
+  } catch (e) {
+    // not fatal -- worst case pin order resets next load
+  }
+}
+
+function isPinned(number) {
+  return !!pinnedState[number];
+}
+
+function togglePinned(number) {
+  if (pinnedState[number]) delete pinnedState[number];
+  else pinnedState[number] = true;
+  savePinnedState();
+  renderConversationList();
+}
+
 // ---------- notifications ----------
 
 function requestNotificationPermission() {
@@ -170,6 +200,9 @@ function init() {
   el("disconnect-btn").addEventListener("click", onForgetClick);
   el("deleted-thread-back-btn").addEventListener("click", () => showScreen("settings"));
   el("deleted-thread-restore-btn").addEventListener("click", restoreSelectedInThread);
+  el("deleted-thread-delete-forever-btn").addEventListener("click", deleteForeverSelectedInThread);
+  el("conv-selection-cancel-btn").addEventListener("click", exitConversationSelectionMode);
+  el("conv-selection-delete-btn").addEventListener("click", confirmDeleteSelectedConversations);
   el("forward-cancel-btn").addEventListener("click", cancelForward);
   el("back-btn").addEventListener("click", () => {
     if (selectionMode) { exitSelectionMode(); return; }
@@ -383,7 +416,30 @@ function toggleSearch() {
 // handles a number with no existing messages fine (an empty thread is
 // exactly what a brand-new conversation looks like), so no changes were
 // needed there.
-function onNewMessageClick() {
+async function onNewMessageClick() {
+  if (navigator.contacts && navigator.contacts.select) {
+    const choice = await showActionSheet("New Message", [
+      { label: "⌨️ Type a number", value: "type" },
+      { label: "👤 Choose from Contacts", value: "contacts" },
+    ]);
+    if (choice === "contacts") {
+      try {
+        const supported = await navigator.contacts.getProperties();
+        const props = ["name", "tel"].filter((p) => supported.includes(p));
+        const [contact] = await navigator.contacts.select(
+          props.length ? props : ["name", "tel"], { multiple: false });
+        if (!contact) return;
+        const tel = (contact.tel && contact.tel[0]) || "";
+        const normalized = normalizeNumber(tel);
+        if (!normalized) return;
+        openChat(normalized);
+      } catch (e) {
+        logDebug("Contact picker unavailable/cancelled: " + e);
+      }
+      return;
+    }
+    if (choice !== "type") return; // cancelled
+  }
   const number = prompt("Phone number?");
   if (!number) return;
   const normalized = normalizeNumber(number);
@@ -537,8 +593,12 @@ async function onAttachClick() {
     capture: mode === "live" ? "environment" : null,
   });
   if (!file) return;
-  if (file.size > 15 * 1024 * 1024) {
-    alert("That file is too large to send (over 15MB).");
+  // 60MB, matching the tablet's own cap -- the phone re-encodes video down
+  // to a small size once it receives it (VideoTranscoder), so this only
+  // needs to protect against picking something absurd, not the actual MMS
+  // limit.
+  if (file.size > 60 * 1024 * 1024) {
+    alert("That file is too large to send (over 60MB).");
     return;
   }
   setPendingAttachment(file, type, null);
@@ -633,6 +693,7 @@ async function connectToRoom(code, persist) {
     if (persist) localStorage.setItem(ROOM_KEY, code);
     loadCache();
     loadReadState();
+    loadPinnedState();
     if (incomingSnapshot && typeof incomingSnapshot === "object") {
       for (const key of Object.keys(incomingSnapshot)) upsertIncoming(key, incomingSnapshot[key]);
     }
@@ -1107,7 +1168,7 @@ async function onSendClick() {
       imagePath = `attachments/${roomId}/${timestamp}.jpg`;
       imageUrl = await uploadToStorage(file, imagePath);
     } else if (kind === "video" || kind === "contact") {
-      if (file.size > 15 * 1024 * 1024) throw new Error("Attachment too large");
+      if (file.size > 60 * 1024 * 1024) throw new Error("Attachment too large");
       attachmentType = kind === "video" ? "video" : "vcard";
       const ext = kind === "video" ? (file.name.split(".").pop() || "mp4") : "vcf";
       const path = `attachments/${roomId}/${timestamp}.${ext}`;
@@ -1226,6 +1287,7 @@ async function onMessageLongPress(m) {
   const options = [
     { label: "📋 Copy", value: "copy" },
     { label: "↪️ Forward", value: "forward" },
+    { label: "ℹ️ Message info", value: "info" },
     { label: "☑️ Select", value: "select" },
   ];
   const isPending = m.direction === "out" && m.id.startsWith("local-");
@@ -1240,11 +1302,24 @@ async function onMessageLongPress(m) {
     }
   } else if (choice === "forward") {
     startForward(m.body);
+  } else if (choice === "info") {
+    showMessageInfo(m);
   } else if (choice === "select") {
     enterSelectionMode(m.id);
   } else if (choice === "delete") {
     if (confirm("Delete this message? It hasn't gone through yet.")) deletePending(m.id);
   }
+}
+
+function showMessageInfo(m) {
+  const isPending = m.direction === "out" && m.id.startsWith("local-");
+  const status = m.direction === "out" ? (isPending ? "Sending..." : "Sent") : "Received";
+  const lines = [
+    "Status: " + status,
+    "Time: " + new Date(m.timestamp).toLocaleString(),
+    "Number: " + m.number,
+  ];
+  alert(lines.join("\n"));
 }
 
 // ---------- forward ----------
@@ -1425,9 +1500,18 @@ function renderDeletedGroupsList() {
       </div>
     `;
     row.addEventListener("click", () => openDeletedThread(number));
-    attachLongPress(row, () => confirmRestoreAllForNumber(number));
+    attachLongPress(row, () => showDeletedGroupMenu(number));
     list.appendChild(row);
   }
+}
+
+async function showDeletedGroupMenu(number) {
+  const choice = await showActionSheet(displayName(number) || number, [
+    { label: "↩️ Restore All", value: "restore" },
+    { label: "🗑️ Delete Forever", value: "delete" },
+  ]);
+  if (choice === "restore") confirmRestoreAllForNumber(number);
+  else if (choice === "delete") confirmDeleteForeverAllForNumber(number);
 }
 
 async function confirmRestoreAllForNumber(number) {
@@ -1436,6 +1520,15 @@ async function confirmRestoreAllForNumber(number) {
   const label = displayName(number) || number;
   if (!confirm(`Restore all ${groupItems.length} deleted message(s) from ${label}?`)) return;
   for (const item of groupItems) await restoreDeletedMessage(item, false);
+  loadDeletedMessages();
+}
+
+async function confirmDeleteForeverAllForNumber(number) {
+  const groupItems = deletedGroups.get(number) || [];
+  if (groupItems.length === 0) return;
+  const label = displayName(number) || number;
+  if (!confirm(`Permanently delete all ${groupItems.length} message(s) from ${label}? This can't be undone.`)) return;
+  for (const item of groupItems) await permanentlyDeleteMessage(item, false);
   loadDeletedMessages();
 }
 
@@ -1484,6 +1577,29 @@ async function restoreSelectedInThread() {
   for (const item of items) await restoreDeletedMessage(item, false);
   await loadDeletedMessages();
   showScreen("settings");
+}
+
+async function deleteForeverSelectedInThread() {
+  const items = (deletedGroups.get(deletedThreadNumber) || [])
+      .filter((item) => deletedThreadSelected.has(item.path + "|" + item.key));
+  if (items.length === 0) return;
+  const n = items.length;
+  if (!confirm(`Permanently delete ${n} message${n === 1 ? "" : "s"}? This can't be undone.`)) return;
+  for (const item of items) await permanentlyDeleteMessage(item, false);
+  await loadDeletedMessages();
+  showScreen("settings");
+}
+
+/** Skips the normal 30-day wait and removes a trashed message outright -- same as the lazy auto-purge in loadDeletedMessages(), just on demand. */
+async function permanentlyDeleteMessage(item, reload = true) {
+  const { path, key } = item;
+  try {
+    await fetch(roomUrl(`deletedMessages/${path}/${key}`), { method: "DELETE" });
+  } catch (e) {
+    logDebug("Permanent delete failed: " + (e && e.stack ? e.stack : e));
+    return;
+  }
+  if (reload) loadDeletedMessages();
 }
 
 async function restoreDeletedMessage(item, reload = true) {
@@ -1539,13 +1655,14 @@ function conversationsByNumber() {
   }
   return [...byNumber.entries()]
     .map(([number, last]) => ({ number, last }))
-    .map((c) => ({ ...c, unread: isUnread(c) }))
-    // Chronological only -- an unread conversation used to jump to the top,
+    .map((c) => ({ ...c, unread: isUnread(c), pinned: isPinned(c.number) }))
+    // Pinned first (matching the tablet app), chronological within each
+    // group -- an unread conversation used to jump to the top on its own,
     // but that's a change of mind from before: it should stay in the order
     // its last message actually arrived, same as every normal texting app.
     // isUnread() above still marks it (bold name + dot in the rendered
-    // list), just no longer as a sort key.
-    .sort((a, b) => b.last.timestamp - a.last.timestamp);
+    // list), just no longer as a sort key by itself.
+    .sort((a, b) => (b.pinned - a.pinned) || (b.last.timestamp - a.last.timestamp));
 }
 
 function displayName(number) {
@@ -1554,6 +1671,71 @@ function displayName(number) {
 }
 
 let conversationSearchQuery = "";
+
+// ---------- conversation multi-select (mirrors the tablet app's Select) ----------
+
+let conversationSelectionMode = false;
+let selectedConversationNumbers = new Set();
+
+function enterConversationSelectionMode(initialNumber) {
+  conversationSelectionMode = true;
+  selectedConversationNumbers = new Set([initialNumber]);
+  renderConversationList();
+}
+
+function exitConversationSelectionMode() {
+  conversationSelectionMode = false;
+  selectedConversationNumbers.clear();
+  renderConversationList();
+}
+
+function toggleConversationSelection(number) {
+  if (selectedConversationNumbers.has(number)) selectedConversationNumbers.delete(number);
+  else selectedConversationNumbers.add(number);
+  if (selectedConversationNumbers.size === 0) {
+    exitConversationSelectionMode();
+    return;
+  }
+  renderConversationList();
+}
+
+function updateConversationSelectionToolbar() {
+  const toolbar = el("conv-selection-toolbar");
+  toolbar.classList.toggle("hidden", !conversationSelectionMode);
+  el("conv-toolbar").classList.toggle("hidden", conversationSelectionMode);
+  if (conversationSelectionMode) {
+    el("conv-selection-count").textContent = selectedConversationNumbers.size + " selected";
+  }
+}
+
+async function confirmDeleteSelectedConversations() {
+  const numbers = Array.from(selectedConversationNumbers);
+  const n = numbers.length;
+  if (n === 0) return;
+  if (!confirm(`Delete ${n} conversation${n === 1 ? "" : "s"}? Messages can be restored later from Settings within 30 days.`)) return;
+  exitConversationSelectionMode();
+  for (const number of numbers) await softDeleteConversation(number);
+}
+
+/** Soft-deletes every message in a conversation, one at a time, via the same trash mechanism as deleting an individual message. */
+async function softDeleteConversation(number) {
+  const ids = messages.filter((m) => m.number === number && m.direction !== "scheduled").map((m) => m.id);
+  for (const id of ids) await softDeleteMessage(id);
+}
+
+async function showConversationLongPressMenu(number) {
+  if (conversationSelectionMode) {
+    toggleConversationSelection(number);
+    return;
+  }
+  const pinned = isPinned(number);
+  const choice = await showActionSheet(displayName(number) || number, [
+    { label: pinned ? "📌 Unpin" : "📌 Pin to top", value: "pin" },
+    { label: "☑️ Select", value: "select" },
+  ]);
+  if (choice === "pin") togglePinned(number);
+  else if (choice === "select") enterConversationSelectionMode(number);
+}
 
 function renderConversationList() {
   const list = el("conversation-list");
@@ -1567,18 +1749,30 @@ function renderConversationList() {
   }
   list.innerHTML = "";
   el("empty-state").classList.toggle("hidden", convos.length > 0);
+  updateConversationSelectionToolbar();
 
-  for (const { number, last, unread } of convos) {
+  for (const { number, last, unread, pinned } of convos) {
     const item = document.createElement("div");
-    item.className = "conversation-item" + (unread ? " unread" : "");
+    const selected = conversationSelectionMode && selectedConversationNumbers.has(number);
+    item.className = "conversation-item" + (unread ? " unread" : "") + (selected ? " selected" : "");
     const prefix = last.direction === "out" ? "You: " : last.direction === "scheduled" ? "Scheduled: " : "";
     const preview = last.imageUrl ? "📷 Picture" + (last.body ? ": " + last.body : "") : last.body;
+    const checkHtml = conversationSelectionMode
+        ? `<div class="select-circle${selected ? " checked" : ""}"></div>` : "";
+    const pinHtml = pinned ? '<span class="pin-mark">📌</span>' : "";
     item.innerHTML = `
-      <div class="name">${unread ? '<span class="unread-dot">●</span>' : ""}${escapeHtml(displayName(number))}</div>
-      <div class="preview">${prefix}${escapeHtml(preview)}</div>
+      ${checkHtml}
+      <div class="conversation-item-body">
+        <div class="name">${pinHtml}${unread ? '<span class="unread-dot">●</span>' : ""}${escapeHtml(displayName(number))}</div>
+        <div class="preview">${prefix}${escapeHtml(preview)}</div>
+      </div>
       <div class="time">${formatTime(last.timestamp)}</div>
     `;
-    item.addEventListener("click", () => openChat(number));
+    item.addEventListener("click", () => {
+      if (conversationSelectionMode) toggleConversationSelection(number);
+      else openChat(number);
+    });
+    attachLongPress(item, () => showConversationLongPressMenu(number));
     list.appendChild(item);
   }
 }

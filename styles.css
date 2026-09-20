@@ -243,7 +243,8 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.selection-toolbar #selection-count { flex: 1; font-size: 14px; }
+.selection-toolbar #selection-count,
+.selection-toolbar #conv-selection-count { flex: 1; font-size: 14px; }
 
 .settings-row {
   display: block;
@@ -337,14 +338,23 @@ body {
 
 .conversation-item {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
 }
 
-.conversation-item:active { background: var(--panel-2); }
+.conversation-item:active,
+.conversation-item.selected { background: var(--panel-2); }
+
+.conversation-item-body {
+  flex: 1;
+  min-width: 0; /* lets .preview's text-overflow ellipsis work inside a flex child */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
 .conversation-item .name {
   font-weight: 600;
@@ -364,6 +374,10 @@ body {
   margin-right: 4px;
 }
 
+.pin-mark {
+  margin-right: 4px;
+}
+
 .conversation-item .preview {
   color: var(--text-dim);
   font-size: 14px;
@@ -375,8 +389,7 @@ body {
 .conversation-item .time {
   color: var(--text-dim);
   font-size: 12px;
-  align-self: flex-end;
-  margin-top: -20px;
+  flex-shrink: 0;
 }
 
 #empty-state {

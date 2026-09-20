@@ -44,9 +44,14 @@
       </div>
       <button id="settings-btn" class="icon-btn" title="Settings">&#9881;</button>
     </div>
-    <div class="conv-toolbar">
+    <div id="conv-toolbar" class="conv-toolbar">
       <button id="new-message-btn" class="toolbar-btn">New Message</button>
       <button id="search-toggle-btn" class="toolbar-btn">Search</button>
+    </div>
+    <div id="conv-selection-toolbar" class="selection-toolbar hidden">
+      <button id="conv-selection-cancel-btn" class="icon-btn" title="Cancel">&times;</button>
+      <span id="conv-selection-count">0 selected</span>
+      <button id="conv-selection-delete-btn" class="icon-btn" title="Delete">&#128465;</button>
     </div>
     <input id="conv-search-input" class="hidden" placeholder="Search by name or number" />
     <div id="forward-banner" class="forward-banner hidden">
@@ -82,6 +87,7 @@
     <div class="selection-toolbar">
       <span id="deleted-thread-count">0 selected</span>
       <button id="deleted-thread-restore-btn" class="icon-btn" title="Restore selected">Restore</button>
+      <button id="deleted-thread-delete-forever-btn" class="icon-btn" title="Delete forever">Delete Forever</button>
     </div>
     <div id="deleted-thread-list"></div>
   </section>
