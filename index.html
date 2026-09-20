@@ -42,16 +42,35 @@
         <div id="conv-status-text" class="sub">Connecting to Firebase...</div>
         <div id="phone-status-text" class="sub phone-status">Phone: checking...</div>
       </div>
-      <button id="forget-btn" class="icon-btn" title="Disconnect this tablet">&#9881;</button>
+      <button id="settings-btn" class="icon-btn" title="Settings">&#9881;</button>
     </div>
     <div class="conv-toolbar">
       <button id="new-message-btn" class="toolbar-btn">New Message</button>
       <button id="search-toggle-btn" class="toolbar-btn">Search</button>
     </div>
     <input id="conv-search-input" class="hidden" placeholder="Search by name or number" />
+    <div id="forward-banner" class="forward-banner hidden">
+      <span>Forwarding message &mdash; choose a conversation, search, or start a new one.</span>
+      <button id="forward-cancel-btn" class="icon-btn" title="Cancel">&times;</button>
+    </div>
     <div id="pull-refresh-indicator" class="pull-refresh hidden">Refreshing...</div>
     <div id="conversation-list"></div>
     <div id="empty-state" class="hidden">No messages yet. Text the flip phone from another number and it'll show up here.</div>
+  </section>
+
+  <!-- Screen 4: settings -->
+  <section id="screen-settings" class="screen hidden">
+    <div class="topbar">
+      <button id="settings-back-btn" class="icon-btn" title="Back">&#8592;</button>
+      <div><h2>Settings</h2></div>
+    </div>
+    <div id="settings-body">
+      <button id="disconnect-btn" class="settings-row danger">Disconnect this tablet</button>
+      <h3 class="settings-heading">Recently Deleted</h3>
+      <p class="settings-hint">Messages deleted from any device stay here for 30 days and can be restored.</p>
+      <div id="deleted-list"></div>
+      <div id="deleted-empty-state" class="hidden settings-hint">Nothing deleted in the last 30 days.</div>
+    </div>
   </section>
 
   <!-- Screen 3: one conversation thread -->
@@ -62,6 +81,11 @@
         <h2 id="chat-title">&nbsp;</h2>
         <div id="chat-subtitle" class="sub"></div>
       </div>
+    </div>
+    <div id="selection-toolbar" class="selection-toolbar hidden">
+      <button id="selection-cancel-btn" class="icon-btn" title="Cancel">&times;</button>
+      <span id="selection-count">0 selected</span>
+      <button id="selection-delete-btn" class="icon-btn" title="Delete">&#128465;</button>
     </div>
     <div id="message-list"></div>
 

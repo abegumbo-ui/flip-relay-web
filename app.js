@@ -165,12 +165,18 @@ function init() {
   el("code-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") onConnectClick();
   });
-  el("forget-btn").addEventListener("click", onForgetClick);
+  el("settings-btn").addEventListener("click", onSettingsClick);
+  el("settings-back-btn").addEventListener("click", () => showScreen("conversations"));
+  el("disconnect-btn").addEventListener("click", onForgetClick);
+  el("forward-cancel-btn").addEventListener("click", cancelForward);
   el("back-btn").addEventListener("click", () => {
+    if (selectionMode) { exitSelectionMode(); return; }
     currentChatNumber = null;
     showScreen("conversations");
     renderConversationList();
   });
+  el("selection-cancel-btn").addEventListener("click", exitSelectionMode);
+  el("selection-delete-btn").addEventListener("click", confirmBulkDelete);
   el("send-btn").addEventListener("click", onSendClick);
   el("compose-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -708,7 +714,7 @@ function onForgetClick() {
 // ---------- screens ----------
 
 function showScreen(name) {
-  ["pairing", "conversations", "chat"].forEach((s) => {
+  ["pairing", "conversations", "chat", "settings"].forEach((s) => {
     el("screen-" + s).classList.toggle("hidden", s !== name);
   });
 }
@@ -1211,9 +1217,14 @@ function attachLongPress(el, onLongPress) {
 }
 
 async function onMessageLongPress(m) {
+  if (selectionMode) {
+    toggleSelection(m.id);
+    return;
+  }
   const options = [
     { label: "📋 Copy", value: "copy" },
     { label: "↪️ Forward", value: "forward" },
+    { label: "☑️ Select", value: "select" },
   ];
   const isPending = m.direction === "out" && m.id.startsWith("local-");
   if (isPending) options.push({ label: "🗑️ Delete", value: "delete" });
@@ -1226,16 +1237,190 @@ async function onMessageLongPress(m) {
       logDebug("Copy failed: " + (e && e.stack ? e.stack : e));
     }
   } else if (choice === "forward") {
-    const number = prompt("Forward to what number?");
-    if (!number) return;
-    const normalized = normalizeNumber(number);
-    if (!normalized) return;
-    openChat(normalized);
-    el("compose-input").value = m.body || "";
-    el("compose-input").focus();
+    startForward(m.body);
+  } else if (choice === "select") {
+    enterSelectionMode(m.id);
   } else if (choice === "delete") {
     if (confirm("Delete this message? It hasn't gone through yet.")) deletePending(m.id);
   }
+}
+
+// ---------- forward ----------
+
+// Matches Google Messages: forwarding takes you to the conversation list
+// to pick (or search for, or start) a target instead of a plain number
+// prompt -- openChat() picks the pending body back up once a target is
+// actually chosen, however that happens (tap an existing conversation,
+// search then tap, or New Message).
+let forwardingBody = null;
+
+function startForward(body) {
+  forwardingBody = body || "";
+  currentChatNumber = null;
+  showScreen("conversations");
+  renderConversationList();
+  el("forward-banner").classList.remove("hidden");
+}
+
+function cancelForward() {
+  forwardingBody = null;
+  el("forward-banner").classList.add("hidden");
+}
+
+// ---------- multi-select ----------
+
+let selectionMode = false;
+let selectedMessageIds = new Set();
+
+function enterSelectionMode(initialId) {
+  selectionMode = true;
+  selectedMessageIds = new Set([initialId]);
+  renderChat(currentChatNumber);
+}
+
+function exitSelectionMode() {
+  selectionMode = false;
+  selectedMessageIds.clear();
+  renderChat(currentChatNumber);
+}
+
+function toggleSelection(id) {
+  if (selectedMessageIds.has(id)) selectedMessageIds.delete(id);
+  else selectedMessageIds.add(id);
+  if (selectedMessageIds.size === 0) {
+    exitSelectionMode();
+    return;
+  }
+  renderChat(currentChatNumber);
+}
+
+function updateSelectionToolbar() {
+  const toolbar = el("selection-toolbar");
+  toolbar.classList.toggle("hidden", !selectionMode);
+  if (selectionMode) {
+    const n = selectedMessageIds.size;
+    el("selection-count").textContent = n + " selected";
+  }
+}
+
+async function confirmBulkDelete() {
+  const n = selectedMessageIds.size;
+  if (n === 0) return;
+  if (!confirm(`Delete ${n} message${n === 1 ? "" : "s"}? This can be restored later from Settings within 30 days.`)) return;
+  const ids = Array.from(selectedMessageIds);
+  exitSelectionMode();
+  for (const id of ids) await softDeleteMessage(id);
+}
+
+// Moves a real (already-confirmed) message into deletedMessages/ with a
+// timestamp instead of deleting it outright, so Settings > Recently
+// Deleted can restore it for 30 days -- and since this happens in
+// Firebase, every device sees the same delete/restore, not just this one.
+// A still-"Sending..." local-only message never made it to Firebase in
+// the first place, so there's nothing to preserve -- just drop it.
+async function softDeleteMessage(id) {
+  const m = messages.find((x) => x.id === id);
+  if (!m) return;
+  if (id.startsWith("local-")) {
+    deletePending(id);
+    return;
+  }
+  const path = m.direction === "in" ? "incoming" : "sent";
+  try {
+    const res = await fetch(roomUrl(`messages/${path}/${id}`));
+    const data = res.ok ? await res.json() : null;
+    if (data) {
+      await fetch(roomUrl(`deletedMessages/${path}/${id}`), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, deletedAt: Date.now() }),
+      });
+    }
+    await fetch(roomUrl(`messages/${path}/${id}`), { method: "DELETE" });
+  } catch (e) {
+    logDebug("Delete failed: " + (e && e.stack ? e.stack : e));
+  }
+  messages = messages.filter((x) => x.id !== id);
+  saveCache();
+  renderConversationList();
+  if (currentChatNumber) renderChat(currentChatNumber);
+}
+
+// ---------- settings / recently deleted ----------
+
+const DELETED_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+function onSettingsClick() {
+  showScreen("settings");
+  loadDeletedMessages();
+}
+
+async function loadDeletedMessages() {
+  const list = el("deleted-list");
+  list.innerHTML = "";
+  const items = [];
+  for (const path of ["incoming", "sent"]) {
+    try {
+      const res = await fetch(roomUrl(`deletedMessages/${path}`));
+      const snapshot = res.ok ? await res.json() : null;
+      if (!snapshot || typeof snapshot !== "object") continue;
+      const now = Date.now();
+      for (const key of Object.keys(snapshot)) {
+        const data = snapshot[key];
+        const deletedAt = data.deletedAt || 0;
+        if (now - deletedAt > DELETED_RETENTION_MS) {
+          // Past 30 days -- prune lazily instead of needing a scheduled
+          // job anywhere; this is the only place that ever reads this data.
+          fetch(roomUrl(`deletedMessages/${path}/${key}`), { method: "DELETE" }).catch(() => {});
+          continue;
+        }
+        items.push({ path, key, data, deletedAt });
+      }
+    } catch (e) {
+      logDebug("Loading deleted messages failed: " + (e && e.stack ? e.stack : e));
+    }
+  }
+  items.sort((a, b) => b.deletedAt - a.deletedAt);
+  el("deleted-empty-state").classList.toggle("hidden", items.length > 0);
+
+  for (const item of items) {
+    const number = normalizeNumber(item.path === "incoming" ? item.data.sender : item.data.to);
+    const preview = item.data.imageUrl ? "📷 Picture" + (item.data.body ? ": " + item.data.body : "") : (item.data.body || "");
+    const row = document.createElement("div");
+    row.className = "deleted-item";
+    row.innerHTML = `
+      <div class="info">
+        <div class="name">${escapeHtml(displayName(number) || number)}</div>
+        <div class="preview">${escapeHtml(preview)}</div>
+      </div>
+      <button class="restore-btn">Restore</button>
+    `;
+    row.querySelector(".restore-btn").addEventListener("click", () => restoreDeletedMessage(item));
+    list.appendChild(row);
+  }
+}
+
+async function restoreDeletedMessage(item) {
+  const { path, key, data } = item;
+  const restored = { ...data };
+  delete restored.deletedAt;
+  try {
+    await fetch(roomUrl(`messages/${path}/${key}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(restored),
+    });
+    await fetch(roomUrl(`deletedMessages/${path}/${key}`), { method: "DELETE" });
+  } catch (e) {
+    logDebug("Restore failed: " + (e && e.stack ? e.stack : e));
+    return;
+  }
+  // The live stream's own "put" event also picks this back up on every
+  // connected device, this just reflects it here immediately too.
+  if (path === "incoming") upsertIncoming(key, restored); else upsertSent(key, restored);
+  saveCache();
+  renderConversationList();
+  loadDeletedMessages();
 }
 
 // Tapping a scheduled message's bubble is the only way to cancel it --
@@ -1321,11 +1506,20 @@ function openChat(number) {
   markRead(number);
   renderConversationList();
   updateChatConnectionWarning();
+  // A forward in progress: this is the chosen target, so drop the pending
+  // body into the composer for review instead of sending it automatically.
+  if (forwardingBody !== null) {
+    el("compose-input").value = forwardingBody;
+    el("compose-input").focus();
+    forwardingBody = null;
+    el("forward-banner").classList.add("hidden");
+  }
 }
 
 function renderChat(number) {
   const list = el("message-list");
   list.innerHTML = "";
+  updateSelectionToolbar();
   const thread = messages
     .filter((m) => m.number === number)
     .sort((a, b) => a.timestamp - b.timestamp);
@@ -1359,8 +1553,18 @@ function renderChat(number) {
             : `<a class="bubble-attachment" href="${escapeHtml(m.attachmentUrl)}" target="_blank" rel="noopener">👤 ${escapeHtml(m.attachmentName || "Open contact")}</a>`)
         : "";
     const bodyHtml = m.body ? escapeHtml(m.body) : "";
-    row.innerHTML = `<div class="bubble${isScheduled ? " scheduled" : ""}">${imageHtml}${attachmentHtml}${bodyHtml}<span class="meta">${meta}</span></div>`;
-    if (isScheduled) {
+    // The circle only appears in selection mode, and never on a scheduled
+    // message -- those aren't part of the conversation history to bulk
+    // manage the same way, they already have their own tap-to-cancel.
+    const showCircle = selectionMode && !isScheduled;
+    const circleHtml = showCircle
+        ? `<div class="select-circle${selectedMessageIds.has(m.id) ? " checked" : ""}"></div>`
+        : "";
+    row.innerHTML = `${circleHtml}<div class="bubble${isScheduled ? " scheduled" : ""}">${imageHtml}${attachmentHtml}${bodyHtml}<span class="meta">${meta}</span></div>`;
+    if (showCircle) {
+      const messageId = m.id;
+      row.addEventListener("click", () => toggleSelection(messageId));
+    } else if (isScheduled) {
       const messageId = m.id;
       row.querySelector(".bubble").addEventListener("click", () => cancelScheduled(messageId));
     } else {
@@ -1368,11 +1572,12 @@ function renderChat(number) {
     }
     if (m.imageUrl) {
       const imageUrl = m.imageUrl;
+      const messageId = m.id;
       // stopPropagation so tapping the picture itself doesn't also trigger
-      // the bubble-level cancel/delete click handler above.
+      // the bubble-level cancel/delete/select handler above.
       row.querySelector(".bubble-image").addEventListener("click", (e) => {
         e.stopPropagation();
-        openImageViewer(imageUrl);
+        if (selectionMode) toggleSelection(messageId); else openImageViewer(imageUrl);
       });
     }
     list.appendChild(row);
