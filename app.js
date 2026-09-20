@@ -891,12 +891,16 @@ function startPhoneHeartbeatPoll() {
   // Reflect the restored state immediately instead of waiting for the
   // first poll to complete, same reasoning as the tablet reading
   // UpdateBus's last-known status on resume.
-  updatePhoneStatus(lastHeartbeatSeenAt > 0 && (Date.now() - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS);
+  updatePhoneStatus(lastHeartbeatSeenAt > 0 && (Date.now() - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS, null);
   const poll = async () => {
     try {
       const res = await fetch(roomUrl("phoneHeartbeat"));
       const data = res.ok ? await res.json() : null;
       const value = data && typeof data.timestamp === "number" ? data.timestamp : null;
+      // -1 (the phone's own sentinel for "couldn't read battery") means
+      // the same as no value at all -- don't show a bogus "-1%".
+      const batteryPercent = data && typeof data.batteryPercent === "number" && data.batteryPercent >= 0
+          ? data.batteryPercent : null;
       const now = Date.now();
       if (value != null) {
         if (hasPolledHeartbeatOnce && value !== lastHeartbeatValue) {
@@ -907,21 +911,28 @@ function startPhoneHeartbeatPoll() {
       hasPolledHeartbeatOnce = true;
       saveHeartbeatState();
       const connected = lastHeartbeatSeenAt > 0 && (now - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS;
-      updatePhoneStatus(connected);
+      updatePhoneStatus(connected, connected ? batteryPercent : null);
     } catch (e) {
-      updatePhoneStatus(false);
+      updatePhoneStatus(false, null);
     }
   };
   poll();
   phoneHeartbeatTimer = setInterval(poll, 30000);
 }
 
-function updatePhoneStatus(connected) {
+function updatePhoneStatus(connected, batteryPercent) {
   const phoneStatusEl = el("phone-status-text");
   if (!phoneStatusEl) return;
   phoneStatusEl.textContent = connected ? "Phone is connected to Firebase" : "Phone not reachable right now";
   phoneStatusEl.classList.toggle("connected", connected);
   phoneStatusEl.classList.toggle("disconnected", !connected);
+  // Blank (not a stale/misleading number) whenever the phone isn't
+  // actually reachable, matching the tablet's own battery indicator.
+  const batteryEl = el("battery-text");
+  if (batteryEl) {
+    batteryEl.textContent = batteryPercent != null ? "🔋" + batteryPercent + "%" : "";
+    batteryEl.classList.toggle("low", batteryPercent != null && batteryPercent <= 20);
+  }
   updateChatConnectionWarning();
 }
 

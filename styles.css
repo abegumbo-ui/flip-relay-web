@@ -168,6 +168,14 @@ body {
 .phone-status.connected { color: var(--good); }
 .phone-status.disconnected { color: var(--danger); }
 
+.battery-text {
+  font-size: 13px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.battery-text.low { color: var(--danger); }
+
 .status-dot {
   width: 9px;
   height: 9px;
