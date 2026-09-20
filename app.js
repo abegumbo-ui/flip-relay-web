@@ -1732,9 +1732,38 @@ async function showConversationLongPressMenu(number) {
   const choice = await showActionSheet(displayName(number) || number, [
     { label: pinned ? "📌 Unpin" : "📌 Pin to top", value: "pin" },
     { label: "☑️ Select", value: "select" },
+    { label: "🚫 Block/Unblock", value: "block" },
   ]);
   if (choice === "pin") togglePinned(number);
   else if (choice === "select") enterConversationSelectionMode(number);
+  else if (choice === "block") toggleBlocked(number);
+}
+
+/**
+ * The tablet/PWA have no local blocked-numbers list of their own (unlike
+ * the phone, which also has Android's BlockedNumberContract) -- reads and
+ * writes rooms/{roomId}/blockedNumbers/{number} directly, which the phone
+ * polls (BlockList.java) to also block incoming texts from a number
+ * blocked here.
+ */
+async function toggleBlocked(number) {
+  try {
+    const res = await fetch(roomUrl(`blockedNumbers/${number}`));
+    const existing = res.ok ? await res.json() : null;
+    const currentlyBlocked = existing !== null && existing !== undefined;
+    if (currentlyBlocked) {
+      await fetch(roomUrl(`blockedNumbers/${number}`), { method: "DELETE" });
+    } else {
+      await fetch(roomUrl(`blockedNumbers/${number}`), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: "true",
+      });
+    }
+    alert(currentlyBlocked ? "Unblocked" : "Blocked");
+  } catch (e) {
+    logDebug("Toggle blocked failed: " + (e && e.stack ? e.stack : e));
+  }
 }
 
 function renderConversationList() {
