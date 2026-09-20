@@ -523,6 +523,14 @@ function onForgetClick() {
   if (scheduledStream) scheduledStream.close();
   if (phoneHeartbeatTimer) clearInterval(phoneHeartbeatTimer);
   phoneHeartbeatTimer = null;
+  // Reset the heartbeat baseline too -- otherwise pairing a *different*
+  // room right after forgetting this one would see that new room's first
+  // heartbeat value differ from the old room's leftover value and wrongly
+  // count that as "just changed", the same false-positive this was just
+  // fixed to avoid.
+  lastHeartbeatValue = null;
+  lastHeartbeatSeenAt = 0;
+  hasPolledHeartbeatOnce = false;
   incomingConnected = false;
   sentConnected = false;
   scheduledConnected = false;
@@ -583,6 +591,7 @@ const PHONE_HEARTBEAT_STALE_MS = 120 * 1000;
 let phoneHeartbeatTimer = null;
 let lastHeartbeatValue = null;
 let lastHeartbeatSeenAt = 0;
+let hasPolledHeartbeatOnce = false;
 
 /**
  * Polled with a plain fetch() every 30s rather than a fourth EventSource
@@ -600,6 +609,16 @@ let lastHeartbeatSeenAt = 0;
  * phone is writing keeps *changing*, measured entirely against this
  * browser's own clock -- self-consistent, and immune to the phone's clock
  * being wrong in either direction.
+ *
+ * The very first poll after a page load can't tell whether the value it
+ * sees was just written or is hours/days old -- confirmed as a real bug
+ * live: a phone with wifi off and no SIM (so genuinely offline, its last
+ * real heartbeat over 18 hours stale) still showed "Phone is connected to
+ * Firebase" on a fresh page load, because `null !== <anything>` made that
+ * first observation look like a change. Only a value seen to *change*
+ * between two separate polls proves the phone wrote something while this
+ * was actually watching, so the first poll only records a baseline and
+ * never counts as evidence of a change by itself.
  */
 function startPhoneHeartbeatPoll() {
   if (phoneHeartbeatTimer) clearInterval(phoneHeartbeatTimer);
@@ -609,10 +628,13 @@ function startPhoneHeartbeatPoll() {
       const data = res.ok ? await res.json() : null;
       const value = data && typeof data.timestamp === "number" ? data.timestamp : null;
       const now = Date.now();
-      if (value != null && value !== lastHeartbeatValue) {
+      if (value != null) {
+        if (hasPolledHeartbeatOnce && value !== lastHeartbeatValue) {
+          lastHeartbeatSeenAt = now;
+        }
         lastHeartbeatValue = value;
-        lastHeartbeatSeenAt = now;
       }
+      hasPolledHeartbeatOnce = true;
       const connected = lastHeartbeatSeenAt > 0 && (now - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS;
       updatePhoneStatus(connected);
     } catch (e) {
