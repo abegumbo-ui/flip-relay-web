@@ -1,8 +1,8 @@
 // Filled in at CI build time from the FIREBASE_DATABASE_URL /
 // FIREBASE_DATABASE_SECRET GitHub Actions secrets -- these placeholders are
 // what actually lives in source control (see .github/workflows/build.yml).
-const DATABASE_URL = "__FIREBASE_DATABASE_URL__";
-const DATABASE_SECRET = "__FIREBASE_DATABASE_SECRET__";
+const DATABASE_URL = "https://flip-relay-default-rtdb.firebaseio.com/";
+const DATABASE_SECRET = "Dqu4Jm70Y9uPBfEQT2Phush1kDBg5mIdqBL9wDyw";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
