@@ -1,4 +1,14 @@
 {
-  "publishedAt": "2026-09-20T05:29:17.9899945Z",
-  "sha": "a3d08adc57ac65d2c75ad5d375f4a32f3568328d"
+  "phone": {
+    "sha": "bd30a766dcb6ba430c6bc190c1746f3b33c98389",
+    "publishedAt": "2026-09-20T05:41:43.9729119Z"
+  },
+  "tablet-regular": {
+    "sha": "bd30a766dcb6ba430c6bc190c1746f3b33c98389",
+    "publishedAt": "2026-09-20T05:41:43.9729119Z"
+  },
+  "tablet-mechi": {
+    "sha": "bd30a766dcb6ba430c6bc190c1746f3b33c98389",
+    "publishedAt": "2026-09-20T05:41:43.9729119Z"
+  }
 }
