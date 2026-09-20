@@ -333,10 +333,27 @@ function setupImageViewer() {
   });
 
   // Desktop/mouse fallback (Chrome DevTools, or a laptop trackpad) --
-  // double-click zooms, a single click closes.
-  overlay.addEventListener("dblclick", () => toggleViewerZoom());
+  // double-click zooms, a single click closes. Same held-briefly trick as
+  // the touch path above: a real browser fires a plain "click" on the
+  // *first* click of a double-click too (its `detail` is always 1 at that
+  // point -- only the second click's own event has detail 2), so acting
+  // on it immediately would close the viewer before "dblclick" ever gets
+  // a chance to fire.
+  let pendingMouseCloseTimer = null;
   overlay.addEventListener("click", (e) => {
-    if (e.detail === 1 && viewerScale <= VIEWER_MIN_SCALE) closeImageViewer();
+    if (e.detail !== 1) return;
+    if (pendingMouseCloseTimer) clearTimeout(pendingMouseCloseTimer);
+    pendingMouseCloseTimer = setTimeout(() => {
+      pendingMouseCloseTimer = null;
+      closeImageViewer();
+    }, VIEWER_DOUBLE_TAP_MS);
+  });
+  overlay.addEventListener("dblclick", () => {
+    if (pendingMouseCloseTimer) {
+      clearTimeout(pendingMouseCloseTimer);
+      pendingMouseCloseTimer = null;
+    }
+    toggleViewerZoom();
   });
 }
 
