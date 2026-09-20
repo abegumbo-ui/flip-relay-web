@@ -168,6 +168,8 @@ function init() {
   el("settings-btn").addEventListener("click", onSettingsClick);
   el("settings-back-btn").addEventListener("click", () => showScreen("conversations"));
   el("disconnect-btn").addEventListener("click", onForgetClick);
+  el("deleted-thread-back-btn").addEventListener("click", () => showScreen("settings"));
+  el("deleted-thread-restore-btn").addEventListener("click", restoreSelectedInThread);
   el("forward-cancel-btn").addEventListener("click", cancelForward);
   el("back-btn").addEventListener("click", () => {
     if (selectionMode) { exitSelectionMode(); return; }
@@ -714,7 +716,7 @@ function onForgetClick() {
 // ---------- screens ----------
 
 function showScreen(name) {
-  ["pairing", "conversations", "chat", "settings"].forEach((s) => {
+  ["pairing", "conversations", "chat", "settings", "deleted-thread"].forEach((s) => {
     el("screen-" + s).classList.toggle("hidden", s !== name);
   });
 }
@@ -1355,9 +1357,13 @@ function onSettingsClick() {
   loadDeletedMessages();
 }
 
+// number -> array of {path, key, data, deletedAt}, refreshed by every
+// loadDeletedMessages() call and read by the drill-down thread screen.
+let deletedGroups = new Map();
+let deletedThreadNumber = null;
+let deletedThreadSelected = new Set(); // holds "path|key" strings
+
 async function loadDeletedMessages() {
-  const list = el("deleted-list");
-  list.innerHTML = "";
   const items = [];
   for (const path of ["incoming", "sent"]) {
     try {
@@ -1380,55 +1386,104 @@ async function loadDeletedMessages() {
       logDebug("Loading deleted messages failed: " + (e && e.stack ? e.stack : e));
     }
   }
-  el("deleted-empty-state").classList.toggle("hidden", items.length > 0);
 
-  // Grouped by conversation -- like folders -- rather than one long list
-  // mixing every number together, since "20 deleted from one number, 5
-  // from another" reads a lot more usefully as two separate groups.
-  const groups = new Map();
+  deletedGroups = new Map();
   for (const item of items) {
     const number = normalizeNumber(item.path === "incoming" ? item.data.sender : item.data.to);
-    if (!groups.has(number)) groups.set(number, []);
-    groups.get(number).push(item);
+    if (!deletedGroups.has(number)) deletedGroups.set(number, []);
+    deletedGroups.get(number).push(item);
   }
-  const sortedNumbers = [...groups.keys()].sort((a, b) => {
-    const aLatest = Math.max(...groups.get(a).map((i) => i.deletedAt));
-    const bLatest = Math.max(...groups.get(b).map((i) => i.deletedAt));
+  renderDeletedGroupsList();
+}
+
+// Settings shows one collapsed row per conversation with deleted
+// messages -- like a list of folders -- rather than every message mixed
+// together. Tap opens that conversation's deleted messages to select
+// which ones to restore; long-press restores all of them in one step
+// without needing to open anything, same pattern as everywhere else in
+// this app that has both a quick whole-thing action and a "look inside
+// and pick" one.
+function renderDeletedGroupsList() {
+  const list = el("deleted-list");
+  list.innerHTML = "";
+  el("deleted-empty-state").classList.toggle("hidden", deletedGroups.size > 0);
+
+  const sortedNumbers = [...deletedGroups.keys()].sort((a, b) => {
+    const aLatest = Math.max(...deletedGroups.get(a).map((i) => i.deletedAt));
+    const bLatest = Math.max(...deletedGroups.get(b).map((i) => i.deletedAt));
     return bLatest - aLatest;
   });
 
   for (const number of sortedNumbers) {
-    const groupItems = groups.get(number).sort((a, b) => b.deletedAt - a.deletedAt);
-    const group = document.createElement("div");
-    group.className = "deleted-group";
-    group.innerHTML = `
-      <div class="deleted-group-header">
-        <span>${escapeHtml(displayName(number) || number)} (${groupItems.length})</span>
-        <button class="restore-all-btn">Restore All</button>
+    const groupItems = deletedGroups.get(number);
+    const row = document.createElement("div");
+    row.className = "deleted-group-row";
+    row.innerHTML = `
+      <div class="info">
+        <div class="name">${escapeHtml(displayName(number) || number)}</div>
+        <div class="preview">${groupItems.length} deleted</div>
       </div>
     `;
-    group.querySelector(".restore-all-btn").addEventListener("click", () => restoreGroup(groupItems));
-
-    for (const item of groupItems) {
-      const preview = item.data.imageUrl ? "📷 Picture" + (item.data.body ? ": " + item.data.body : "") : (item.data.body || "");
-      const row = document.createElement("div");
-      row.className = "deleted-item";
-      row.innerHTML = `
-        <div class="info">
-          <div class="preview">${escapeHtml(preview)}</div>
-        </div>
-        <button class="restore-btn">Restore</button>
-      `;
-      row.querySelector(".restore-btn").addEventListener("click", () => restoreDeletedMessage(item));
-      group.appendChild(row);
-    }
-    list.appendChild(group);
+    row.addEventListener("click", () => openDeletedThread(number));
+    attachLongPress(row, () => confirmRestoreAllForNumber(number));
+    list.appendChild(row);
   }
 }
 
-async function restoreGroup(groupItems) {
+async function confirmRestoreAllForNumber(number) {
+  const groupItems = deletedGroups.get(number) || [];
+  if (groupItems.length === 0) return;
+  const label = displayName(number) || number;
+  if (!confirm(`Restore all ${groupItems.length} deleted message(s) from ${label}?`)) return;
   for (const item of groupItems) await restoreDeletedMessage(item, false);
   loadDeletedMessages();
+}
+
+function openDeletedThread(number) {
+  deletedThreadNumber = number;
+  deletedThreadSelected = new Set();
+  el("deleted-thread-title").textContent = displayName(number) || number;
+  showScreen("deleted-thread");
+  renderDeletedThread();
+}
+
+function renderDeletedThread() {
+  const list = el("deleted-thread-list");
+  list.innerHTML = "";
+  const items = (deletedGroups.get(deletedThreadNumber) || []).slice().sort((a, b) => b.deletedAt - a.deletedAt);
+
+  for (const item of items) {
+    const id = item.path + "|" + item.key;
+    const preview = item.data.imageUrl ? "📷 Picture" + (item.data.body ? ": " + item.data.body : "") : (item.data.body || "");
+    const row = document.createElement("div");
+    row.className = "deleted-item";
+    row.innerHTML = `
+      <div class="select-circle${deletedThreadSelected.has(id) ? " checked" : ""}"></div>
+      <div class="info"><div class="preview">${escapeHtml(preview)}</div></div>
+    `;
+    row.addEventListener("click", () => toggleDeletedThreadSelection(id));
+    list.appendChild(row);
+  }
+  updateDeletedThreadToolbar();
+}
+
+function toggleDeletedThreadSelection(id) {
+  if (deletedThreadSelected.has(id)) deletedThreadSelected.delete(id);
+  else deletedThreadSelected.add(id);
+  renderDeletedThread();
+}
+
+function updateDeletedThreadToolbar() {
+  el("deleted-thread-count").textContent = deletedThreadSelected.size + " selected";
+}
+
+async function restoreSelectedInThread() {
+  const items = (deletedGroups.get(deletedThreadNumber) || [])
+      .filter((item) => deletedThreadSelected.has(item.path + "|" + item.key));
+  if (items.length === 0) return;
+  for (const item of items) await restoreDeletedMessage(item, false);
+  await loadDeletedMessages();
+  showScreen("settings");
 }
 
 async function restoreDeletedMessage(item, reload = true) {

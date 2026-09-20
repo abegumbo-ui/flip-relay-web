@@ -73,6 +73,19 @@
     </div>
   </section>
 
+  <!-- Screen 5: one conversation's deleted messages, selectable to restore -->
+  <section id="screen-deleted-thread" class="screen hidden">
+    <div class="topbar">
+      <button id="deleted-thread-back-btn" class="icon-btn" title="Back">&#8592;</button>
+      <div><h2 id="deleted-thread-title">&nbsp;</h2></div>
+    </div>
+    <div class="selection-toolbar">
+      <span id="deleted-thread-count">0 selected</span>
+      <button id="deleted-thread-restore-btn" class="icon-btn" title="Restore selected">Restore</button>
+    </div>
+    <div id="deleted-thread-list"></div>
+  </section>
+
   <!-- Screen 3: one conversation thread -->
   <section id="screen-chat" class="screen hidden">
     <div class="topbar">
