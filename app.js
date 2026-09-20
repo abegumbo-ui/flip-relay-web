@@ -1161,17 +1161,81 @@ function onScheduleConfirmClick() {
   el("schedule-picker").classList.add("hidden");
 }
 
-// Tapping a still-"Sending..." bubble offers to delete it -- there was
-// previously no way to clear one that's stuck because there's no
-// connection to actually send it. Only ever removes the local echo; if
-// the send does eventually go through anyway, the real "sent" record
-// just shows up as a new message.
+// Removes a message that's still showing "Sending..." (a local-only echo
+// with no confirmed Firebase record yet) -- lets it be dismissed if it's
+// stuck with no connection to actually send it. Only ever removes the
+// local echo; if the send does eventually go through anyway, the real
+// "sent" record just shows up as a new message.
 function deletePending(messageId) {
-  if (!confirm("Delete this message? It hasn't gone through yet.")) return;
   messages = messages.filter((m) => !(m.id === messageId && m.id.startsWith("local-")));
   saveCache();
   renderConversationList();
   if (currentChatNumber) renderChat(currentChatNumber);
+}
+
+// Long-press (or press-and-hold with a mouse) on a message bubble opens an
+// action sheet -- Copy and Forward always, Delete only for a message
+// that's still stuck "Sending...". Implemented on raw touch/mouse events
+// rather than the native "contextmenu"/long-press-to-select behavior,
+// which fights with this on a touchscreen and doesn't exist for touch at
+// all in older browsers.
+const LONG_PRESS_MS = 500;
+function attachLongPress(el, onLongPress) {
+  let timer = null;
+  let firedOrCancelled = false;
+  const start = () => {
+    firedOrCancelled = false;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (!firedOrCancelled) {
+        firedOrCancelled = true;
+        onLongPress();
+      }
+    }, LONG_PRESS_MS);
+  };
+  const cancel = () => {
+    firedOrCancelled = true;
+    clearTimeout(timer);
+  };
+  el.addEventListener("touchstart", start, { passive: true });
+  el.addEventListener("touchmove", cancel, { passive: true });
+  el.addEventListener("touchend", cancel);
+  el.addEventListener("touchcancel", cancel);
+  el.addEventListener("mousedown", start);
+  el.addEventListener("mousemove", cancel);
+  el.addEventListener("mouseup", cancel);
+  el.addEventListener("mouseleave", cancel);
+  // Suppresses the browser's own long-press context menu / text-selection
+  // callout so it doesn't pop up alongside the action sheet.
+  el.addEventListener("contextmenu", (e) => e.preventDefault());
+}
+
+async function onMessageLongPress(m) {
+  const options = [
+    { label: "📋 Copy", value: "copy" },
+    { label: "↪️ Forward", value: "forward" },
+  ];
+  const isPending = m.direction === "out" && m.id.startsWith("local-");
+  if (isPending) options.push({ label: "🗑️ Delete", value: "delete" });
+
+  const choice = await showActionSheet("Message", options);
+  if (choice === "copy") {
+    try {
+      await navigator.clipboard.writeText(m.body || "");
+    } catch (e) {
+      logDebug("Copy failed: " + (e && e.stack ? e.stack : e));
+    }
+  } else if (choice === "forward") {
+    const number = prompt("Forward to what number?");
+    if (!number) return;
+    const normalized = normalizeNumber(number);
+    if (!normalized) return;
+    openChat(normalized);
+    el("compose-input").value = m.body || "";
+    el("compose-input").focus();
+  } else if (choice === "delete") {
+    if (confirm("Delete this message? It hasn't gone through yet.")) deletePending(m.id);
+  }
 }
 
 // Tapping a scheduled message's bubble is the only way to cancel it --
@@ -1205,7 +1269,12 @@ function conversationsByNumber() {
   return [...byNumber.entries()]
     .map(([number, last]) => ({ number, last }))
     .map((c) => ({ ...c, unread: isUnread(c) }))
-    .sort((a, b) => a.unread !== b.unread ? (a.unread ? -1 : 1) : b.last.timestamp - a.last.timestamp);
+    // Chronological only -- an unread conversation used to jump to the top,
+    // but that's a change of mind from before: it should stay in the order
+    // its last message actually arrived, same as every normal texting app.
+    // isUnread() above still marks it (bold name + dot in the rendered
+    // list), just no longer as a sort key.
+    .sort((a, b) => b.last.timestamp - a.last.timestamp);
 }
 
 function displayName(number) {
@@ -1294,9 +1363,8 @@ function renderChat(number) {
     if (isScheduled) {
       const messageId = m.id;
       row.querySelector(".bubble").addEventListener("click", () => cancelScheduled(messageId));
-    } else if (isOut && m.id.startsWith("local-")) {
-      const messageId = m.id;
-      row.querySelector(".bubble").addEventListener("click", () => deletePending(messageId));
+    } else {
+      attachLongPress(row.querySelector(".bubble"), () => onMessageLongPress(m));
     }
     if (m.imageUrl) {
       const imageUrl = m.imageUrl;
