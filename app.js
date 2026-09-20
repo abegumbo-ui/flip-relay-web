@@ -195,6 +195,149 @@ function init() {
   });
   el("new-message-btn").addEventListener("click", onNewMessageClick);
   setupPullToRefresh();
+  setupImageViewer();
+}
+
+// ---------- full-screen picture viewer ----------
+
+const VIEWER_DOUBLE_TAP_MS = 300;
+const VIEWER_DOUBLE_TAP_DIST = 30;
+const VIEWER_MIN_SCALE = 1;
+const VIEWER_MAX_SCALE = 5;
+const VIEWER_DOUBLE_TAP_SCALE = 2.5;
+
+let viewerScale = 1;
+let viewerTranslateX = 0;
+let viewerTranslateY = 0;
+let viewerPinchStartDist = null;
+let viewerPinchStartScale = 1;
+let viewerPanStart = null;
+let viewerGestureMoved = false;
+let viewerLastTapAt = 0;
+let viewerLastTapX = 0;
+let viewerLastTapY = 0;
+let viewerPendingSingleTapTimer = null;
+
+function openImageViewer(src) {
+  resetViewerTransform();
+  el("image-viewer-img").src = src;
+  el("image-viewer-overlay").classList.remove("hidden");
+}
+
+function closeImageViewer() {
+  el("image-viewer-overlay").classList.add("hidden");
+  el("image-viewer-img").src = "";
+}
+
+function resetViewerTransform() {
+  viewerScale = 1;
+  viewerTranslateX = 0;
+  viewerTranslateY = 0;
+  applyViewerTransform();
+}
+
+function applyViewerTransform() {
+  el("image-viewer-img").style.transform =
+      `translate(${viewerTranslateX}px, ${viewerTranslateY}px) scale(${viewerScale})`;
+}
+
+function viewerTouchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+function toggleViewerZoom() {
+  if (viewerScale > VIEWER_MIN_SCALE) {
+    viewerScale = VIEWER_MIN_SCALE;
+    viewerTranslateX = 0;
+    viewerTranslateY = 0;
+  } else {
+    viewerScale = VIEWER_DOUBLE_TAP_SCALE;
+  }
+  applyViewerTransform();
+}
+
+// Handles pinch-to-zoom, single-finger pan while zoomed in, double-tap to
+// zoom, and a plain tap to close -- all via raw touch events rather than
+// native click/dblclick, since a tap that's actually the first half of a
+// double-tap needs to be held briefly (same reasoning, and same
+// DOUBLE_TAP_MS window, as the flip phone's double-press-to-zoom).
+function setupImageViewer() {
+  const overlay = el("image-viewer-overlay");
+
+  overlay.addEventListener("touchstart", (e) => {
+    viewerGestureMoved = false;
+    if (e.touches.length === 2) {
+      if (viewerPendingSingleTapTimer) {
+        clearTimeout(viewerPendingSingleTapTimer);
+        viewerPendingSingleTapTimer = null;
+      }
+      viewerPinchStartDist = viewerTouchDistance(e.touches);
+      viewerPinchStartScale = viewerScale;
+    } else if (e.touches.length === 1 && viewerScale > VIEWER_MIN_SCALE) {
+      viewerPanStart = {
+        x: e.touches[0].clientX, y: e.touches[0].clientY,
+        tx: viewerTranslateX, ty: viewerTranslateY,
+      };
+    }
+  }, { passive: true });
+
+  overlay.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2 && viewerPinchStartDist) {
+      viewerGestureMoved = true;
+      const dist = viewerTouchDistance(e.touches);
+      viewerScale = Math.max(VIEWER_MIN_SCALE, Math.min(VIEWER_MAX_SCALE,
+          viewerPinchStartScale * (dist / viewerPinchStartDist)));
+      applyViewerTransform();
+    } else if (e.touches.length === 1 && viewerPanStart) {
+      viewerGestureMoved = true;
+      const t = e.touches[0];
+      viewerTranslateX = viewerPanStart.tx + (t.clientX - viewerPanStart.x);
+      viewerTranslateY = viewerPanStart.ty + (t.clientY - viewerPanStart.y);
+      applyViewerTransform();
+    }
+  }, { passive: true });
+
+  overlay.addEventListener("touchend", (e) => {
+    // Stops the browser from also firing a synthetic click/dblclick right
+    // after this -- the desktop-mouse fallback below would otherwise race
+    // with the touch handling already done here on an actual touchscreen.
+    e.preventDefault();
+    if (e.touches.length > 0) return; // more fingers still down -- not done yet
+    viewerPinchStartDist = null;
+    viewerPanStart = null;
+    if (viewerGestureMoved) {
+      viewerGestureMoved = false;
+      return; // was a pinch or pan, not a tap
+    }
+
+    const t = e.changedTouches[0];
+    const now = Date.now();
+    const dx = t.clientX - viewerLastTapX;
+    const dy = t.clientY - viewerLastTapY;
+    if (viewerPendingSingleTapTimer && now - viewerLastTapAt < VIEWER_DOUBLE_TAP_MS
+        && Math.hypot(dx, dy) < VIEWER_DOUBLE_TAP_DIST) {
+      clearTimeout(viewerPendingSingleTapTimer);
+      viewerPendingSingleTapTimer = null;
+      toggleViewerZoom();
+      return;
+    }
+    viewerLastTapAt = now;
+    viewerLastTapX = t.clientX;
+    viewerLastTapY = t.clientY;
+    viewerPendingSingleTapTimer = setTimeout(() => {
+      viewerPendingSingleTapTimer = null;
+      closeImageViewer();
+    }, VIEWER_DOUBLE_TAP_MS);
+  });
+
+  // Desktop/mouse fallback (Chrome DevTools, or a laptop trackpad) --
+  // double-click zooms, a single click closes.
+  overlay.addEventListener("dblclick", () => toggleViewerZoom());
+  overlay.addEventListener("click", (e) => {
+    if (e.detail === 1 && viewerScale <= VIEWER_MIN_SCALE) closeImageViewer();
+  });
 }
 
 function toggleSearch() {
@@ -1137,6 +1280,15 @@ function renderChat(number) {
     } else if (isOut && m.id.startsWith("local-")) {
       const messageId = m.id;
       row.querySelector(".bubble").addEventListener("click", () => deletePending(messageId));
+    }
+    if (m.imageUrl) {
+      const imageUrl = m.imageUrl;
+      // stopPropagation so tapping the picture itself doesn't also trigger
+      // the bubble-level cancel/delete click handler above.
+      row.querySelector(".bubble-image").addEventListener("click", (e) => {
+        e.stopPropagation();
+        openImageViewer(imageUrl);
+      });
     }
     list.appendChild(row);
   }
