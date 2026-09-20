@@ -1380,27 +1380,58 @@ async function loadDeletedMessages() {
       logDebug("Loading deleted messages failed: " + (e && e.stack ? e.stack : e));
     }
   }
-  items.sort((a, b) => b.deletedAt - a.deletedAt);
   el("deleted-empty-state").classList.toggle("hidden", items.length > 0);
 
+  // Grouped by conversation -- like folders -- rather than one long list
+  // mixing every number together, since "20 deleted from one number, 5
+  // from another" reads a lot more usefully as two separate groups.
+  const groups = new Map();
   for (const item of items) {
     const number = normalizeNumber(item.path === "incoming" ? item.data.sender : item.data.to);
-    const preview = item.data.imageUrl ? "📷 Picture" + (item.data.body ? ": " + item.data.body : "") : (item.data.body || "");
-    const row = document.createElement("div");
-    row.className = "deleted-item";
-    row.innerHTML = `
-      <div class="info">
-        <div class="name">${escapeHtml(displayName(number) || number)}</div>
-        <div class="preview">${escapeHtml(preview)}</div>
+    if (!groups.has(number)) groups.set(number, []);
+    groups.get(number).push(item);
+  }
+  const sortedNumbers = [...groups.keys()].sort((a, b) => {
+    const aLatest = Math.max(...groups.get(a).map((i) => i.deletedAt));
+    const bLatest = Math.max(...groups.get(b).map((i) => i.deletedAt));
+    return bLatest - aLatest;
+  });
+
+  for (const number of sortedNumbers) {
+    const groupItems = groups.get(number).sort((a, b) => b.deletedAt - a.deletedAt);
+    const group = document.createElement("div");
+    group.className = "deleted-group";
+    group.innerHTML = `
+      <div class="deleted-group-header">
+        <span>${escapeHtml(displayName(number) || number)} (${groupItems.length})</span>
+        <button class="restore-all-btn">Restore All</button>
       </div>
-      <button class="restore-btn">Restore</button>
     `;
-    row.querySelector(".restore-btn").addEventListener("click", () => restoreDeletedMessage(item));
-    list.appendChild(row);
+    group.querySelector(".restore-all-btn").addEventListener("click", () => restoreGroup(groupItems));
+
+    for (const item of groupItems) {
+      const preview = item.data.imageUrl ? "📷 Picture" + (item.data.body ? ": " + item.data.body : "") : (item.data.body || "");
+      const row = document.createElement("div");
+      row.className = "deleted-item";
+      row.innerHTML = `
+        <div class="info">
+          <div class="preview">${escapeHtml(preview)}</div>
+        </div>
+        <button class="restore-btn">Restore</button>
+      `;
+      row.querySelector(".restore-btn").addEventListener("click", () => restoreDeletedMessage(item));
+      group.appendChild(row);
+    }
+    list.appendChild(group);
   }
 }
 
-async function restoreDeletedMessage(item) {
+async function restoreGroup(groupItems) {
+  for (const item of groupItems) await restoreDeletedMessage(item, false);
+  loadDeletedMessages();
+}
+
+async function restoreDeletedMessage(item, reload = true) {
   const { path, key, data } = item;
   const restored = { ...data };
   delete restored.deletedAt;
@@ -1420,7 +1451,7 @@ async function restoreDeletedMessage(item) {
   if (path === "incoming") upsertIncoming(key, restored); else upsertSent(key, restored);
   saveCache();
   renderConversationList();
-  loadDeletedMessages();
+  if (reload) loadDeletedMessages();
 }
 
 // Tapping a scheduled message's bubble is the only way to cancel it --
