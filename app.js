@@ -198,6 +198,7 @@ function init() {
   el("settings-btn").addEventListener("click", onSettingsClick);
   el("settings-back-btn").addEventListener("click", () => showScreen("conversations"));
   el("disconnect-btn").addEventListener("click", onForgetClick);
+  el("sync-log-btn").addEventListener("click", onSyncLogClick);
   el("deleted-thread-back-btn").addEventListener("click", () => showScreen("settings"));
   el("deleted-thread-restore-btn").addEventListener("click", restoreSelectedInThread);
   el("deleted-thread-delete-forever-btn").addEventListener("click", deleteForeverSelectedInThread);
@@ -1441,6 +1442,30 @@ const DELETED_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 function onSettingsClick() {
   showScreen("settings");
   loadDeletedMessages();
+}
+
+/** The phone's recent HistoricalSyncer.syncNow() history -- see the phone's own SyncLog.java. Read-only, so any pick just closes it. */
+async function onSyncLogClick() {
+  let entries = [];
+  try {
+    const res = await fetch(roomUrl("syncLog"));
+    const data = res.ok ? await res.json() : null;
+    if (Array.isArray(data)) entries = data;
+  } catch (e) {
+    logDebug("Loading sync log failed: " + (e && e.stack ? e.stack : e));
+  }
+  if (entries.length === 0) {
+    await showActionSheet("Sync Log", [{ label: "No syncs yet", value: "close" }]);
+    return;
+  }
+  const options = entries.map((e) => {
+    const type = e.type === "pictures" ? "Pictures" : "Messages";
+    const when = e.at ? new Date(e.at).toLocaleString(undefined, {
+      month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+    }) : "unknown time";
+    return { label: `${type} (${e.manual ? "manual" : "auto"}) — ${when}`, value: "close" };
+  });
+  await showActionSheet("Sync Log", options);
 }
 
 // number -> array of {path, key, data, deletedAt}, refreshed by every
