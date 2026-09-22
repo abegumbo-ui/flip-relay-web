@@ -892,7 +892,7 @@ function startPhoneHeartbeatPoll() {
   // Reflect the restored state immediately instead of waiting for the
   // first poll to complete, same reasoning as the tablet reading
   // UpdateBus's last-known status on resume.
-  updatePhoneStatus(lastHeartbeatSeenAt > 0 && (Date.now() - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS, null);
+  updatePhoneStatus(lastHeartbeatSeenAt > 0 && (Date.now() - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS, null, null);
   const poll = async () => {
     try {
       const res = await fetch(roomUrl("phoneHeartbeat"));
@@ -902,6 +902,10 @@ function startPhoneHeartbeatPoll() {
       // the same as no value at all -- don't show a bogus "-1%".
       const batteryPercent = data && typeof data.batteryPercent === "number" && data.batteryPercent >= 0
           ? data.batteryPercent : null;
+      // Both can be true at once -- the phone can be on Wi-Fi while its
+      // cellular radio is also registered, same as its own status bar's
+      // two separate icons.
+      const network = data ? { wifi: !!data.wifi, cellular: !!data.cellular } : null;
       const now = Date.now();
       if (value != null) {
         if (hasPolledHeartbeatOnce && value !== lastHeartbeatValue) {
@@ -912,16 +916,16 @@ function startPhoneHeartbeatPoll() {
       hasPolledHeartbeatOnce = true;
       saveHeartbeatState();
       const connected = lastHeartbeatSeenAt > 0 && (now - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS;
-      updatePhoneStatus(connected, connected ? batteryPercent : null);
+      updatePhoneStatus(connected, connected ? batteryPercent : null, connected ? network : null);
     } catch (e) {
-      updatePhoneStatus(false, null);
+      updatePhoneStatus(false, null, null);
     }
   };
   poll();
   phoneHeartbeatTimer = setInterval(poll, 30000);
 }
 
-function updatePhoneStatus(connected, batteryPercent) {
+function updatePhoneStatus(connected, batteryPercent, network) {
   const phoneStatusEl = el("phone-status-text");
   if (!phoneStatusEl) return;
   phoneStatusEl.textContent = connected ? "Phone is connected to Firebase" : "Phone not reachable right now";
@@ -933,6 +937,13 @@ function updatePhoneStatus(connected, batteryPercent) {
   if (batteryEl) {
     batteryEl.textContent = batteryPercent != null ? "🔋" + batteryPercent + "%" : "";
     batteryEl.classList.toggle("low", batteryPercent != null && batteryPercent <= 20);
+  }
+  const networkEl = el("network-text");
+  if (networkEl) {
+    let text = "";
+    if (network && network.wifi) text += "📶";
+    if (network && network.cellular) text += (text ? " " : "") + "📡";
+    networkEl.textContent = text;
   }
   updateChatConnectionWarning();
 }
