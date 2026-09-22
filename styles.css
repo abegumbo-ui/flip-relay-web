@@ -252,7 +252,25 @@ body {
 }
 
 .selection-toolbar #selection-count,
-.selection-toolbar #conv-selection-count { flex: 1; font-size: 14px; }
+.selection-toolbar #conv-selection-count,
+.selection-toolbar #deleted-selection-count { flex: 1; font-size: 14px; }
+
+.settings-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 16px 4px;
+}
+.settings-heading-row .settings-heading { margin: 0; }
+
+.icon-btn-text {
+  background: none;
+  border: none;
+  color: var(--accent, #2563eb);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
 
 .settings-row {
   display: block;
@@ -283,8 +301,8 @@ body {
 
 .deleted-group-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
@@ -293,6 +311,7 @@ body {
   -webkit-touch-callout: none;
 }
 
+.deleted-group-row .info { flex: 1; min-width: 0; }
 .deleted-group-row .name { font-weight: 600; font-size: 15px; }
 .deleted-group-row .preview { color: var(--text-dim); font-size: 13px; }
 

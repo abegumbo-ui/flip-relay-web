@@ -200,6 +200,10 @@ function init() {
   el("disconnect-btn").addEventListener("click", onForgetClick);
   el("sync-log-btn").addEventListener("click", onSyncLogClick);
   el("force-resync-btn").addEventListener("click", onForceResyncClick);
+  el("deleted-select-multiple-btn").addEventListener("click", () => enterDeletedGroupsSelectionMode(null));
+  el("deleted-selection-cancel-btn").addEventListener("click", exitDeletedGroupsSelectionMode);
+  el("deleted-selection-restore-btn").addEventListener("click", confirmRestoreSelectedGroups);
+  el("deleted-selection-delete-btn").addEventListener("click", confirmDeleteSelectedGroups);
   el("deleted-thread-back-btn").addEventListener("click", () => showScreen("settings"));
   el("deleted-thread-restore-btn").addEventListener("click", restoreSelectedInThread);
   el("deleted-thread-delete-forever-btn").addEventListener("click", deleteForeverSelectedInThread);
@@ -1553,10 +1557,19 @@ async function loadDeletedMessages() {
 // without needing to open anything, same pattern as everywhere else in
 // this app that has both a quick whole-thing action and a "look inside
 // and pick" one.
+// Select Multiple for Recently Deleted's own conversation groups -- same
+// checkbox pattern the main conversation list's own selection mode already
+// uses, since restoring/deleting several conversations' worth of deleted
+// messages one at a time (long-press each) was the actual gap being
+// reported: there was no way to act on more than one at once.
+let deletedGroupsSelectionMode = false;
+let selectedDeletedGroups = new Set();
+
 function renderDeletedGroupsList() {
   const list = el("deleted-list");
   list.innerHTML = "";
   el("deleted-empty-state").classList.toggle("hidden", deletedGroups.size > 0);
+  el("deleted-select-multiple-btn").classList.toggle("hidden", deletedGroupsSelectionMode || deletedGroups.size === 0);
 
   const sortedNumbers = [...deletedGroups.keys()].sort((a, b) => {
     const aLatest = Math.max(...deletedGroups.get(a).map((i) => i.deletedAt));
@@ -1568,25 +1581,80 @@ function renderDeletedGroupsList() {
     const groupItems = deletedGroups.get(number);
     const row = document.createElement("div");
     row.className = "deleted-group-row";
+    const selected = selectedDeletedGroups.has(number);
     row.innerHTML = `
+      ${deletedGroupsSelectionMode ? `<div class="select-circle${selected ? " checked" : ""}"></div>` : ""}
       <div class="info">
         <div class="name">${escapeHtml(displayName(number) || number)}</div>
         <div class="preview">${groupItems.length} deleted</div>
       </div>
     `;
-    row.addEventListener("click", () => openDeletedThread(number));
-    attachLongPress(row, () => showDeletedGroupMenu(number));
+    if (deletedGroupsSelectionMode) {
+      row.addEventListener("click", () => toggleDeletedGroupSelection(number));
+    } else {
+      row.addEventListener("click", () => openDeletedThread(number));
+      attachLongPress(row, () => showDeletedGroupMenu(number));
+    }
     list.appendChild(row);
   }
+}
+
+function toggleDeletedGroupSelection(number) {
+  if (!selectedDeletedGroups.delete(number)) selectedDeletedGroups.add(number);
+  if (selectedDeletedGroups.size === 0) {
+    exitDeletedGroupsSelectionMode();
+    return;
+  }
+  el("deleted-selection-count").textContent = `${selectedDeletedGroups.size} selected`;
+  renderDeletedGroupsList();
+}
+
+function enterDeletedGroupsSelectionMode(preChecked) {
+  deletedGroupsSelectionMode = true;
+  selectedDeletedGroups = new Set(preChecked ? [preChecked] : []);
+  el("deleted-selection-count").textContent = `${selectedDeletedGroups.size} selected`;
+  el("deleted-selection-toolbar").classList.remove("hidden");
+  renderDeletedGroupsList();
+}
+
+function exitDeletedGroupsSelectionMode() {
+  deletedGroupsSelectionMode = false;
+  selectedDeletedGroups = new Set();
+  el("deleted-selection-toolbar").classList.add("hidden");
+  renderDeletedGroupsList();
+}
+
+async function confirmRestoreSelectedGroups() {
+  const numbers = [...selectedDeletedGroups];
+  if (numbers.length === 0) return;
+  if (!confirm(`Restore ${numbers.length} conversation${numbers.length === 1 ? "" : "s"}?`)) return;
+  for (const number of numbers) {
+    for (const item of deletedGroups.get(number) || []) await restoreDeletedMessage(item, false);
+  }
+  exitDeletedGroupsSelectionMode();
+  loadDeletedMessages();
+}
+
+async function confirmDeleteSelectedGroups() {
+  const numbers = [...selectedDeletedGroups];
+  if (numbers.length === 0) return;
+  if (!confirm(`Are you sure you want to delete ${numbers.length} conversation${numbers.length === 1 ? "" : "s"} forever? This can't be undone.`)) return;
+  for (const number of numbers) {
+    for (const item of deletedGroups.get(number) || []) await permanentlyDeleteMessage(item, false);
+  }
+  exitDeletedGroupsSelectionMode();
+  loadDeletedMessages();
 }
 
 async function showDeletedGroupMenu(number) {
   const choice = await showActionSheet(displayName(number) || number, [
     { label: "↩️ Restore All", value: "restore" },
     { label: "🗑️ Delete Forever", value: "delete" },
+    { label: "☑️ Select Multiple", value: "select" },
   ]);
   if (choice === "restore") confirmRestoreAllForNumber(number);
   else if (choice === "delete") confirmDeleteForeverAllForNumber(number);
+  else if (choice === "select") enterDeletedGroupsSelectionMode(number);
 }
 
 async function confirmRestoreAllForNumber(number) {
