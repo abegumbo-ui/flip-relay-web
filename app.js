@@ -199,6 +199,7 @@ function init() {
   el("settings-back-btn").addEventListener("click", () => showScreen("conversations"));
   el("disconnect-btn").addEventListener("click", onForgetClick);
   el("sync-log-btn").addEventListener("click", onSyncLogClick);
+  el("force-resync-btn").addEventListener("click", onForceResyncClick);
   el("deleted-thread-back-btn").addEventListener("click", () => showScreen("settings"));
   el("deleted-thread-restore-btn").addEventListener("click", restoreSelectedInThread);
   el("deleted-thread-delete-forever-btn").addEventListener("click", deleteForeverSelectedInThread);
@@ -1450,6 +1451,32 @@ async function softDeleteMessage(id) {
 // ---------- settings / recently deleted ----------
 
 const DELETED_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * No access to the phone's own content://sms from here, so this just asks
+ * the phone to do the work -- see the phone's own
+ * RelayService.checkReconcileRequest(), which polls for this. Picks up
+ * both directions: a message deleted directly on the phone that hasn't
+ * been reconciled yet (its own background pass only checks one slice a
+ * day, and only while charging), and anything local that never made it to
+ * Firebase in the first place.
+ */
+async function onForceResyncClick() {
+  if (!confirm("Ask the phone to re-check everything against its real messages right now, instead of"
+      + " waiting for its own background schedule? This can take a little while for a large message"
+      + " history.")) return;
+  try {
+    await fetch(roomUrl("reconcileRequest"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ at: Date.now() }),
+    });
+    alert("Requested -- the phone will pick this up shortly.");
+  } catch (e) {
+    logDebug("Force resync request failed: " + (e && e.stack ? e.stack : e));
+    alert("Couldn't reach Firebase to request this -- try again.");
+  }
+}
 
 function onSettingsClick() {
   showScreen("settings");
