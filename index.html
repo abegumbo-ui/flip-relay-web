@@ -42,8 +42,33 @@
         <div id="conv-status-text" class="sub">Connecting to Firebase...</div>
         <div id="phone-status-text" class="sub phone-status">Phone: checking...</div>
       </div>
-      <span id="network-text" class="battery-text"></span>
-      <span id="battery-text" class="battery-text"></span>
+      <div id="status-icons" class="status-icons">
+        <svg id="wifi-icon" class="status-icon hidden" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12,21l2.5,-2.5C13.79,17.79 12.91,17.5 12,17.5s-1.79,0.29 -2.5,1L12,21z" />
+          <path d="M12,3C7.31,3 3.07,4.9 0,7.98L1.44,9.42C4.16,6.7 7.88,5 12,5s7.84,1.7 10.56,4.42L24,7.98C20.93,4.9 16.69,3 12,3z" />
+          <path d="M12,9c-2.76,0 -5.26,1.12 -7.07,2.93l1.44,1.44C7.81,11.92 9.8,11 12,11s4.19,0.92 5.63,2.37l1.44,-1.44C17.26,10.12 14.76,9 12,9z" />
+        </svg>
+        <div id="signal-icon-wrap" class="signal-icon-wrap hidden">
+          <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M2,22h3v-6H2V22z" /><path d="M8,22h3V14H8V22z" />
+            <path d="M14,22h3V9h-3V22z" /><path d="M20,22h3V2h-3V22z" />
+          </svg>
+          <svg id="no-signal-badge" class="no-signal-badge hidden" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19,6.41L17.59,5 12,10.59 6.41,5 5,6.41 10.59,12 5,17.59 6.41,19 12,13.41 17.59,19 19,17.59 13.41,12z" />
+          </svg>
+        </div>
+        <div id="battery-icon-wrap" class="battery-icon-wrap hidden">
+          <svg class="battery-outline" viewBox="0 0 30 16" aria-hidden="true">
+            <path d="M8,1 H22 A7,7 0 0 1 29,8 A7,7 0 0 1 22,15 H8 A7,7 0 0 1 1,8 A7,7 0 0 1 8,1 Z" />
+          </svg>
+          <span class="battery-content">
+            <svg id="battery-bolt" class="battery-bolt hidden" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13,2 L4.5,14 h5 L9,22 L18,10 h-5 L13,2 z" />
+            </svg>
+            <span id="battery-number"></span>
+          </span>
+        </div>
+      </div>
       <button id="settings-btn" class="icon-btn" title="Settings">&#9881;</button>
     </div>
     <div id="conv-toolbar" class="conv-toolbar">

@@ -835,10 +835,13 @@ function startStreams() {
 }
 
 // How long the heartbeat value can go unchanged before it's treated as
-// stale -- comfortable margin above the phone's own ~30s write interval
-// so one slow/dropped beat, or this poll landing right before the phone's
-// next write, doesn't flicker the status.
-const PHONE_HEARTBEAT_STALE_MS = 120 * 1000;
+// stale -- comfortable margin above the phone's own ~5s write interval.
+// Was 120s against a since-shrunk-elsewhere ~30s write interval, but never
+// updated here when the phone (and the tablet's matching poll) sped up --
+// this PWA copy was still lagging behind by as much as two full minutes
+// before "not connected" ever showed. Matches the tablet's own
+// PHONE_HEARTBEAT_STALE_MS exactly now.
+const PHONE_HEARTBEAT_STALE_MS = 20 * 1000;
 let phoneHeartbeatTimer = null;
 let lastHeartbeatValue = null;
 let lastHeartbeatSeenAt = 0;
@@ -943,7 +946,9 @@ function startPhoneHeartbeatPoll() {
     }
   };
   poll();
-  phoneHeartbeatTimer = setInterval(poll, 30000);
+  // Matches the phone's own ~5s write interval (was 30s, same staleness
+  // problem as PHONE_HEARTBEAT_STALE_MS above).
+  phoneHeartbeatTimer = setInterval(poll, 5000);
 }
 
 function updatePhoneStatus(connected, batteryPercent, network, charging) {
@@ -952,19 +957,32 @@ function updatePhoneStatus(connected, batteryPercent, network, charging) {
   phoneStatusEl.textContent = connected ? "Phone is connected to Firebase" : "Phone not reachable right now";
   phoneStatusEl.classList.toggle("connected", connected);
   phoneStatusEl.classList.toggle("disconnected", !connected);
+
+  // Real icon graphics (same vector paths as the tablet's own status row),
+  // not emoji -- confirmed explicit request. Wi-Fi only shows up when
+  // actually connected; the signal bars only show up at all once the
+  // phone's reachable, and the no-signal X badges them when it's reachable
+  // but off cellular, matching the tablet's own logic exactly.
+  const wifiIcon = el("wifi-icon");
+  if (wifiIcon) wifiIcon.classList.toggle("hidden", !(network && network.wifi));
+
+  const signalWrap = el("signal-icon-wrap");
+  const noSignalBadge = el("no-signal-badge");
+  if (signalWrap) signalWrap.classList.toggle("hidden", !connected);
+  if (noSignalBadge) noSignalBadge.classList.toggle("hidden", !(connected && network && !network.cellular));
+
   // Blank (not a stale/misleading number) whenever the phone isn't
-  // actually reachable, matching the tablet's own battery indicator.
-  const batteryEl = el("battery-text");
-  if (batteryEl) {
-    batteryEl.textContent = batteryPercent != null ? (charging ? "⚡" : "") + "🔋" + batteryPercent + "%" : "";
-    batteryEl.classList.toggle("low", batteryPercent != null && batteryPercent <= 20);
-  }
-  const networkEl = el("network-text");
-  if (networkEl) {
-    let text = "";
-    if (network && network.wifi) text += "📶";
-    if (network && network.cellular) text += (text ? " " : "") + "📡";
-    networkEl.textContent = text;
+  // actually reachable, matching the tablet's own battery indicator. No
+  // "%" sign -- just the number, inside the icon, same as the tablet.
+  const batteryWrap = el("battery-icon-wrap");
+  const batteryNumber = el("battery-number");
+  const batteryBolt = el("battery-bolt");
+  if (batteryWrap) {
+    const show = batteryPercent != null;
+    batteryWrap.classList.toggle("hidden", !show);
+    batteryWrap.classList.toggle("low", show && batteryPercent <= 20);
+    if (batteryNumber) batteryNumber.textContent = show ? batteryPercent : "";
+    if (batteryBolt) batteryBolt.classList.toggle("hidden", !(show && charging));
   }
   updateChatConnectionWarning();
 }
