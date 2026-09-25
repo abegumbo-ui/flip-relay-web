@@ -218,14 +218,29 @@ function init() {
   });
   el("selection-cancel-btn").addEventListener("click", exitSelectionMode);
   el("selection-delete-btn").addEventListener("click", confirmBulkDelete);
-  el("send-btn").addEventListener("click", onSendClick);
+  // Merged into one button, like Google Messages -- confirmed explicit
+  // request: a normal tap sends now, holding it down opens the schedule
+  // picker instead. suppressNextSendClick stops the tap's own "click"
+  // (which still fires right after a long-press's touchend/mouseup) from
+  // ALSO sending the message the same moment the schedule picker opens.
+  let suppressNextSendClick = false;
+  attachLongPress(el("send-btn"), () => {
+    suppressNextSendClick = true;
+    onScheduleButtonClick();
+  });
+  el("send-btn").addEventListener("click", () => {
+    if (suppressNextSendClick) {
+      suppressNextSendClick = false;
+      return;
+    }
+    onSendClick();
+  });
   el("compose-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       onSendClick();
     }
   });
-  el("schedule-btn").addEventListener("click", onScheduleButtonClick);
   el("schedule-confirm-btn").addEventListener("click", onScheduleConfirmClick);
   el("schedule-cancel-btn").addEventListener("click", () => {
     el("schedule-picker").classList.add("hidden");

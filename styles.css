@@ -34,6 +34,15 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  /* 100vh on mobile browsers doesn't track the address bar collapsing and
+     expanding as you scroll, so this whole flex column (and with it, the
+     "fixed" topbar/composer, which are only pinned relative to this
+     container's own bottom) visibly resizes and appears to slide -- a very
+     well-known mobile web issue. 100dvh tracks the real, current visible
+     viewport instead; layered on top of the 100vh above so it's simply
+     ignored (falling back to 100vh) on a browser old enough not to
+     understand dvh at all. */
+  height: 100dvh;
 }
 
 /* ---------- Pairing screen ---------- */
