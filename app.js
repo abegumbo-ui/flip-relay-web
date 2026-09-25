@@ -657,7 +657,10 @@ async function attachContact() {
 function buildAndAttachVcard(name, tel) {
   const vcard = "BEGIN:VCARD\nVERSION:3.0\nN:" + name + "\nFN:" + name
       + (tel ? "\nTEL:" + tel : "") + "\nEND:VCARD\n";
-  const file = new File([vcard], name + ".vcf", { type: "text/x-vcard" });
+  // "text/vcard" is the standard, registered MIME type (RFC 6350);
+  // "text/x-vcard" is the old pre-registration experimental type. Matches
+  // the phone's own MmsSender fix for the same reason.
+  const file = new File([vcard], name + ".vcf", { type: "text/vcard" });
   setPendingAttachment(file, "contact", name);
 }
 
@@ -842,6 +845,15 @@ function startStreams() {
 // before "not connected" ever showed. Matches the tablet's own
 // PHONE_HEARTBEAT_STALE_MS exactly now.
 const PHONE_HEARTBEAT_STALE_MS = 20 * 1000;
+
+// How long a "Sending..." local echo sits before the bubble itself says
+// so isn't delivering, instead of silently staying "Sending..." forever
+// with no visible sign anything went wrong -- confirmed live as a real
+// gap: a contact attachment that had actually failed on the phone (no
+// retry, no failure report back) just sat there looking identical to
+// "still in progress" for minutes. Matches the tablet's own
+// PENDING_TIMEOUT_MS.
+const PENDING_TIMEOUT_MS = 3 * 60 * 1000;
 let phoneHeartbeatTimer = null;
 let lastHeartbeatValue = null;
 let lastHeartbeatSeenAt = 0;
@@ -1220,6 +1232,12 @@ async function onSendClick() {
   clearAttachment();
   renderChat(currentChatNumber);
   renderConversationList();
+  // One-shot re-render right at the pending timeout, so a still-stuck
+  // bubble actually flips to "Not delivered" instead of only updating
+  // whenever some unrelated event happens to trigger a fresh render.
+  setTimeout(() => {
+    if (currentChatNumber === msg.number) renderChat(currentChatNumber);
+  }, PENDING_TIMEOUT_MS + 1000);
 
   try {
     let imageUrl = null;
@@ -2019,9 +2037,12 @@ function renderChat(number) {
     // upsertSent() replaces it with the real Firebase record (a normal
     // push-key id) once the phone actually reports the send. Matches
     // asking "did this actually reach the phone, or are we still in
-    // limbo" at a glance.
+    // limbo" at a glance. Past PENDING_TIMEOUT_MS with no confirmation,
+    // says so instead of silently staying "Sending..." forever.
+    const stillPending = m.id.startsWith("local-");
+    const stuck = stillPending && (Date.now() - m.timestamp) > PENDING_TIMEOUT_MS;
     const deliveryStatus = isOut && !isScheduled
-        ? (m.id.startsWith("local-") ? " · Sending..." : " · ✓ Sent")
+        ? (stuck ? " · Not delivered" : stillPending ? " · Sending..." : " · ✓ Sent")
         : "";
     const meta = isScheduled
         ? "⏰ Scheduled for " + formatTime(m.sendAt)
@@ -2045,7 +2066,7 @@ function renderChat(number) {
     const circleHtml = showCircle
         ? `<div class="select-circle${selectedMessageIds.has(m.id) ? " checked" : ""}"></div>`
         : "";
-    row.innerHTML = `${circleHtml}<div class="bubble${isScheduled ? " scheduled" : ""}">${imageHtml}${attachmentHtml}${bodyHtml}<span class="meta">${meta}</span></div>`;
+    row.innerHTML = `${circleHtml}<div class="bubble${isScheduled ? " scheduled" : ""}">${imageHtml}${attachmentHtml}${bodyHtml}<span class="meta${stuck ? " stuck" : ""}">${meta}</span></div>`;
     if (showCircle) {
       const messageId = m.id;
       row.addEventListener("click", () => toggleSelection(messageId));

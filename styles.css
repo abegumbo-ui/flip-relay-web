@@ -566,6 +566,11 @@ body {
   margin-top: 4px;
 }
 
+.bubble .meta.stuck {
+  color: var(--danger);
+  opacity: 1;
+}
+
 .bubble.scheduled {
   background: var(--panel-2);
   color: var(--text);
