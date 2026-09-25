@@ -1,14 +1,14 @@
 {
   "phone": {
-    "sha": "bd392d96245dd1fa5baac58bd92a5d2e2a190141",
-    "publishedAt": "2026-09-25T06:10:00.0000000Z"
+    "sha": "caac4a3c4e2d76ab5eec24bfba207cbc3e13d647",
+    "publishedAt": "2026-09-25T06:20:00.0000000Z"
   },
   "tablet-regular": {
-    "sha": "bd392d96245dd1fa5baac58bd92a5d2e2a190141",
-    "publishedAt": "2026-09-25T06:10:00.0000000Z"
+    "sha": "caac4a3c4e2d76ab5eec24bfba207cbc3e13d647",
+    "publishedAt": "2026-09-25T06:20:00.0000000Z"
   },
   "tablet-mechi": {
-    "sha": "bd392d96245dd1fa5baac58bd92a5d2e2a190141",
-    "publishedAt": "2026-09-25T06:10:00.0000000Z"
+    "sha": "caac4a3c4e2d76ab5eec24bfba207cbc3e13d647",
+    "publishedAt": "2026-09-25T06:20:00.0000000Z"
   }
 }
