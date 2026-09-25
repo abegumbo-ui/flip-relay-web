@@ -208,6 +208,7 @@ function init() {
   el("deleted-thread-restore-btn").addEventListener("click", restoreSelectedInThread);
   el("deleted-thread-delete-forever-btn").addEventListener("click", deleteForeverSelectedInThread);
   el("conv-selection-cancel-btn").addEventListener("click", exitConversationSelectionMode);
+  el("conv-select-all-btn").addEventListener("click", toggleSelectAllConversations);
   el("conv-selection-delete-btn").addEventListener("click", confirmDeleteSelectedConversations);
   el("forward-cancel-btn").addEventListener("click", cancelForward);
   el("back-btn").addEventListener("click", () => {
@@ -838,21 +839,22 @@ function startStreams() {
 }
 
 // How long the heartbeat value can go unchanged before it's treated as
-// stale -- comfortable margin above the phone's own ~5s write interval.
-// Was 120s against a since-shrunk-elsewhere ~30s write interval, but never
-// updated here when the phone (and the tablet's matching poll) sped up --
-// this PWA copy was still lagging behind by as much as two full minutes
-// before "not connected" ever showed. Matches the tablet's own
-// PHONE_HEARTBEAT_STALE_MS exactly now.
+// stale -- comfortable margin above the phone's own ~30s write interval
+// so one slow/dropped beat, or this poll landing right before the phone's
+// next write, doesn't flicker the status -- comfortable margin above the
+// phone's own ~5s write interval. Was 120s against a since-shrunk ~30s
+// write interval, but never updated here when the phone (and the tablet's
+// matching poll) sped up -- this PWA copy was lagging behind by as much as
+// two full minutes before "not connected" ever showed. Matches the
+// tablet's own PHONE_HEARTBEAT_STALE_MS exactly now.
 const PHONE_HEARTBEAT_STALE_MS = 20 * 1000;
 
-// How long a "Sending..." local echo sits before the bubble itself says
-// so isn't delivering, instead of silently staying "Sending..." forever
-// with no visible sign anything went wrong -- confirmed live as a real
-// gap: a contact attachment that had actually failed on the phone (no
-// retry, no failure report back) just sat there looking identical to
-// "still in progress" for minutes. Matches the tablet's own
-// PENDING_TIMEOUT_MS.
+// How long a "Sending..." local echo sits before the bubble itself says so
+// isn't delivering, instead of silently staying "Sending..." forever with
+// no visible sign anything went wrong -- confirmed live as a real gap: a
+// contact attachment that had actually failed on the phone (no retry, no
+// failure report back) just sat there looking identical to "still in
+// progress" for minutes. Matches the tablet's own PENDING_TIMEOUT_MS.
 const PENDING_TIMEOUT_MS = 3 * 60 * 1000;
 let phoneHeartbeatTimer = null;
 let lastHeartbeatValue = null;
@@ -1899,7 +1901,25 @@ function updateConversationSelectionToolbar() {
   el("conv-toolbar").classList.toggle("hidden", conversationSelectionMode);
   if (conversationSelectionMode) {
     el("conv-selection-count").textContent = selectedConversationNumbers.size + " selected";
+    const visible = filteredConversations();
+    const allSelected = visible.length > 0 && visible.every(({ number }) => selectedConversationNumbers.has(number));
+    el("conv-select-all-btn").textContent = allSelected ? "Deselect All" : "Select All";
   }
+}
+
+/** Selects (or deselects) every conversation currently visible, honoring the active search filter -- same fix as the tablet/phone apps' own conversation-list Select All. */
+function toggleSelectAllConversations() {
+  const visible = filteredConversations();
+  const allSelected = visible.length > 0 && visible.every(({ number }) => selectedConversationNumbers.has(number));
+  if (allSelected) {
+    // Stays in selection mode with nothing selected, same as the phone/
+    // tablet apps -- "Deselect All" clears the picks without kicking back
+    // out to the plain conversation list.
+    selectedConversationNumbers.clear();
+  } else {
+    for (const { number } of visible) selectedConversationNumbers.add(number);
+  }
+  renderConversationList();
 }
 
 async function confirmDeleteSelectedConversations() {
@@ -1960,8 +1980,7 @@ async function toggleBlocked(number) {
   }
 }
 
-function renderConversationList() {
-  const list = el("conversation-list");
+function filteredConversations() {
   let convos = conversationsByNumber();
   const q = conversationSearchQuery.trim().toLowerCase();
   if (q) {
@@ -1970,6 +1989,12 @@ function renderConversationList() {
       return name.includes(q) || number.includes(q);
     });
   }
+  return convos;
+}
+
+function renderConversationList() {
+  const list = el("conversation-list");
+  const convos = filteredConversations();
   list.innerHTML = "";
   el("empty-state").classList.toggle("hidden", convos.length > 0);
   updateConversationSelectionToolbar();

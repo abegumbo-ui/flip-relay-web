@@ -328,6 +328,10 @@ body {
 .selection-toolbar #conv-selection-count,
 .selection-toolbar #deleted-selection-count { flex: 1; font-size: 14px; }
 
+/* Overrides .toolbar-btn's flex:1 -- inside a selection toolbar it sits
+   between the count and the icon buttons, not stretched to fill the row. */
+.selection-toolbar .toolbar-btn { flex: 0 0 auto; padding: 8px 12px; font-size: 13px; }
+
 .settings-heading-row {
   display: flex;
   align-items: center;
