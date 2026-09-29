@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0f1720" />
-  <link rel="stylesheet" href="styles.css?v=c231c0e15ddb441d11e194d55492b03465b92b81" />
+  <link rel="stylesheet" href="styles.css?v=f7f80a777846cb394e73734bbc5d76ea9690656b" />
 </head>
 <body>
 
@@ -74,6 +74,7 @@
     <div id="conv-toolbar" class="conv-toolbar">
       <button id="new-message-btn" class="toolbar-btn">New Message</button>
       <button id="search-toggle-btn" class="toolbar-btn">Search</button>
+      <button id="calls-btn" class="toolbar-btn">Calls</button>
     </div>
     <div id="conv-selection-toolbar" class="selection-toolbar hidden">
       <button id="conv-selection-cancel-btn" class="icon-btn" title="Cancel">&times;</button>
@@ -101,7 +102,6 @@
       <button id="disconnect-btn" class="settings-row danger">Disconnect this tablet</button>
       <button id="sync-log-btn" class="settings-row">Sync Log</button>
       <button id="force-resync-btn" class="settings-row">Force Resync</button>
-      <button id="missed-calls-btn" class="settings-row">Missed Calls</button>
       <div class="settings-heading-row">
         <h3 class="settings-heading">Recently Deleted</h3>
         <button id="deleted-select-multiple-btn" class="icon-btn-text">Select Multiple</button>
@@ -132,17 +132,19 @@
     <div id="deleted-thread-list"></div>
   </section>
 
-  <!-- Missed calls the phone's own call log picked up (see the phone's
-       own CallLogRelayService). Read-only except for dismissing entries. -->
-  <section id="screen-missed-calls" class="screen hidden">
+  <!-- Calls (missed, incoming, outgoing) the phone's own call log picked
+       up (see the phone's own CallLogRelayService). Reached from a button
+       on the conversation list's own toolbar, not buried in Settings.
+       Read-only except for dismissing entries. -->
+  <section id="screen-calls" class="screen hidden">
     <div class="topbar">
-      <button id="missed-calls-back-btn" class="icon-btn" title="Back">&#8592;</button>
-      <div><h2>Missed Calls</h2></div>
-      <button id="missed-calls-clear-all-btn" class="icon-btn-text hidden">Clear All</button>
+      <button id="calls-back-btn" class="icon-btn" title="Back">&#8592;</button>
+      <div><h2>Calls</h2></div>
+      <button id="calls-clear-all-btn" class="icon-btn-text hidden">Clear All</button>
     </div>
     <p class="settings-hint">Tap a call to dial back. Long-press to dismiss.</p>
-    <div id="missed-calls-list"></div>
-    <div id="missed-calls-empty-state" class="hidden settings-hint">No missed calls.</div>
+    <div id="calls-list"></div>
+    <div id="calls-empty-state" class="hidden settings-hint">No calls yet.</div>
   </section>
 
   <!-- Screen 3: one conversation thread -->
@@ -199,6 +201,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=c231c0e15ddb441d11e194d55492b03465b92b81"></script>
+  <script src="app.js?v=f7f80a777846cb394e73734bbc5d76ea9690656b"></script>
 </body>
 </html>

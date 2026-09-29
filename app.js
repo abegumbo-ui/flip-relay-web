@@ -200,9 +200,9 @@ function init() {
   el("disconnect-btn").addEventListener("click", onForgetClick);
   el("sync-log-btn").addEventListener("click", onSyncLogClick);
   el("force-resync-btn").addEventListener("click", onForceResyncClick);
-  el("missed-calls-btn").addEventListener("click", onMissedCallsClick);
-  el("missed-calls-back-btn").addEventListener("click", () => showScreen("settings"));
-  el("missed-calls-clear-all-btn").addEventListener("click", confirmClearAllMissedCalls);
+  el("calls-btn").addEventListener("click", onCallsClick);
+  el("calls-back-btn").addEventListener("click", () => showScreen("conversations"));
+  el("calls-clear-all-btn").addEventListener("click", confirmClearAllCalls);
   el("deleted-select-multiple-btn").addEventListener("click", () => enterDeletedGroupsSelectionMode(null));
   el("deleted-selection-cancel-btn").addEventListener("click", exitDeletedGroupsSelectionMode);
   el("deleted-selection-restore-btn").addEventListener("click", confirmRestoreSelectedGroups);
@@ -805,7 +805,7 @@ function onForgetClick() {
 // ---------- screens ----------
 
 function showScreen(name) {
-  ["pairing", "conversations", "chat", "settings", "deleted-thread", "missed-calls"].forEach((s) => {
+  ["pairing", "conversations", "chat", "settings", "deleted-thread", "calls"].forEach((s) => {
     el("screen-" + s).classList.toggle("hidden", s !== name);
   });
 }
@@ -1824,46 +1824,54 @@ async function restoreDeletedMessage(item, reload = true) {
   if (reload) loadDeletedMessages();
 }
 
-// ---------- missed calls ----------
-// Missed calls the phone's own call log picked up -- see the phone's own
-// CallLogRelayService. Read-only except for dismissing entries (which just
-// removes them from this list; the phone's own call log is never touched).
+// ---------- calls ----------
+// Calls (missed, incoming, outgoing) the phone's own call log picked up --
+// see the phone's own CallLogRelayService. Read-only except for dismissing
+// entries (which just removes them from this list; the phone's own call
+// log is never touched).
 
-let missedCalls = [];
+let allCalls = [];
 
-function onMissedCallsClick() {
-  showScreen("missed-calls");
-  loadMissedCalls();
+function onCallsClick() {
+  showScreen("calls");
+  loadCalls();
 }
 
-async function loadMissedCalls() {
+async function loadCalls() {
   let calls = [];
   try {
-    const res = await fetch(roomUrl("missedCalls"));
+    const res = await fetch(roomUrl("calls"));
     const snapshot = res.ok ? await res.json() : null;
     if (snapshot && typeof snapshot === "object") {
       calls = Object.keys(snapshot).map((key) => ({
         key,
         number: snapshot[key].number,
         contactName: snapshot[key].contactName || null,
+        type: snapshot[key].type || "incoming",
         timestamp: snapshot[key].timestamp || 0,
       })).filter((c) => c.number);
     }
   } catch (e) {
-    logDebug("Loading missed calls failed: " + (e && e.stack ? e.stack : e));
+    logDebug("Loading calls failed: " + (e && e.stack ? e.stack : e));
   }
   calls.sort((a, b) => b.timestamp - a.timestamp);
-  missedCalls = calls;
-  renderMissedCallsList();
+  allCalls = calls;
+  renderCallsList();
 }
 
-function renderMissedCallsList() {
-  const list = el("missed-calls-list");
-  list.innerHTML = "";
-  el("missed-calls-empty-state").classList.toggle("hidden", missedCalls.length > 0);
-  el("missed-calls-clear-all-btn").classList.toggle("hidden", missedCalls.length === 0);
+function callTypeLabel(type) {
+  if (type === "missed") return "Missed";
+  if (type === "outgoing") return "Outgoing";
+  return "Incoming";
+}
 
-  for (const call of missedCalls) {
+function renderCallsList() {
+  const list = el("calls-list");
+  list.innerHTML = "";
+  el("calls-empty-state").classList.toggle("hidden", allCalls.length > 0);
+  el("calls-clear-all-btn").classList.toggle("hidden", allCalls.length === 0);
+
+  for (const call of allCalls) {
     const row = document.createElement("div");
     row.className = "deleted-group-row";
     const when = call.timestamp ? new Date(call.timestamp).toLocaleString(undefined, {
@@ -1872,35 +1880,35 @@ function renderMissedCallsList() {
     row.innerHTML = `
       <div class="info">
         <div class="name">${escapeHtml(call.contactName || call.number)}</div>
-        <div class="preview">${escapeHtml(when)}</div>
+        <div class="preview"${call.type === "missed" ? ' style="color:var(--danger)"' : ""}>${escapeHtml(callTypeLabel(call.type))} &middot; ${escapeHtml(when)}</div>
       </div>
     `;
     row.addEventListener("click", () => { window.location.href = "tel:" + call.number; });
-    attachLongPress(row, () => confirmDismissMissedCall(call));
+    attachLongPress(row, () => confirmDismissCall(call));
     list.appendChild(row);
   }
 }
 
-async function confirmDismissMissedCall(call) {
-  if (!confirm("Dismiss this missed call?")) return;
-  missedCalls = missedCalls.filter((c) => c.key !== call.key);
-  renderMissedCallsList();
+async function confirmDismissCall(call) {
+  if (!confirm("Dismiss this call?")) return;
+  allCalls = allCalls.filter((c) => c.key !== call.key);
+  renderCallsList();
   try {
-    await fetch(roomUrl(`missedCalls/${call.key}`), { method: "DELETE" });
+    await fetch(roomUrl(`calls/${call.key}`), { method: "DELETE" });
   } catch (e) {
-    logDebug("Dismissing missed call failed: " + (e && e.stack ? e.stack : e));
+    logDebug("Dismissing call failed: " + (e && e.stack ? e.stack : e));
   }
 }
 
-async function confirmClearAllMissedCalls() {
-  if (missedCalls.length === 0) return;
-  if (!confirm("Clear all missed calls?")) return;
-  missedCalls = [];
-  renderMissedCallsList();
+async function confirmClearAllCalls() {
+  if (allCalls.length === 0) return;
+  if (!confirm("Clear all calls?")) return;
+  allCalls = [];
+  renderCallsList();
   try {
-    await fetch(roomUrl("missedCalls"), { method: "DELETE" });
+    await fetch(roomUrl("calls"), { method: "DELETE" });
   } catch (e) {
-    logDebug("Clearing missed calls failed: " + (e && e.stack ? e.stack : e));
+    logDebug("Clearing calls failed: " + (e && e.stack ? e.stack : e));
   }
 }
 
