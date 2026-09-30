@@ -1912,10 +1912,11 @@ function relativeTime(whenMs) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+// A directional arrow symbol next to the type, matching the phone's own native call log glyphs, per explicit request.
 function callTypeLabel(type) {
-  if (type === "missed") return "Missed";
-  if (type === "outgoing") return "Outgoing";
-  return "Incoming";
+  if (type === "missed") return "↙ Missed";     // ↙
+  if (type === "outgoing") return "↗ Outgoing"; // ↗
+  return "↘ Incoming"; // ↘
 }
 
 // "0:45", "3:12" -- how long the call itself lasted, per explicit instruction (never shown for missed calls, which are always 0).
