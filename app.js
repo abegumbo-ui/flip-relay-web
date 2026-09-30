@@ -739,7 +739,12 @@ async function connectToRoom(code, persist) {
     showScreen("conversations");
     renderConversationList();
     startStreams();
-    requestNotificationPermission();
+    // Confirmed live as unwanted: the browser's own "this site wants to
+    // send notifications" permission prompt, right after pairing --
+    // "I don't want that, I want it to just be there." Not requesting this
+    // means desktop push notifications for incoming messages just never
+    // activate (Notification.permission stays "default"), silently, with
+    // no prompt ever shown.
   } catch (e) {
     setPairingProgress(false);
     const message = e instanceof TypeError
