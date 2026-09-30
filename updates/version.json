@@ -1,18 +1,18 @@
 {
   "phone": {
-    "sha": "b13fcecd492bc5eef611c7fa982172f08c18c7e1",
-    "publishedAt": "2026-09-30T14:20:00.0000000Z"
+    "sha": "61dd798134bc0b423db689149481328c124795b1",
+    "publishedAt": "2026-09-30T14:35:00.0000000Z"
   },
   "tablet": {
-    "sha": "b13fcecd492bc5eef611c7fa982172f08c18c7e1",
-    "publishedAt": "2026-09-30T14:20:00.0000000Z"
+    "sha": "61dd798134bc0b423db689149481328c124795b1",
+    "publishedAt": "2026-09-30T14:35:00.0000000Z"
   },
   "tablet-regular": {
-    "sha": "b13fcecd492bc5eef611c7fa982172f08c18c7e1",
-    "publishedAt": "2026-09-30T14:20:00.0000000Z"
+    "sha": "61dd798134bc0b423db689149481328c124795b1",
+    "publishedAt": "2026-09-30T14:35:00.0000000Z"
   },
   "tablet-mechi": {
-    "sha": "b13fcecd492bc5eef611c7fa982172f08c18c7e1",
-    "publishedAt": "2026-09-30T14:20:00.0000000Z"
+    "sha": "61dd798134bc0b423db689149481328c124795b1",
+    "publishedAt": "2026-09-30T14:35:00.0000000Z"
   }
 }
