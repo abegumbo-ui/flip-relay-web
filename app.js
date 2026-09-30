@@ -202,7 +202,7 @@ function init() {
   el("force-resync-btn").addEventListener("click", onForceResyncClick);
   el("calls-btn").addEventListener("click", onCallsClick);
   el("calls-back-btn").addEventListener("click", () => showScreen("conversations"));
-  el("calls-refresh-btn").addEventListener("click", loadCalls);
+  el("calls-refresh-btn").addEventListener("click", onCallsRefreshClick);
   el("deleted-select-multiple-btn").addEventListener("click", () => enterDeletedGroupsSelectionMode(null));
   el("deleted-selection-cancel-btn").addEventListener("click", exitDeletedGroupsSelectionMode);
   el("deleted-selection-restore-btn").addEventListener("click", confirmRestoreSelectedGroups);
@@ -1862,7 +1862,23 @@ async function loadCalls() {
   calls.sort((a, b) => b.timestamp - a.timestamp);
   allCalls = calls;
   renderCallsList();
-  loadCallsStatus();
+  await loadCallsStatus();
+}
+
+// showFeedback is true only for an explicit Refresh button press -- per
+// explicit instruction that pressing it gave no visual sign it was doing
+// anything. The automatic load when opening the Calls screen stays silent.
+async function onCallsRefreshClick() {
+  const btn = el("calls-refresh-btn");
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = "↻ Refreshing…";
+  await loadCalls();
+  btn.textContent = "✓ Refreshed";
+  setTimeout(() => {
+    btn.textContent = original;
+    btn.disabled = false;
+  }, 1200);
 }
 
 async function loadCallsStatus() {
@@ -1883,10 +1899,11 @@ async function loadCallsStatus() {
   }
 }
 
-// "3m ago", "2h ago", "5d ago" -- mirrors the phone's own CallsSettingsActivity.relativeTime().
+// "12s ago", "3m ago", "2h ago", "5d ago" -- mirrors the phone's own CallsSettingsActivity.relativeTime().
 function relativeTime(whenMs) {
   const seconds = Math.floor((Date.now() - whenMs) / 1000);
-  if (seconds < 60) return "just now";
+  if (seconds < 5) return "just now";
+  if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
