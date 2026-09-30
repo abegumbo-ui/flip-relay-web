@@ -1854,6 +1854,7 @@ async function loadCalls() {
         contactName: snapshot[key].contactName || null,
         type: snapshot[key].type || "incoming",
         timestamp: snapshot[key].timestamp || 0,
+        duration: snapshot[key].duration || 0,
       })).filter((c) => c.number);
     }
   } catch (e) {
@@ -1917,6 +1918,13 @@ function callTypeLabel(type) {
   return "Incoming";
 }
 
+// "0:45", "3:12" -- how long the call itself lasted, per explicit instruction (never shown for missed calls, which are always 0).
+function formatCallDuration(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s < 10 ? "0" + s : s}`;
+}
+
 function renderCallsList() {
   const list = el("calls-list");
   list.innerHTML = "";
@@ -1928,10 +1936,11 @@ function renderCallsList() {
     const when = call.timestamp ? new Date(call.timestamp).toLocaleString(undefined, {
       month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
     }) : "";
+    const durationPart = call.type === "missed" ? "" : `${formatCallDuration(call.duration)} &middot; `;
     row.innerHTML = `
       <div class="info">
         <div class="name">${escapeHtml(call.contactName || call.number)}</div>
-        <div class="preview"${call.type === "missed" ? ' style="color:var(--danger)"' : ""}>${escapeHtml(callTypeLabel(call.type))} &middot; ${escapeHtml(when)}</div>
+        <div class="preview"${call.type === "missed" ? ' style="color:var(--danger)"' : ""}>${escapeHtml(callTypeLabel(call.type))} &middot; ${durationPart}${escapeHtml(when)}</div>
       </div>
     `;
     row.addEventListener("click", () => { window.location.href = "tel:" + call.number; });
