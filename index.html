@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0f1720" />
-  <link rel="stylesheet" href="styles.css?v=f7f80a777846cb394e73734bbc5d76ea9690656b" />
+  <link rel="stylesheet" href="styles.css?v=9ae3e75202b9adc3a331778f5bf6647da92e5f47" />
 </head>
 <body>
 
@@ -135,14 +135,16 @@
   <!-- Calls (missed, incoming, outgoing) the phone's own call log picked
        up (see the phone's own CallLogRelayService). Reached from a button
        on the conversation list's own toolbar, not buried in Settings.
-       Read-only except for dismissing entries. -->
+       Read-only: always mirrors the phone's own call log (see
+       CallLogRelayService's own deletion reconciliation) -- no manual
+       Clear All / dismiss here per explicit instruction, since a call
+       removed from the phone disappears here on its own on the next sync. -->
   <section id="screen-calls" class="screen hidden">
     <div class="topbar">
       <button id="calls-back-btn" class="icon-btn" title="Back">&#8592;</button>
       <div><h2>Calls</h2></div>
-      <button id="calls-clear-all-btn" class="icon-btn-text hidden">Clear All</button>
     </div>
-    <p class="settings-hint">Tap a call to dial back. Long-press to dismiss.</p>
+    <p class="settings-hint">Tap a call to dial back.</p>
     <div id="calls-list"></div>
     <div id="calls-empty-state" class="hidden settings-hint">No calls yet.</div>
   </section>
@@ -201,6 +203,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=f7f80a777846cb394e73734bbc5d76ea9690656b"></script>
+  <script src="app.js?v=9ae3e75202b9adc3a331778f5bf6647da92e5f47"></script>
 </body>
 </html>

@@ -202,7 +202,6 @@ function init() {
   el("force-resync-btn").addEventListener("click", onForceResyncClick);
   el("calls-btn").addEventListener("click", onCallsClick);
   el("calls-back-btn").addEventListener("click", () => showScreen("conversations"));
-  el("calls-clear-all-btn").addEventListener("click", confirmClearAllCalls);
   el("deleted-select-multiple-btn").addEventListener("click", () => enterDeletedGroupsSelectionMode(null));
   el("deleted-selection-cancel-btn").addEventListener("click", exitDeletedGroupsSelectionMode);
   el("deleted-selection-restore-btn").addEventListener("click", confirmRestoreSelectedGroups);
@@ -1874,7 +1873,6 @@ function renderCallsList() {
   const list = el("calls-list");
   list.innerHTML = "";
   el("calls-empty-state").classList.toggle("hidden", allCalls.length > 0);
-  el("calls-clear-all-btn").classList.toggle("hidden", allCalls.length === 0);
 
   for (const call of allCalls) {
     const row = document.createElement("div");
@@ -1889,31 +1887,7 @@ function renderCallsList() {
       </div>
     `;
     row.addEventListener("click", () => { window.location.href = "tel:" + call.number; });
-    attachLongPress(row, () => confirmDismissCall(call));
     list.appendChild(row);
-  }
-}
-
-async function confirmDismissCall(call) {
-  if (!confirm("Dismiss this call?")) return;
-  allCalls = allCalls.filter((c) => c.key !== call.key);
-  renderCallsList();
-  try {
-    await fetch(roomUrl(`calls/${call.key}`), { method: "DELETE" });
-  } catch (e) {
-    logDebug("Dismissing call failed: " + (e && e.stack ? e.stack : e));
-  }
-}
-
-async function confirmClearAllCalls() {
-  if (allCalls.length === 0) return;
-  if (!confirm("Clear all calls?")) return;
-  allCalls = [];
-  renderCallsList();
-  try {
-    await fetch(roomUrl("calls"), { method: "DELETE" });
-  } catch (e) {
-    logDebug("Clearing calls failed: " + (e && e.stack ? e.stack : e));
   }
 }
 
