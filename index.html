@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0f1720" />
-  <link rel="stylesheet" href="styles.css?v=9ae3e75202b9adc3a331778f5bf6647da92e5f47" />
+  <link rel="stylesheet" href="styles.css?v=80606357496803cdc2cf004ba4cec96ac3d0e7e2" />
 </head>
 <body>
 
@@ -142,8 +142,13 @@
   <section id="screen-calls" class="screen hidden">
     <div class="topbar">
       <button id="calls-back-btn" class="icon-btn" title="Back">&#8592;</button>
-      <div><h2>Calls</h2></div>
+      <div style="flex:1"><h2>Calls</h2></div>
+      <!-- A pure re-fetch of what's already in Firebase, never asks the
+           phone to do anything -- per explicit instruction ("it shouldn't
+           touch the phone, it just should refresh it"). -->
+      <button id="calls-refresh-btn" class="icon-btn" title="Refresh">&#8635;</button>
     </div>
+    <p id="calls-status-line" class="settings-hint"></p>
     <p class="settings-hint">Tap a call to dial back.</p>
     <div id="calls-list"></div>
     <div id="calls-empty-state" class="hidden settings-hint">No calls yet.</div>
@@ -203,6 +208,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=9ae3e75202b9adc3a331778f5bf6647da92e5f47"></script>
+  <script src="app.js?v=80606357496803cdc2cf004ba4cec96ac3d0e7e2"></script>
 </body>
 </html>

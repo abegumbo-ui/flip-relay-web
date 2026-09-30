@@ -202,6 +202,7 @@ function init() {
   el("force-resync-btn").addEventListener("click", onForceResyncClick);
   el("calls-btn").addEventListener("click", onCallsClick);
   el("calls-back-btn").addEventListener("click", () => showScreen("conversations"));
+  el("calls-refresh-btn").addEventListener("click", loadCalls);
   el("deleted-select-multiple-btn").addEventListener("click", () => enterDeletedGroupsSelectionMode(null));
   el("deleted-selection-cancel-btn").addEventListener("click", exitDeletedGroupsSelectionMode);
   el("deleted-selection-restore-btn").addEventListener("click", confirmRestoreSelectedGroups);
@@ -1861,6 +1862,36 @@ async function loadCalls() {
   calls.sort((a, b) => b.timestamp - a.timestamp);
   allCalls = calls;
   renderCallsList();
+  loadCallsStatus();
+}
+
+async function loadCallsStatus() {
+  const statusLine = el("calls-status-line");
+  try {
+    const res = await fetch(roomUrl("callsStatus"));
+    const status = res.ok ? await res.json() : null;
+    if (!status || typeof status !== "object") {
+      statusLine.textContent = "Calls sync: not set up on the phone yet";
+      return;
+    }
+    const when = status.lastSyncedAt ? relativeTime(status.lastSyncedAt) : "never";
+    statusLine.textContent = status.enabled
+        ? `Calls sync: On · last synced ${when}`
+        : "Calls sync: Off on the phone";
+  } catch (e) {
+    logDebug("Loading calls status failed: " + (e && e.stack ? e.stack : e));
+  }
+}
+
+// "3m ago", "2h ago", "5d ago" -- mirrors the phone's own CallsSettingsActivity.relativeTime().
+function relativeTime(whenMs) {
+  const seconds = Math.floor((Date.now() - whenMs) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 function callTypeLabel(type) {
