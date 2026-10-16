@@ -1,8 +1,11 @@
 // Filled in at CI build time from the FIREBASE_DATABASE_URL /
 // FIREBASE_DATABASE_SECRET GitHub Actions secrets -- these placeholders are
 // what actually lives in source control (see .github/workflows/build.yml).
-const DATABASE_URL = "https://flip-relay-default-rtdb.firebaseio.com/";
-const DATABASE_SECRET = "Dqu4Jm70Y9uPBfEQT2Phush1kDBg5mIdqBL9wDyw";
+// The database address and key are NOT in this file: the build encrypts them with the site passphrase (ENC_CONFIG) and the
+// browser decrypts them after the passphrase is typed once (then remembered on that device only).
+let DATABASE_URL = "";
+let DATABASE_SECRET = "";
+const ENC_CONFIG = "zo//c+06cj+q141zyMXhEQ==.i+qZAcRr040jJTbu.xV7sPgmI4NIrYvS3mApV3y6muIDip7ciCn/z9UFkq5z0d7kOC1lQH/12VNzlFfPAjJ3GvV+j6w7uiLBh2dONeNZK/nED9lzK2VDj9GwsfT2XbzT4GQzoP8lPQE3FrBRs5fWjT0gPusiTetW0Uxg/WQCG9rL0jkFcDrWMG18=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -2392,4 +2395,201 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-init();
+// ---- App code (lock screen) -------------------------------------------------------------------------------------------
+// A code of 4 or more digits is asked for every time the app opens. Only a salted SHA-256 of it is kept, in this browser.
+// It keeps people who pick up the tablet/phone out of the conversations; it is not a server-side password.
+const LOCK_KEY = "flip_relay_app_lock";
+const LOCK_SKIP_KEY = "flip_relay_app_lock_skipped";
+
+async function lockHash(code, salt) {
+  const data = new TextEncoder().encode(salt + ":" + code);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function lockStored() {
+  try { return JSON.parse(localStorage.getItem(LOCK_KEY) || "null"); } catch (e) { return null; }
+}
+
+// ---- Site passphrase: unlocks the (encrypted) database address and key -------------------------------------------------------
+const CFG_KEY = "flip_relay_cfg_v1";
+
+function b64bytes(b) { return Uint8Array.from(atob(b), (c) => c.charCodeAt(0)); }
+
+async function decryptConfig(pass) {
+  const [salt, iv, ct] = ENC_CONFIG.split(".").map(b64bytes);
+  const km = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: salt, iterations: 300000, hash: "SHA-256" }, km, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+async function configGate() {
+  if (ENC_CONFIG.indexOf("__") === 0) return; // local/unbuilt copy: nothing encrypted
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(CFG_KEY) || "null"); } catch (e) {}
+  if (saved && saved.url && saved.secret) { DATABASE_URL = saved.url; DATABASE_SECRET = saved.secret; return; }
+  await lockCard({
+    title: "Enter the site passphrase",
+    text: "Asked once on each device. Without it this page cannot reach your messages.",
+    fields: ["Passphrase"],
+    textKeyboard: true,
+    okLabel: "Continue",
+    validate: async (v) => {
+      try {
+        const c = await decryptConfig(v[0].replace(/\s+/g, "").toLowerCase());
+        DATABASE_URL = c.url; DATABASE_SECRET = c.secret;
+        localStorage.setItem(CFG_KEY, JSON.stringify(c));
+        return "";
+      } catch (e) {
+        return "Wrong passphrase";
+      }
+    },
+  });
+}
+
+// Shows a full-screen card; resolves when the user finishes (or skips).
+function lockCard(opts) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "position:fixed;inset:0;z-index:99999;background:#F1F1F3;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,sans-serif";
+    const card = document.createElement("div");
+    card.style.cssText = "background:#fff;border-radius:24px;padding:24px;width:100%;max-width:340px;box-shadow:0 2px 12px rgba(0,0,0,.12);display:flex;flex-direction:column;gap:12px";
+    const h = document.createElement("h2");
+    h.textContent = opts.title;
+    h.style.cssText = "margin:0;font-size:20px;color:#1b1b1f";
+    card.appendChild(h);
+    if (opts.text) {
+      const t = document.createElement("div");
+      t.textContent = opts.text;
+      t.style.cssText = "font-size:14px;color:#444";
+      card.appendChild(t);
+    }
+    const inputs = [];
+    (opts.fields || []).forEach((label) => {
+      const i = document.createElement("input");
+      i.type = "password";
+      i.inputMode = opts.textKeyboard ? "text" : "numeric";
+      i.autocomplete = "off";
+      i.placeholder = label;
+      i.style.cssText = "font-size:18px;padding:12px;border:1px solid #c4c6d0;border-radius:12px;" + (opts.textKeyboard ? "" : "letter-spacing:4px");
+      card.appendChild(i);
+      inputs.push(i);
+    });
+    const err = document.createElement("div");
+    err.style.cssText = "color:#b3261e;font-size:13px;min-height:16px";
+    card.appendChild(err);
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;gap:8px;justify-content:flex-end";
+    const done = (v) => { wrap.remove(); resolve(v); };
+    (opts.extra || []).forEach((x) => {
+      const b = document.createElement("button");
+      b.textContent = x.label;
+      b.style.cssText = "border:0;background:none;color:#0b57d0;font-size:15px;padding:10px 14px;border-radius:20px";
+      b.addEventListener("click", () => done(x.value));
+      row.appendChild(b);
+    });
+    const ok = document.createElement("button");
+    ok.textContent = opts.okLabel || "OK";
+    ok.style.cssText = "border:0;background:#0b57d0;color:#fff;font-size:15px;padding:10px 20px;border-radius:20px";
+    const submit = async () => {
+      const vals = inputs.map((i) => i.value.trim());
+      const msg = await opts.validate(vals);
+      if (msg) { err.textContent = msg; inputs.forEach((i) => (i.value = "")); if (inputs[0]) inputs[0].focus(); return; }
+      done(true);
+    };
+    ok.addEventListener("click", submit);
+    inputs.forEach((i) => i.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); }));
+    row.appendChild(ok);
+    card.appendChild(row);
+    wrap.appendChild(card);
+    document.body.appendChild(wrap);
+    if (inputs[0]) inputs[0].focus();
+  });
+}
+
+async function lockSetNew() {
+  return lockCard({
+    title: "Set a code",
+    text: "At least 4 digits. It will be asked every time this app opens.",
+    fields: ["New code", "Repeat code"],
+    okLabel: "Save",
+    extra: opts_cancel(),
+    validate: async (v) => {
+      if (!/^[0-9]{4,12}$/.test(v[0])) return "Use 4 to 12 digits.";
+      if (v[0] !== v[1]) return "The two codes are different.";
+      const salt = Array.from(crypto.getRandomValues(new Uint8Array(8))).map((b) => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem(LOCK_KEY, JSON.stringify({ salt: salt, hash: await lockHash(v[0], salt) }));
+      return "";
+    },
+  });
+}
+function opts_cancel() { return [{ label: "Cancel", value: false }]; }
+
+async function lockAskCode(title) {
+  const st = lockStored();
+  if (!st) return true;
+  return lockCard({
+    title: title || "Enter your code",
+    fields: ["Code"],
+    okLabel: "Unlock",
+    validate: async (v) => ((await lockHash(v[0], st.salt)) === st.hash ? "" : "Wrong code"),
+  });
+}
+
+// Runs before the app starts: set-up offer on the first open, then the code on every open.
+async function lockGate() {
+  try {
+    if (!window.crypto || !crypto.subtle) return; // very old browser: no lock
+    const st = lockStored();
+    if (st) {
+      await lockAskCode("Enter your code");
+      return;
+    }
+    if (!localStorage.getItem(LOCK_SKIP_KEY)) {
+      const set = await lockCard({
+        title: "Protect this app with a code?",
+        text: "Pick a code now, or skip. You can set, change or remove it later in Settings.",
+        fields: [],
+        okLabel: "Set a code",
+        extra: [{ label: "Skip", value: "skip" }],
+        validate: async () => "",
+      });
+      if (set === "skip") { localStorage.setItem(LOCK_SKIP_KEY, "1"); return; }
+      localStorage.setItem(LOCK_SKIP_KEY, "1");
+      await lockSetNew();
+    }
+  } catch (e) {
+    console.warn("lock skipped", e);
+  }
+}
+
+// Settings button: set / change / remove the code (the current code is needed to change or remove it).
+function addLockSettingsButton() {
+  const anchor = document.getElementById("disconnect-btn");
+  if (!anchor || document.getElementById("app-lock-btn")) return;
+  const b = document.createElement("button");
+  b.id = "app-lock-btn";
+  b.className = "settings-row";
+  anchor.parentNode.insertBefore(b, anchor);
+  const refresh = () => { b.textContent = lockStored() ? "App code: on (change or remove)" : "App code: off (set one)"; };
+  refresh();
+  b.addEventListener("click", async () => {
+    if (!lockStored()) { await lockSetNew(); refresh(); return; }
+    if (!(await lockAskCode("Enter the current code"))) return;
+    const choice = await lockCard({
+      title: "App code",
+      text: "Change it or remove it?",
+      fields: [],
+      okLabel: "Change",
+      extra: [{ label: "Remove", value: "remove" }, { label: "Cancel", value: false }],
+      validate: async () => "",
+    });
+    if (choice === "remove") localStorage.removeItem(LOCK_KEY);
+    else if (choice === true) await lockSetNew();
+    refresh();
+  });
+}
+
+configGate().then(lockGate).then(() => { init(); addLockSettingsButton(); });
+
