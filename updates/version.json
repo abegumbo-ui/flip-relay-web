@@ -4,15 +4,15 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "2df55ed963ab9ca5aafe8781f9dfe302e60556a3",
-    "publishedAt": "2026-10-16T08:27:22.0000000Z"
+    "sha": "26138d4350db76bacd375f41f344772dff88466b",
+    "publishedAt": "2026-10-16T15:24:50.0000000Z"
   },
   "tablet-regular": {
-    "sha": "2df55ed963ab9ca5aafe8781f9dfe302e60556a3",
-    "publishedAt": "2026-10-16T08:27:22.0000000Z"
+    "sha": "26138d4350db76bacd375f41f344772dff88466b",
+    "publishedAt": "2026-10-16T15:24:50.0000000Z"
   },
   "tablet-mechi": {
-    "sha": "2df55ed963ab9ca5aafe8781f9dfe302e60556a3",
-    "publishedAt": "2026-10-16T08:27:22.0000000Z"
+    "sha": "26138d4350db76bacd375f41f344772dff88466b",
+    "publishedAt": "2026-10-16T15:24:50.0000000Z"
   }
 }
