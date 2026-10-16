@@ -768,3 +768,14 @@ body {
   border-radius: 10px;
   cursor: pointer;
 }
+
+.unread-badge {
+  background: #c62828;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin-left: 10px;
+  align-self: center;
+}

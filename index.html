@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Flip Relay</title>
+  <title>Message+</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0f1720" />
-  <link rel="stylesheet" href="styles.css?v=c020075206a23ebc2fda4424ca60bedc773be914" />
+  <link rel="stylesheet" href="styles.css?v=e914365648772b51d1278c8e0aecdcc483f02fda" />
+  <link rel="stylesheet" href="gm.css?v=e914365648772b51d1278c8e0aecdcc483f02fda" />
 </head>
 <body>
 
@@ -38,7 +39,7 @@
     <div class="topbar">
       <span id="conv-status-dot" class="status-dot"></span>
       <div>
-        <h2>Flip Relay</h2>
+        <h2>Message+</h2>
         <div id="conv-status-text" class="sub">Connecting to Firebase...</div>
         <div id="phone-status-text" class="sub phone-status">Phone: checking...</div>
       </div>
@@ -101,7 +102,7 @@
     <div id="settings-body">
       <button id="disconnect-btn" class="settings-row danger">Disconnect this tablet</button>
       <button id="sync-log-btn" class="settings-row">Sync Log</button>
-      <button id="force-resync-btn" class="settings-row">Force Resync</button>
+      <button id="layout-btn" class="settings-row">Layout</button>
       <div class="settings-heading-row">
         <h3 class="settings-heading">Recently Deleted</h3>
         <button id="deleted-select-multiple-btn" class="icon-btn-text">Select Multiple</button>
@@ -168,6 +169,7 @@
       <span id="selection-count">0 selected</span>
       <button id="selection-delete-btn" class="icon-btn" title="Delete">&#128465;</button>
     </div>
+    <div id="chat-placeholder">Select a conversation from the list on the left</div>
     <div id="message-list"></div>
 
     <div id="chat-connection-warning" class="chat-connection-warning hidden"></div>
@@ -208,6 +210,8 @@
     </div>
   </div>
 
-  <script src="app.js?v=c020075206a23ebc2fda4424ca60bedc773be914"></script>
+  <button id="gm-fab" class="hidden" title="Start chat"><svg viewBox="0 0 24 24"><path d="M20,2H4c-1.1,0 -2,0.9 -2,2v18l4,-4h14c1.1,0 2,-0.9 2,-2V4c0,-1.1 -0.9,-2 -2,-2zM20,16H6l-2,2V4h16V16z"/></svg></button>
+
+  <script src="app.js?v=e914365648772b51d1278c8e0aecdcc483f02fda"></script>
 </body>
 </html>

@@ -29,6 +29,7 @@ let currentChatNumber = null;
 let pendingAttachmentFile = null;
 let pendingAttachmentKind = null; // "photo" | "video" | "contact" | null
 let pendingAttachmentName = null; // display name, only meaningful for "contact"
+let phoneUnread = null; // number -> unread texts as reported by the phone (null until it reports)
 let readState = {}; // number -> lastRead timestamp (localStorage-backed, mirrors the tablet app's ReadState)
 let pinnedState = {}; // number -> true (localStorage-backed, mirrors the tablet app's pin/unpin)
 
@@ -116,6 +117,10 @@ function markRead(number) {
 }
 
 function isUnread(convo) {
+  if (phoneUnread) {
+    // The phone's own read state wins: read on the phone => read here. Opening the chat here also counts as read.
+    return (phoneUnread[convo.number] || 0) > 0 && convo.last.timestamp > (readState[convo.number] || 0);
+  }
   return convo.last.direction === "in" && convo.last.timestamp > (readState[convo.number] || 0);
 }
 
@@ -183,7 +188,25 @@ function notifyIncoming(data) {
 
 // ---------- pairing ----------
 
+function addGmHeader() {
+  const bar = document.querySelector("#screen-conversations .topbar");
+  if (!bar || document.getElementById("gm-search-btn")) return;
+  const mk = (id, title, path, handler) => {
+    const b = document.createElement("button");
+    b.id = id;
+    b.className = "gm-head-btn gm-only";
+    b.title = title;
+    b.innerHTML = '<svg viewBox="0 0 24 24"><path d="' + path + '"/></svg>';
+    b.addEventListener("click", handler);
+    return b;
+  };
+  bar.appendChild(mk("gm-calls-btn", "Calls", "M6.62,10.79c1.44,2.83 3.76,5.14 6.59,6.59l2.2,-2.2c0.27,-0.27 0.67,-0.36 1.02,-0.24 1.12,0.37 2.33,0.57 3.57,0.57 0.55,0 1,0.45 1,1V20c0,0.55 -0.45,1 -1,1 -9.39,0 -17,-7.61 -17,-17 0,-0.55 0.45,-1 1,-1h3.5c0.55,0 1,0.45 1,1 0,1.25 0.2,2.45 0.57,3.57 0.11,0.35 0.03,0.74 -0.25,1.02l-2.2,2.2z", () => el("calls-btn").click()));
+  bar.appendChild(mk("gm-search-btn", "Search", "M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14z", () => el("search-toggle-btn").click()));
+  bar.appendChild(mk("gm-settings-btn", "Settings", "M19.14,12.94c0.04,-0.3 0.06,-0.61 0.06,-0.94 0,-0.32 -0.02,-0.64 -0.07,-0.94l2.03,-1.58c0.18,-0.14 0.23,-0.41 0.12,-0.61l-1.92,-3.32c-0.12,-0.22 -0.37,-0.29 -0.59,-0.22l-2.39,0.96c-0.5,-0.38 -1.03,-0.7 -1.62,-0.94L14.4,2.81c-0.04,-0.24 -0.24,-0.41 -0.48,-0.41h-3.84c-0.24,0 -0.43,0.17 -0.47,0.41L9.25,5.35C8.66,5.59 8.12,5.92 7.63,6.29L5.24,5.33c-0.22,-0.08 -0.47,0 -0.59,0.22L2.74,8.87C2.62,9.08 2.66,9.34 2.86,9.48l2.03,1.58C4.84,11.36 4.8,11.69 4.8,12s0.02,0.64 0.07,0.94l-2.03,1.58c-0.18,0.14 -0.23,0.41 -0.12,0.61l1.92,3.32c0.12,0.22 0.37,0.29 0.59,0.22l2.39,-0.96c0.5,0.38 1.03,0.7 1.62,0.94l0.36,2.54c0.05,0.24 0.24,0.41 0.48,0.41h3.84c0.24,0 0.44,-0.17 0.47,-0.41l0.36,-2.54c0.59,-0.24 1.13,-0.56 1.62,-0.94l2.39,0.96c0.22,0.08 0.47,0 0.59,-0.22l1.92,-3.32c0.12,-0.22 0.07,-0.47 -0.12,-0.61L19.14,12.94zM12,15.6c-1.98,0 -3.6,-1.62 -3.6,-3.6s1.62,-3.6 3.6,-3.6 3.6,1.62 3.6,3.6S13.98,15.6 12,15.6z", () => el("settings-btn").click()));
+}
+
 function init() {
+  addGmHeader();
   const savedRoom = localStorage.getItem(ROOM_KEY);
   if (savedRoom) {
     connectToRoom(savedRoom, false);
@@ -199,7 +222,9 @@ function init() {
   el("settings-back-btn").addEventListener("click", () => showScreen("conversations"));
   el("disconnect-btn").addEventListener("click", onForgetClick);
   el("sync-log-btn").addEventListener("click", onSyncLogClick);
-  el("force-resync-btn").addEventListener("click", onForceResyncClick);
+  el("layout-btn").addEventListener("click", onLayoutClick);
+  el("gm-fab").addEventListener("click", () => el("new-message-btn").click());
+  applyLayout();
   el("calls-btn").addEventListener("click", onCallsClick);
   el("calls-back-btn").addEventListener("click", () => showScreen("conversations"));
   el("calls-refresh-btn").addEventListener("click", onCallsRefreshClick);
@@ -809,11 +834,78 @@ function onForgetClick() {
 
 // ---------- screens ----------
 
-function showScreen(name) {
-  ["pairing", "conversations", "chat", "settings", "deleted-thread", "calls"].forEach((s) => {
-    el("screen-" + s).classList.toggle("hidden", s !== name);
-  });
+// ---------- layout: classic / Google tablet / Google phone ----------
+
+const LAYOUT_KEY = "layout_mode";
+const LAYOUT_LABELS = { auto: "Automatic", tablet: "Google Messages \u2014 tablet", phone: "Google Messages \u2014 phone", classic: "Classic" };
+
+function storedLayout() {
+  try { return localStorage.getItem(LAYOUT_KEY) || "auto"; } catch (e) { return "auto"; }
 }
+
+function effectiveLayout() {
+  const m = storedLayout();
+  if (m === "classic" || m === "tablet" || m === "phone") return m;
+  return window.innerWidth >= 900 ? "tablet" : "phone";
+}
+
+function applyLayout() {
+  const l = effectiveLayout();
+  document.body.classList.toggle("gm", l !== "classic");
+  document.body.classList.toggle("gm-tablet", l === "tablet");
+  document.body.classList.toggle("gm-phone", l === "phone");
+  const fab = el("gm-fab");
+  if (fab) fab.classList.toggle("hidden", l === "classic" || currentScreenName !== "conversations" && !(l === "tablet" && currentScreenName === "chat"));
+  const btn = document.getElementById("layout-btn");
+  if (btn) btn.textContent = "Layout: " + LAYOUT_LABELS[storedLayout()];
+}
+
+async function onLayoutClick() {
+  const choice = await showActionSheet("Layout", [
+    { label: "Automatic", value: "auto" },
+    { label: "Google Messages \u2014 tablet (side by side)", value: "tablet" },
+    { label: "Google Messages \u2014 phone (one screen at a time)", value: "phone" },
+    { label: "Classic (the original look)", value: "classic" },
+  ]);
+  if (!choice) return;
+  try { localStorage.setItem(LAYOUT_KEY, choice); } catch (e) { /* private mode */ }
+  applyLayout();
+  showScreen(currentScreenName === "chat" ? "chat" : "conversations");
+}
+
+const GM_AVATARS = [["#eaa695", "#eaa696"], ["#d8b4f7", "#c8a2f8"], ["#83e7ca", "#89ecc3"], ["#86cbbe", "#6cc1b9"],
+  ["#c098f0", "#bf9bea"], ["#ffa480", "#ffb189"], ["#ef9eb0", "#d784c8"], ["#ffb77b", "#ffb282"]];
+const GM_PERSON = '<svg viewBox="0 0 24 24"><path d="M12,12c2.21,0 4,-1.79 4,-4s-1.79,-4 -4,-4 -4,1.79 -4,4 1.79,4 4,4zM12,14c-2.67,0 -8,1.34 -8,4v2h16v-2c0,-2.66 -5.33,-4 -8,-4z"/></svg>';
+
+function gmAvatarHtml(number) {
+  const name = displayName(number) || "";
+  const saved = name && name !== number && /^\p{L}/u.test(name);
+  if (!saved) return '<div class="gm-avatar unknown">' + GM_PERSON + "</div>";
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+  const pair = GM_AVATARS[Math.abs(h) % GM_AVATARS.length];
+  return '<div class="gm-avatar" style="background:linear-gradient(135deg,' + pair[0] + "," + pair[1] + ')">' + escapeHtml(name[0].toUpperCase()) + "</div>";
+}
+
+let currentScreenName = "pairing";
+
+function showScreen(name) {
+  currentScreenName = name;
+  const tablet = effectiveLayout() === "tablet";
+  ["pairing", "conversations", "chat", "settings", "deleted-thread", "calls"].forEach((s) => {
+    let visible = s === name;
+    if (tablet && (name === "conversations" || name === "chat") && (s === "conversations" || s === "chat")) visible = true;
+    el("screen-" + s).classList.toggle("hidden", !visible);
+  });
+  // tablet layout: with no conversation open, the right side shows a hint instead of an empty chat
+  const showHint = tablet && currentChatNumber == null;
+  const ph = document.getElementById("chat-placeholder");
+  if (ph) ph.style.display = showHint ? "flex" : "none";
+  el("message-list").style.display = showHint ? "none" : "";
+  applyLayout();
+}
+
+window.addEventListener("resize", () => { if (storedLayout() === "auto") { applyLayout(); showScreen(currentScreenName); } });
 
 // ---------- Firebase streaming ----------
 
@@ -961,6 +1053,19 @@ function startPhoneHeartbeatPoll() {
       }
       hasPolledHeartbeatOnce = true;
       saveHeartbeatState();
+      try {
+        const ur = await fetch(roomUrl("unreadState"));
+        const ud = ur.ok ? await ur.json() : null;
+        if (ud && typeof ud.at === "number" && ud.at > 0) {
+          const next = ud.counts || {};
+          if (JSON.stringify(next) !== JSON.stringify(phoneUnread)) {
+            phoneUnread = next;
+            renderConversationList();
+          }
+        }
+      } catch (e) {
+        // not fatal: keeps the last known counts
+      }
       const connected = lastHeartbeatSeenAt > 0 && (now - lastHeartbeatSeenAt) < PHONE_HEARTBEAT_STALE_MS;
       updatePhoneStatus(connected, connected ? batteryPercent : null, connected ? network : null, connected && charging);
     } catch (e) {
@@ -1979,7 +2084,7 @@ function conversationsByNumber() {
   }
   return [...byNumber.entries()]
     .map(([number, last]) => ({ number, last }))
-    .map((c) => ({ ...c, unread: isUnread(c), pinned: isPinned(c.number) }))
+    .map((c) => ({ ...c, unread: isUnread(c), unreadCount: phoneUnread ? (phoneUnread[c.number] || 0) : 0, pinned: isPinned(c.number) }))
     // Pinned first (matching the tablet app), chronological within each
     // group -- an unread conversation used to jump to the top on its own,
     // but that's a change of mind from before: it should stay in the order
@@ -2127,10 +2232,10 @@ function renderConversationList() {
   el("empty-state").classList.toggle("hidden", convos.length > 0);
   updateConversationSelectionToolbar();
 
-  for (const { number, last, unread, pinned } of convos) {
+  for (const { number, last, unread, unreadCount, pinned } of convos) {
     const item = document.createElement("div");
     const selected = conversationSelectionMode && selectedConversationNumbers.has(number);
-    item.className = "conversation-item" + (unread ? " unread" : "") + (selected ? " selected" : "");
+    item.className = "conversation-item" + (unread ? " unread" : "") + (selected ? " selected" : "") + (number === currentChatNumber ? " open" : "");
     const prefix = last.direction === "out" ? "You: " : last.direction === "scheduled" ? "Scheduled: " : "";
     const preview = last.imageUrl ? "📷 Picture" + (last.body ? ": " + last.body : "") : last.body;
     const checkHtml = conversationSelectionMode
@@ -2138,11 +2243,13 @@ function renderConversationList() {
     const pinHtml = pinned ? '<span class="pin-mark">📌</span>' : "";
     item.innerHTML = `
       ${checkHtml}
+      ${gmAvatarHtml(number)}
       <div class="conversation-item-body">
         <div class="name">${pinHtml}${unread ? '<span class="unread-dot">●</span>' : ""}${escapeHtml(displayName(number))}</div>
         <div class="preview">${prefix}${escapeHtml(preview)}</div>
       </div>
       <div class="time">${formatTime(last.timestamp)}</div>
+      ${unread && unreadCount > 0 ? `<div class="unread-badge">${unreadCount > 999 ? "999+" : unreadCount}</div>` : ""}
     `;
     item.addEventListener("click", () => {
       if (conversationSelectionMode) toggleConversationSelection(number);
@@ -2180,7 +2287,19 @@ function renderChat(number) {
     .filter((m) => m.number === number)
     .sort((a, b) => a.timestamp - b.timestamp);
 
+  let lastShown = 0;
   for (const m of thread) {
+    if (m.direction !== "scheduled" && (m.timestamp - lastShown > 3600000 || new Date(m.timestamp).toDateString() !== new Date(lastShown).toDateString())) {
+      const sep = document.createElement("div");
+      sep.className = "gm-sep gm-only";
+      const dd = new Date(m.timestamp);
+      const today = new Date();
+      const days = Math.round((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - new Date(dd.getFullYear(), dd.getMonth(), dd.getDate())) / 86400000);
+      const clock = dd.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      sep.textContent = (days === 0 ? "Today" : days === 1 ? "Yesterday" : dd.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })) + " \u2022 " + clock;
+      list.appendChild(sep);
+      lastShown = m.timestamp;
+    }
     const row = document.createElement("div");
     const isScheduled = m.direction === "scheduled";
     const isOut = m.direction === "out";
@@ -2240,6 +2359,12 @@ function renderChat(number) {
       });
     }
     list.appendChild(row);
+    if (!isScheduled) {
+      const t = document.createElement("div");
+      t.className = "gm-time gm-only " + (isOut ? "out" : "in") + (stuck ? " stuck" : "");
+      t.textContent = formatTime(m.timestamp) + (isOut ? (stuck ? " \u00B7 Not sent" : stillPending ? " \u00B7 Sending..." : "") : "");
+      list.appendChild(t);
+    }
   }
   list.scrollTop = list.scrollHeight;
 }
