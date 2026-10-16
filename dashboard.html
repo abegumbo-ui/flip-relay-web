@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Message+ dashboard</title>
+<style>
+  :root { --page:#e4e4e7; --card:#f1f1f3; --ink:#1a1b20; --soft:#45464f; --blue:#0b57d0; --red:#b3261e; --high:#ededf3; }
+  @media (prefers-color-scheme: dark) { :root { --page:#111318; --card:#1b1d23; --ink:#e3e3ea; --soft:#c4c6d0; --blue:#a8c7fa; --red:#f2b8b5; --high:#272a32; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family: Roboto, "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 16px; }
+  h1 { font-weight:400; font-size: 26px; margin: 8px 0 16px; }
+  .card { background:var(--card); border-radius:24px; padding:20px; margin-bottom:16px; }
+  .card h2 { font-size:16px; margin:0 0 12px; color:var(--blue); font-weight:500; }
+  input, button, select { font: inherit; }
+  input[type=text], input[type=password], input[type=number] { width:100%; padding:14px 16px; border:none; border-radius:16px; background:var(--high); color:var(--ink); margin-bottom:10px; }
+  button { border:none; border-radius:22px; padding:11px 20px; background:var(--blue); color:#fff; cursor:pointer; }
+  @media (prefers-color-scheme: dark) { button { color:#062e6f; } }
+  button.ghost { background:var(--high); color:var(--ink); }
+  button.danger { background:var(--red); color:#fff; }
+  .row { display:flex; gap:12px; align-items:center; padding:14px 0; border-top:1px solid rgba(128,128,128,.2); flex-wrap:wrap; }
+  .row:first-of-type { border-top:none; }
+  .grow { flex:1; min-width:200px; }
+  .name { font-size:17px; }
+  .meta { color:var(--soft); font-size:13px; margin-top:3px; }
+  .bar { height:10px; border-radius:6px; background:var(--high); overflow:hidden; margin-top:6px; }
+  .bar > div { height:100%; background:var(--blue); }
+  .err { color:var(--red); min-height:20px; }
+  .hidden { display:none !important; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; background:var(--high); margin-left:6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Message+ dashboard</h1>
+
+  <!-- first run: connect, and choose a PIN. The Firebase secret is stored only in THIS browser, encrypted with the PIN. -->
+  <div id="setup" class="card hidden">
+    <h2>First time: connect and choose a PIN</h2>
+    <p class="meta">Where to find these: console.firebase.google.com → your project → Build → Realtime Database (the address is at the top of the Data tab, like https://something-default-rtdb.firebaseio.com). The secret: gear icon → Project settings → Service accounts → Database secrets → Show.</p>
+    <input id="s-url" type="text" placeholder="Firebase database address" autocomplete="off" />
+    <input id="s-secret" type="password" placeholder="Firebase database secret" autocomplete="off" />
+    <input id="s-pin" type="password" placeholder="Choose a PIN or password" autocomplete="new-password" />
+    <button id="s-go">Save and open</button>
+    <p class="meta">The secret is never put in this file and never sent anywhere except to Firebase. It is saved in this browser, locked with your PIN.</p>
+    <div id="s-err" class="err"></div>
+  </div>
+
+  <div id="login" class="card hidden">
+    <h2>Enter your PIN</h2>
+    <input id="l-pin" type="password" placeholder="PIN or password" autocomplete="current-password" />
+    <button id="l-go">Open</button>
+    <button id="l-forgot" class="ghost">Forgot PIN</button>
+    <div id="l-err" class="err"></div>
+    <p class="meta">Forgot it? The PIN cannot be recovered, but nothing is lost: it only locks the saved Firebase secret on this device. "Forgot PIN" clears that and lets you enter the Firebase address and secret again with a new PIN. Your messages and rooms are not touched.</p>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="card">
+      <h2>Storage</h2>
+      <div id="usage">Measuring...</div>
+      <div class="meta">Free plan: 1 GB of database data is more than this will ever need; Storage files are counted separately.</div>
+    </div>
+
+    <div class="card">
+      <h2>Rooms</h2>
+      <div id="rooms">Loading...</div>
+      <button id="refresh" class="ghost">Refresh</button>
+    </div>
+
+    <div id="detail" class="card hidden">
+      <h2 id="d-title">Room</h2>
+      <div id="d-body">Loading...</div>
+      <hr style="border:none;border-top:1px solid rgba(128,128,128,.2);margin:18px 0" />
+      <label class="meta">Delete everything in this room older than</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="d-n" type="number" min="1" value="2" style="width:100px" />
+        <select id="d-unit" style="padding:12px;border-radius:16px;border:none;background:var(--high);color:var(--ink);margin-bottom:10px"><option value="365">years</option><option value="30">months</option><option value="1">days</option></select>
+        <select id="d-type" style="padding:12px;border-radius:16px;border:none;background:var(--high);color:var(--ink);margin-bottom:10px"><option value="all">all kinds</option><option value="text">only text</option><option value="picture">only pictures</option><option value="video">only videos</option><option value="voice">only voice messages</option><option value="contact">only contacts</option></select>
+      </div>
+      <button id="d-preview" class="ghost">Count what would go</button>
+      <button id="d-delete" class="danger">Delete</button>
+      <div id="d-msg" class="meta" style="margin-top:8px"></div>
+      <div class="meta">Devices keep their own copy of what is removed here (it is marked as expired, not deleted).</div>
+      <button id="d-close" class="ghost" style="margin-top:12px">Back to rooms</button>
+    </div>
+
+    <div class="card">
+      <h2>Settings</h2>
+      <label class="meta">Delete messages and files older than (days) — used by the daily cleanup</label>
+      <input id="days" type="number" min="1" max="365" />
+      <button id="save-days">Save</button>
+      <span id="days-msg" class="meta"></span>
+      <hr style="border:none;border-top:1px solid rgba(128,128,128,.2);margin:18px 0" />
+      <label class="meta">Daily cleanup</label>
+      <div id="live-state" class="name" style="margin:6px 0 10px"></div>
+      <button id="live-btn">Turn on</button>
+      <div class="meta">Off = it only reports what it would remove. On = it really removes old messages and files every day (about 03:17 UTC). Turn it on only after all your tablets have updated, because the web app does not keep expired messages.</div>
+      <hr style="border:none;border-top:1px solid rgba(128,128,128,.2);margin:18px 0" />
+      <label class="meta">Change PIN</label>
+      <input id="new-pin" type="password" placeholder="New PIN or password" autocomplete="new-password" />
+      <button id="save-pin" class="ghost">Change PIN</button>
+      <span id="pin-msg" class="meta"></span>
+      <hr style="border:none;border-top:1px solid rgba(128,128,128,.2);margin:18px 0" />
+      <button id="lock" class="ghost">Lock</button>
+      <button id="forget" class="danger">Forget the Firebase secret on this device</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STORE = "msgplus_dashboard_v1";
+let cfg = null; // { url, secret } once unlocked
+let pinInUse = "";
+
+// ---------- encryption of the saved secret ----------
+const enc = new TextEncoder(), dec = new TextDecoder();
+const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+async function key(pin, salt) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(pin), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 250000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+async function lockUp(data, pin) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await key(pin, salt), enc.encode(JSON.stringify(data)));
+  localStorage.setItem(STORE, JSON.stringify({ salt: b64(salt), iv: b64(iv), ct: b64(ct) }));
+}
+async function unlock(pin) {
+  const s = JSON.parse(localStorage.getItem(STORE));
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(s.iv) }, await key(pin, unb64(s.salt)), unb64(s.ct));
+  return JSON.parse(dec.decode(pt));
+}
+
+// ---------- Firebase ----------
+async function db(method, path, body, extra) {
+  const u = `${cfg.url.replace(/\/$/, "")}/${path}.json?auth=${encodeURIComponent(cfg.secret)}${extra || ""}`;
+  const r = await fetch(u, { method, headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+  if (!r.ok) throw new Error("Firebase said " + r.status);
+  return r.json();
+}
+const BUCKET = "flip-relay.firebasestorage.app";
+async function storageBytes(room) {
+  let total = 0, token = null, files = 0;
+  try {
+    do {
+      const q = new URLSearchParams({ prefix: `attachments/${room}/`, maxResults: "1000" });
+      if (token) q.set("pageToken", token);
+      const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?${q}`);
+      if (!r.ok) return null;
+      const j = await r.json();
+      for (const it of j.items || []) { total += Number(it.size || 0); files++; }
+      token = j.nextPageToken;
+    } while (token);
+  } catch (e) { return null; }
+  return { total, files };
+}
+async function storageDelete(room) {
+  const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?` + new URLSearchParams({ prefix: `attachments/${room}/`, maxResults: "1000" }));
+  if (!r.ok) return;
+  for (const it of (await r.json()).items || []) {
+    await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(it.name)}`, { method: "DELETE" });
+  }
+}
+
+const mb = (n) => (n / 1048576).toFixed(n > 10485760 ? 0 : 1) + " MB";
+const ago = (ms) => { if (!ms) return "never"; const s = (Date.now() - ms) / 1000; return s < 90 ? "just now" : s < 5400 ? Math.round(s / 60) + " min ago" : s < 172800 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago"; };
+
+async function load() {
+  $("rooms").textContent = "Loading...";
+  const names = (await db("GET", "admin/roomNames")) || {};
+  const list = Object.keys((await db("GET", "rooms", undefined, "&shallow=true")) || {}).sort();
+  const days = await db("GET", "admin/cleanupDays");
+  $("days").value = days || 14;
+  liveOn = (await db("GET", "admin/cleanupLive")) === true;
+  showLive();
+  const box = $("rooms");
+  box.innerHTML = "";
+  let totalBytes = 0, biggest = 1;
+  const rows = [];
+  for (const room of list) {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<div class="grow"><div class="name"></div><div class="meta">Measuring...</div><div class="bar"><div style="width:0"></div></div></div>
+      <button class="ghost rn">Name</button><button class="danger rm">Delete room</button>`;
+    row.querySelector(".name").textContent = names[room] || room;
+    row.querySelector(".name").style.cursor = "pointer";
+    row.querySelector(".name").title = "Open this room";
+    row.querySelector(".name").onclick = () => openRoom(room, names[room] || room);
+    box.appendChild(row);
+    rows.push({ room, row });
+  }
+  if (!list.length) box.textContent = "No rooms.";
+  for (const { room, row } of rows) {
+    let bytes = 0, count = 0, last = 0, parts = {};
+    try {
+      for (const p of ["messages/incoming", "messages/sent", "deletedMessages", "calls"]) {
+        const txt = JSON.stringify((await db("GET", `rooms/${room}/${p}`)) || {});
+        parts[p] = txt.length; bytes += txt.length;
+        if (p.startsWith("messages")) { const o = JSON.parse(txt); for (const v of Object.values(o)) { count++; if (v && v.timestamp > last) last = v.timestamp; } }
+      }
+    } catch (e) { row.querySelector(".meta").textContent = "Could not read: " + e.message; continue; }
+    const hb = await db("GET", `rooms/${room}/heartbeat`).catch(() => null);
+    const files = await storageBytes(room);
+    const fileBytes = files ? files.total : 0;
+    totalBytes += bytes + fileBytes;
+    row._bytes = bytes + fileBytes;
+    biggest = Math.max(biggest, bytes + fileBytes);
+    row.querySelector(".meta").innerHTML = `${count.toLocaleString()} messages · ${mb(bytes)} data` + (files ? ` · ${files.files} files, ${mb(fileBytes)}` : "") +
+      ` · last message ${ago(last)}` + (hb && hb.at ? ` · phone seen ${ago(hb.at)}` : "") + (Date.now() - last > 30 * 864e5 ? '<span class="pill">inactive</span>' : "");
+    row.querySelector(".bar > div").style.width = Math.max(2, (bytes + fileBytes) / biggest * 100) + "%";
+    row.querySelector(".rn").onclick = async () => {
+      const n = prompt("A name to recognise this room by:", names[room] || "");
+      if (n === null) return;
+      await db("PUT", `admin/roomNames/${room}`, n || null);
+      load();
+    };
+    row.querySelector(".rm").onclick = async () => {
+      const label = names[room] || room;
+      if (prompt(`This permanently deletes ALL messages, calls and files of "${label}" from Firebase.\nType DELETE to confirm:`) !== "DELETE") return;
+      await db("DELETE", `rooms/${room}`);
+      await storageDelete(room);
+      await db("PUT", `admin/roomNames/${room}`, null);
+      load();
+    };
+  }
+  $("usage").innerHTML = `<div style="font-size:28px">${mb(totalBytes)}</div><div class="meta">in ${list.length} room${list.length === 1 ? "" : "s"} (message text, trash, calls and attachment files)</div>`;
+}
+
+// ---------- one room in detail ----------
+function kindOf(v) {
+  if (v.imageUrl) return "picture";
+  const k = v.attachmentType || v.attachmentKind;
+  if (k === "video") return "video";
+  if (k === "audio") return "voice";
+  if (k === "vcard") return "contact";
+  if (k) return "other";
+  return "text";
+}
+const KIND_LABEL = { text: "Text messages", picture: "Pictures", video: "Videos", voice: "Voice messages", contact: "Contacts", other: "Other attachments" };
+let currentRoom = null, currentRoomName = "";
+
+async function roomMessages(room) {
+  const out = [];
+  for (const kind of ["incoming", "sent"]) {
+    const t = (await db("GET", `rooms/${room}/messages/${kind}`)) || {};
+    for (const [key, v] of Object.entries(t)) if (v && typeof v === "object") out.push({ kind, key, v, size: JSON.stringify(v).length });
+  }
+  return out;
+}
+const extKind = (name) => /\.(jpe?g|png|gif|webp)$/i.test(name) ? "picture" : /\.(mp4|3gp|mov)$/i.test(name) ? "video" : /\.(amr|mp3|m4a|aac|ogg)$/i.test(name) ? "voice" : /\.vcf$/i.test(name) ? "contact" : "other";
+
+async function storageItems(room) {
+  const items = [];
+  try {
+    let token = null;
+    do {
+      const q = new URLSearchParams({ prefix: `attachments/${room}/`, maxResults: "1000" });
+      if (token) q.set("pageToken", token);
+      const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?${q}`);
+      if (!r.ok) return null;
+      const j = await r.json();
+      items.push(...(j.items || []));
+      token = j.nextPageToken;
+    } while (token);
+  } catch (e) { return null; }
+  return items;
+}
+
+async function openRoom(room, label) {
+  currentRoom = room; currentRoomName = label;
+  $("detail").classList.remove("hidden");
+  $("rooms").parentElement.classList.add("hidden");
+  $("d-title").textContent = label;
+  $("d-body").textContent = "Counting...";
+  $("d-msg").textContent = "";
+  const msgs = await roomMessages(room);
+  const stats = {};
+  for (const k of Object.keys(KIND_LABEL)) stats[k] = { n: 0, bytes: 0, fileBytes: 0, files: 0 };
+  for (const m of msgs) { const s = stats[kindOf(m.v)]; s.n++; s.bytes += m.size; }
+  const files = await storageItems(room);
+  if (files) for (const f of files) { const s = stats[extKind(f.name)]; s.files++; s.fileBytes += Number(f.size || 0); }
+  let html = "", total = 0;
+  for (const [k, label2] of Object.entries(KIND_LABEL)) {
+    const s = stats[k]; if (!s.n && !s.files) continue;
+    total += s.bytes + s.fileBytes;
+    html += `<div class="row"><div class="grow"><div class="name">${label2}</div><div class="meta">${s.n.toLocaleString()} in the database (${mb(s.bytes)})` + (files ? ` · ${s.files} files in Storage (${mb(s.fileBytes)})` : "") + `</div></div></div>`;
+  }
+  const oldest = msgs.length ? Math.min(...msgs.map((m) => m.v.timestamp || Date.now())) : 0;
+  $("d-body").innerHTML = html + `<div class="meta" style="margin-top:10px">Total ${mb(total)} · ${msgs.length.toLocaleString()} messages · oldest ${oldest ? new Date(oldest).toLocaleDateString() : "—"}` + (files ? "" : " · Storage files could not be listed") + "</div>";
+}
+
+function chosenCutoff() { return Date.now() - (parseFloat($("d-n").value) || 1) * parseInt($("d-unit").value, 10) * 86400000; }
+
+async function matching(room) {
+  const cutoff = chosenCutoff(), type = $("d-type").value;
+  const msgs = (await roomMessages(room)).filter((m) => (m.v.timestamp || 0) > 0 && m.v.timestamp < cutoff && (type === "all" || kindOf(m.v) === type));
+  const files = (await storageItems(room)) || [];
+  const oldFiles = files.filter((f) => new Date(f.timeCreated).getTime() < cutoff && (type === "all" || extKind(f.name) === type));
+  return { cutoff, msgs, oldFiles };
+}
+
+$("d-preview").onclick = async () => {
+  $("d-msg").textContent = "Counting...";
+  const r = await matching(currentRoom);
+  $("d-msg").textContent = `${r.msgs.length.toLocaleString()} messages (${mb(r.msgs.reduce((a, m) => a + m.size, 0))}) and ${r.oldFiles.length} files (${mb(r.oldFiles.reduce((a, f) => a + Number(f.size || 0), 0))}) older than ${new Date(r.cutoff).toLocaleDateString()} would be removed.`;
+};
+$("d-delete").onclick = async () => {
+  const r = await matching(currentRoom);
+  if (!r.msgs.length && !r.oldFiles.length) { $("d-msg").textContent = "Nothing that old."; return; }
+  if (prompt(`Remove ${r.msgs.length.toLocaleString()} messages and ${r.oldFiles.length} files from "${currentRoomName}" (older than ${new Date(r.cutoff).toLocaleDateString()})?\nType DELETE to confirm:`) !== "DELETE") return;
+  $("d-msg").textContent = "Removing...";
+  const prior = Number(await db("GET", `rooms/${currentRoom}/expiredBefore`)) || 0;
+  await db("PUT", `rooms/${currentRoom}/expiredBefore`, Math.max(prior, r.cutoff)); // first, so devices keep their copy
+  for (const kind of ["incoming", "sent"]) {
+    const keys = r.msgs.filter((m) => m.kind === kind).map((m) => m.key);
+    for (let i = 0; i < keys.length; i += 400) {
+      const patch = {}; for (const k of keys.slice(i, i + 400)) patch[k] = null;
+      await db("PATCH", `rooms/${currentRoom}/messages/${kind}`, patch);
+    }
+  }
+  for (const f of r.oldFiles) await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(f.name)}`, { method: "DELETE" });
+  $("d-msg").textContent = "Done.";
+  openRoom(currentRoom, currentRoomName);
+};
+$("d-close").onclick = () => { $("detail").classList.add("hidden"); $("rooms").parentElement.classList.remove("hidden"); load(); };
+
+let liveOn = false;
+function showLive() {
+  $("live-state").textContent = liveOn ? "ON — removing old messages and files every day" : "OFF — only reporting, nothing is removed";
+  $("live-state").style.color = liveOn ? "var(--red)" : "var(--ink)";
+  $("live-btn").textContent = liveOn ? "Turn off" : "Turn on";
+  $("live-btn").className = liveOn ? "ghost" : "danger";
+}
+$("live-btn").onclick = async () => {
+  if (!liveOn && !confirm("Turn the daily cleanup ON? From tonight it permanently removes messages and files older than " + $("days").value + " days from Firebase. Tablets on the newest build keep their copy.")) return;
+  liveOn = !liveOn;
+  await db("PUT", "admin/cleanupLive", liveOn);
+  showLive();
+};
+
+// ---------- screens ----------
+function show(which) { for (const id of ["setup", "login", "app"]) $(id).classList.toggle("hidden", id !== which); }
+async function open() { show("app"); try { await load(); } catch (e) { $("rooms").textContent = "Could not load: " + e.message + " — is the secret right?"; } }
+
+$("s-go").onclick = async () => {
+  const url = $("s-url").value.trim(), secret = $("s-secret").value.trim(), pin = $("s-pin").value;
+  if (!url || !secret || pin.length < 4) { $("s-err").textContent = "Fill in all three; the PIN needs at least 4 characters."; return; }
+  cfg = { url, secret };
+  try { await db("GET", "admin/cleanupDays"); } catch (e) { $("s-err").textContent = "Firebase refused that address / secret."; return; }
+  pinInUse = pin;
+  await lockUp(cfg, pin);
+  $("s-secret").value = "";
+  open();
+};
+$("l-go").onclick = async () => {
+  try { cfg = await unlock($("l-pin").value); pinInUse = $("l-pin").value; $("l-pin").value = ""; $("l-err").textContent = ""; open(); }
+  catch (e) { $("l-err").textContent = "Wrong PIN."; }
+};
+$("l-forgot").onclick = () => {
+  if (!confirm("Clear the saved Firebase secret from this device and set the dashboard up again? Your messages and rooms are not touched.")) return;
+  localStorage.removeItem(STORE); cfg = null; $("l-err").textContent = ""; show("setup");
+};
+$("l-pin").addEventListener("keydown", (e) => { if (e.key === "Enter") $("l-go").click(); });
+$("refresh").onclick = load;
+$("save-days").onclick = async () => {
+  const d = Math.max(1, Math.min(365, parseInt($("days").value, 10) || 14));
+  await db("PUT", "admin/cleanupDays", d);
+  $("days-msg").textContent = "Saved: " + d + " days (the daily cleanup reads this).";
+};
+$("save-pin").onclick = async () => {
+  const p = $("new-pin").value;
+  if (p.length < 4) { $("pin-msg").textContent = "At least 4 characters."; return; }
+  await lockUp(cfg, p); pinInUse = p; $("new-pin").value = ""; $("pin-msg").textContent = "PIN changed.";
+};
+$("lock").onclick = () => { cfg = null; show("login"); };
+$("forget").onclick = () => { if (confirm("Remove the saved Firebase secret from this device?")) { localStorage.removeItem(STORE); cfg = null; show("setup"); } };
+
+show(localStorage.getItem(STORE) ? "login" : "setup");
+</script>
+</body>
+</html>
