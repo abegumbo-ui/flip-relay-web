@@ -83,6 +83,8 @@
     <h2>Enter your PIN</h2>
     <input id="l-pin" type="password" placeholder="PIN or password" autocomplete="current-password" />
     <button id="l-go">Open</button>
+    <button id="l-bio" class="ghost hidden">Use fingerprint</button>
+    <div id="l-bio-note" class="meta hidden"></div>
     <button id="l-forgot" class="ghost">Forgot PIN</button>
     <div id="l-err" class="err"></div>
     <p class="meta">Forgot it? The PIN cannot be recovered, but nothing is lost: it only locks the saved Firebase secret on this device. "Forgot PIN" clears that and lets you enter the Firebase address and secret again with a new PIN. Your messages and rooms are not touched.</p>
@@ -523,7 +525,7 @@ async function screenHome() {
   root.appendChild(group("Security")
     .add(item({ icon: "lock", title: "Change PIN", onclick: () => go("pin") }))
     .add(item({ icon: "out", title: "Lock", onclick: () => { cfg = null; stack.length = 0; show("login"); } }))
-    .add(item({ icon: "trash", title: "Forget the Firebase secret on this device", danger: true, onclick: () => { if (confirm("Remove the saved Firebase secret from this device?")) { localStorage.removeItem(STORE); localStorage.removeItem(CACHE_KEY); cfg = null; stack.length = 0; show("setup"); } } })));
+    .add(item({ icon: "trash", title: "Forget the Firebase secret on this device", danger: true, onclick: () => { if (confirm("Remove the saved Firebase secret from this device?")) { localStorage.removeItem(STORE); localStorage.removeItem(CACHE_KEY); try { if (bio) bio.forget(); } catch (e) { } cfg = null; stack.length = 0; show("setup"); } } })));
   return root;
 }
 
@@ -989,7 +991,7 @@ async function screenPin() {
   box.querySelector("#save-pin").onclick = async () => {
     const p = box.querySelector("#new-pin").value;
     if (p.length < 4) { box.querySelector("#pin-msg").textContent = "At least 4 characters."; return; }
-    await lockUp(cfg, p); pinInUse = p; box.querySelector("#new-pin").value = ""; box.querySelector("#pin-msg").textContent = "PIN changed.";
+    await lockUp(cfg, p); pinInUse = p; box.querySelector("#new-pin").value = ""; box.querySelector("#pin-msg").textContent = "PIN changed." + (bio ? " Fingerprint unlock was switched off; it is offered again next time you sign in with the PIN." : ""); if (bio) { try { bio.forget(); localStorage.removeItem("bio_declined"); } catch (e) { } }
   };
   root.appendChild(g);
   return root;
@@ -1010,19 +1012,55 @@ $("s-go").onclick = async () => {
   pinInUse = pin;
   await lockUp(cfg, pin);
   $("s-secret").value = "";
-  open();
+  open(); offerBio(pin);
 };
 $("l-go").onclick = async () => {
-  try { cfg = await unlock($("l-pin").value); pinInUse = $("l-pin").value; $("l-pin").value = ""; $("l-err").textContent = ""; open(); }
+  try { cfg = await unlock($("l-pin").value); pinInUse = $("l-pin").value; const used = pinInUse; $("l-pin").value = ""; $("l-err").textContent = ""; open(); offerBio(used); }
   catch (e) { $("l-err").textContent = "Wrong PIN."; }
 };
 $("l-forgot").onclick = () => {
   if (!confirm("Clear the saved Firebase secret from this device and set the dashboard up again? Your messages and rooms are not touched.")) return;
-  localStorage.removeItem(STORE); cfg = null; $("l-err").textContent = ""; show("setup");
+  localStorage.removeItem(STORE); try { if (bio) bio.forget(); } catch (e) { } cfg = null; $("l-err").textContent = ""; show("setup");
 };
 $("l-pin").addEventListener("keydown", (e) => { if (e.key === "Enter") $("l-go").click(); });
 
+// ---------- fingerprint (only inside the Message+ Dashboard app, which provides window.FlipBio) ----------
+const bio = window.FlipBio || null;
+const bioStatus = () => { try { return bio ? bio.status() : "unavailable"; } catch (e) { return "unavailable"; } };
+function bioLoginUi() {
+  const st = bioStatus();
+  $("l-bio").classList.toggle("hidden", st !== "ready");
+  const note = $("l-bio-note");
+  note.classList.toggle("hidden", st !== "invalidated");
+  note.textContent = st === "invalidated" ? "A fingerprint was added or changed on this phone, so fingerprint unlock was switched off for safety. Enter your PIN; you will then be offered to turn it on again." : "";
+  return st;
+}
+window.onFlipBio = (op, ok, payload) => {
+  if (op === "unlock") {
+    if (ok) { $("l-pin").value = payload; $("l-go").click(); }
+    else { const st = bioLoginUi(); if (payload !== "invalidated" && st === "ready") $("l-err").textContent = ""; }
+  } else if (op === "enroll") {
+    alert(ok ? "Fingerprint unlock is on." : "Fingerprint unlock was not turned on. " + payload);
+    if (typeof render === "function" && !$("app").classList.contains("hidden")) render();
+  }
+};
+$("l-bio").onclick = () => { try { bio.unlock(); } catch (e) { } };
+// after a PIN sign-in, offer to turn fingerprint unlock on (not again if declined, unless a fingerprint was added)
+function offerBio(pin) {
+  if (!bio) return;
+  const st = bioStatus();
+  if (st !== "none" && st !== "invalidated") return;
+  let declined = false; try { declined = localStorage.getItem("bio_declined") === "1"; } catch (e) { }
+  if (declined && st === "none") return;
+  setTimeout(() => {
+    if (confirm("Use your fingerprint to open the dashboard next time instead of typing the PIN?")) { try { localStorage.removeItem("bio_declined"); } catch (e) { } bio.enroll(pin); }
+    else { try { localStorage.setItem("bio_declined", "1"); } catch (e) { } }
+  }, 400);
+}
+window.dashBack = () => { if ($("app").classList.contains("hidden") || stack.length <= 1) return false; back(); return true; };
+
 show(localStorage.getItem(STORE) ? "login" : "setup");
+if (localStorage.getItem(STORE) && bioLoginUi() === "ready") setTimeout(() => { try { bio.unlock(); } catch (e) { } }, 300);
 // installable as its own app (separate from the Flip Relay web app): register its own tiny service worker
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("/flip-relay-web/dash-sw.js", { scope: "/flip-relay-web/dashboard.html" }).catch(() => {});
