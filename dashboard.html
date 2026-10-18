@@ -686,6 +686,40 @@ async function screenRoom({ room, label }) {
   } }));
   root.appendChild(info);
 
+  // crashes reported by this room's phone and tablets (newest first)
+  const [pc, tc] = await Promise.all([dbq(`rooms/${room}/phoneCrashes`), dbq(`rooms/${room}/tabletCrashes`)]);
+  const crashes = [];
+  for (const [k, v] of Object.entries(pc || {})) if (v && v.text) crashes.push({ key: "phoneCrashes/" + k, who: "Phone", at: v.at || Number(k) || 0, text: v.text });
+  for (const [k, v] of Object.entries(tc || {})) if (v && v.text) crashes.push({ key: "tabletCrashes/" + k, who: "Tablet" + (v.device ? " (" + v.device + ")" : ""), at: v.at || 0, text: v.text });
+  crashes.sort((a, b) => b.at - a.at);
+  const cg = group("Crashes (" + crashes.length + ")");
+  if (!crashes.length) cg.add(item({ icon: "info", title: "No crashes reported", sub: "Phone and tablet apps send a crash here the next time they start after one." }));
+  for (const c of crashes.slice(0, 30)) {
+    const first = (c.text.split("\n").find((l) => /Exception|Error/.test(l)) || c.text.split("\n")[0] || "").trim();
+    cg.add(item({ icon: "info", title: c.who + " · " + new Date(c.at).toLocaleString(), sub: first.slice(0, 140), onclick: () => {
+      const m = document.createElement("div");
+      m.style.cssText = "position:fixed;inset:0;background:var(--bg,#111);z-index:50;overflow:auto;padding:16px";
+      const pre = document.createElement("pre");
+      pre.style.cssText = "white-space:pre-wrap;word-break:break-word;font-size:12px";
+      pre.textContent = c.who + " · " + new Date(c.at).toLocaleString() + "\n\n" + c.text;
+      const close = document.createElement("button");
+      close.textContent = "Close";
+      close.onclick = () => m.remove();
+      const copy = document.createElement("button");
+      copy.textContent = "Copy";
+      copy.className = "ghost";
+      copy.onclick = () => { try { navigator.clipboard.writeText(pre.textContent); copy.textContent = "Copied"; } catch (e) { } };
+      const del = document.createElement("button");
+      del.textContent = "Delete this report";
+      del.className = "ghost";
+      del.onclick = async () => { await db("DELETE", `rooms/${room}/${c.key}`); m.remove(); render(); };
+      m.append(close, copy, del, pre);
+      document.body.appendChild(m);
+    } }));
+  }
+  if (crashes.length) cg.add(actions([{ label: "Clear all crash reports", onclick: async () => { if (!confirm("Delete all crash reports for this room?")) return; await db("DELETE", `rooms/${room}/phoneCrashes`); await db("DELETE", `rooms/${room}/tabletCrashes`); render(); } }]));
+  root.appendChild(cg);
+
   const guests = group("Guest list (" + memberEntries.length + ")");
   for (const [uid, v] of memberEntries) {
     const kind = v === roomKey ? "joined with the permanent code" : v === room ? "joined with the old room code (migration)" : "joined with a one-time code";
