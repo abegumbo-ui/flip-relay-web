@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = "";
-const ENC_CONFIG = "mNlQdWRFJggeAAVml8vHzA==.Cf8ImdHj/3rudJ1S.c7NIBGtwRfWfhkZrFwo2OPLdcdfhm+TAnMCRRbV1KZTCCCpD4Ur0debFvZmwvuMMcjLJ69Rn8z4zVbJbvLIk70rUKtviPIai2k6LYpKrNKbYSLnWadQLVWKOxLFKvnIVEskmZblGFegGGNUaLFIJBZhQXdLr7DlakaRXXBc=";
+const ENC_CONFIG = "0apwCZRxV5alIojC2155Ww==.fVLZP/k2/HDteuDg.Da9JPCGj8f2GUAdbDFIertDNzFCXo4vpIGhcFpMC0KOCHTs9bJ1FEzZoGPqRW8bIRVKgSvEtmy7tJyGKhuN/gyFTyLyvnz1r6yTgHG0twqwFkelnCq3kWngLZSbQKLDQ08bRo8PbEBVB7kpJ32D+2oG9PQqMVQCM2ZbfxP8=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -263,6 +263,8 @@ function notifyIncoming(data) {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   const number = normalizeNumber(data.sender);
   if (number && number === currentChatNumber && !document.hidden) return; // already looking at it
+  if (number && archivedStay.has(number) && archived.has(number)) return; // archived to stay archived: no notification
+  if (groupsHidden() && String(data.sender || "").startsWith("gm:")) return; // group texts hidden here
   const title = data.contactName || number || "New message";
   const body = data.imageUrl ? "📷 Picture" : (data.attachmentType === "video" ? "🎥 Video"
       : data.attachmentType === "vcard" ? "👤 Contact" : (data.body || ""));
@@ -2414,7 +2416,14 @@ async function showConversationLongPressMenu(number) {
   if (isMulti(number)) options.splice(2, 0, { label: "✏️ Rename group", value: "rename" });
   else options.push({ label: "🚫 Block/Unblock", value: "block" });
   const choice = await showActionSheet(displayName(number) || number, options);
-  if (choice === "archive") { setArchived(number, true); renderConversationList(); return; }
+  if (choice === "archive") {
+    const how = await showActionSheet("Archive", [
+      { label: "Come back when a new message arrives", value: "back" },
+      { label: "Stay archived, even for new messages", value: "stay" },
+    ]);
+    if (how) { setArchived(number, true, how === "stay"); renderConversationList(); }
+    return;
+  }
   if (choice === "rename") { const n = prompt("Name this group:", groupNames[number] || ""); if (n !== null) { setGroupName(number, n.trim()); renderConversationList(); } return; }
   if (choice === "pin") togglePinned(number);
   else if (choice === "select") enterConversationSelectionMode(number);
@@ -2675,16 +2684,20 @@ let archived = new Set();
 function archivedKey() { return "flip_relay_web_archived_" + roomId; }
 function loadArchived() {
   try { archived = new Set(JSON.parse(localStorage.getItem(archivedKey()) || "[]")); } catch (e) { archived = new Set(); }
+  try { archivedStay = new Set(JSON.parse(localStorage.getItem(archivedKey() + "_stay") || "[]")); } catch (e) { archivedStay = new Set(); }
 }
-function setArchived(number, on) {
+let archivedStay = new Set(); // archived to STAY archived: new messages do not bring them back
+function setArchived(number, on, stay) {
   if (on) archived.add(number); else archived.delete(number);
+  if (on && stay) archivedStay.add(number); else archivedStay.delete(number);
+  try { localStorage.setItem(archivedKey() + "_stay", JSON.stringify([...archivedStay])); } catch (e) { /* storage blocked */ }
   try { localStorage.setItem(archivedKey(), JSON.stringify([...archived])); } catch (e) { /* storage blocked */ }
 }
 // a new message in an archived conversation brings it back to the list
 const _origUpsertIncoming = upsertIncoming;
 upsertIncoming = function (key, data) {
   const added = _origUpsertIncoming(key, data);
-  if (added) { const last = messages[messages.length - 1]; if (last && archived.has(last.number) && Date.now() - last.timestamp < 60000) setArchived(last.number, false); }
+  if (added) { const last = messages[messages.length - 1]; if (last && archived.has(last.number) && !archivedStay.has(last.number) && Date.now() - last.timestamp < 60000) setArchived(last.number, false); }
   return added;
 };
 
