@@ -261,6 +261,13 @@ async function screenHome() {
 
   root.appendChild(group("Rooms").add(item({ icon: "folder", title: "Rooms", sub: `${rooms.length} room${rooms.length === 1 ? "" : "s"} — storage, names and details`, onclick: () => go("rooms") })));
 
+  const mig = (await db("GET", "admin/migrationOpen")) === true;
+  root.appendChild(group("Pairing").add(item({
+    icon: "shield", title: "Let old devices join with the 6-character code",
+    sub: mig ? "On: a tablet or phone paired before the 16-character code can still join. Turn it off once everyone has updated." : "Off: new devices need the 16-character code or the QR code.",
+    toggle: async (v) => { await db("PUT", "admin/migrationOpen", v); render(); }, on: mig,
+  })));
+
   const del = group("Deleting");
   del.add(item({
     icon: "trash", title: "Allow deleting",
@@ -427,8 +434,10 @@ async function storageItems(room) {
 async function screenRoom({ room, label }) {
   const root = document.createElement("div");
   const reg = (await db("GET", `registry/${room}`)) || {};
+  const memberCount = Object.keys((await db("GET", "rooms/" + room + "/members", undefined, "&shallow=true")) || {}).length;
   const info = group("Phone");
   info.add(item({ icon: "phone", title: reg.model || "Phone", sub: [reg.phoneNumber ? "number " + reg.phoneNumber : "number unknown", "pairing code " + room, "last seen " + ago(reg.lastSeen)].join(" · "), pill: reg.approved === true ? "approved" : "waiting", warn: reg.approved !== true }));
+  info.add(item({ icon: "shield", title: "Devices on the guest list", sub: memberCount + " (each phone, tablet or web page that joined this room with its own sign-in)" }));
   root.appendChild(info);
 
   const stats = group("What is stored");
