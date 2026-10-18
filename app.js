@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = "";
-const ENC_CONFIG = "2YmSDLhRBA1x589Q8lnACA==.NUiPh6y71TLSQqp3.7Z+jDTKcuTRNDIQjDkCGarv5S5zCEOQTGWvQTDih5qkyZlbJNsUP+6LeInfeipyQXuedUeQfKny1YDR4lhIs1R4vEtz+yF1KhkYkMRK9fe650IDUq70x07dblHVEjzbvwEi3IPuQQcJNawStLpYrhPB8+4if+pK5bI1pVP4=";
+const ENC_CONFIG = "nXiSoVTCZgf2KpRZxDa+zA==.BotG/Ecbv3eEnnKF.GUbxszaMuKw8Kn5I3ujC23OPnEo0ohQayOS79EY93uW7Bp35tYc+EzJZbRWY0Z1h4YZYqzI1AX9P9XOp6rKd5TGzGufGyW2+qJyAqlcPhr0APUK3JUSk9lEpHB2AQ1YboAi7u0YKY1PxhINtd0uK75MZ+atsQbWKfb1JZQM=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -861,7 +861,50 @@ function setPendingAttachment(file, kind, name) {
   el("attachment-preview").classList.remove("hidden");
 }
 
-function onConnectClick() {
+// ---------- the long pairing key (16 characters): typed instead of the short code; picked up quietly for existing rooms ----------
+async function sha256Hex16(text) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(d)).slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function rootRead(path) {
+  const r = await fetch(`${DATABASE_URL}/${path}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`);
+  if (!r.ok) return null;
+  return r.json();
+}
+function roomKeyStore(room) { return "flip_relay_web_roomkey_" + room; }
+// Typed text -> { room, key }: "FR1:ROOM:KEY", a 16-character key (dashes and spaces allowed), or a short code
+function parsePairingText(raw) {
+  const s = (raw || "").trim().toUpperCase();
+  if (s.startsWith("FR1:")) { const p = s.split(":"); if (p.length >= 3) return { room: p[1], key: p[2].replace(/-/g, "") }; }
+  const compact = s.replace(/[-\s]/g, "");
+  return compact.length === 16 ? { room: null, key: compact } : { room: compact, key: null };
+}
+async function resolvePairing(raw) {
+  const p = parsePairingText(raw);
+  if (!p.key) return p.room ? p.room : null;
+  const room = p.room || await rootRead("keyIndex/" + await sha256Hex16(p.key));
+  if (!room) return null;
+  const stored = await rootRead("roomKeys/" + room);
+  if (typeof stored !== "string" || stored.toUpperCase() !== p.key) return null;
+  try { localStorage.setItem(roomKeyStore(room), p.key); } catch (e) { /* storage blocked */ }
+  return room;
+}
+async function fetchRoomKeyQuietly() {
+  try {
+    if (!roomId || localStorage.getItem(roomKeyStore(roomId))) return;
+    const k = await rootRead("roomKeys/" + roomId);
+    if (typeof k === "string" && k.length === 16) localStorage.setItem(roomKeyStore(roomId), k);
+  } catch (e) { /* later */ }
+}
+
+async function onConnectClick() {
+  const typed = el("code-input").value;
+  if (/[-:\s]/.test(typed.trim()) || typed.trim().replace(/[-\s]/g, "").length === 16) {
+    el("pairing-error").textContent = "Checking the code...";
+    const room = await resolvePairing(typed);
+    if (!room) { el("pairing-error").textContent = "That 16-character code is not right. Check it against the flip phone's Pairing Code screen."; return; }
+    el("code-input").value = room;
+  }
   const code = el("code-input").value.trim().toUpperCase();
   if (code.length < 4) {
     el("pairing-error").textContent = "That doesn't look like a full code.";
@@ -900,6 +943,7 @@ async function connectToRoom(code, persist) {
     loadGroupNames();
     loadArchived();
     checkDeviceApproval();
+    fetchRoomKeyQuietly();
     if (incomingSnapshot && typeof incomingSnapshot === "object") {
       for (const key of Object.keys(incomingSnapshot)) upsertIncoming(key, incomingSnapshot[key]);
     }
@@ -1079,7 +1123,8 @@ window.addEventListener("resize", () => { if (storedLayout() === "auto") { apply
 // ---------- Firebase streaming ----------
 
 function roomUrl(path) {
-  return `${DATABASE_URL}/rooms/${roomId}/${path}.json`;
+  // the database only lets joined devices (or the admin key) into a room, so every room request carries the key this page already holds
+  return `${DATABASE_URL}/rooms/${roomId}/${path}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`;
 }
 
 function startStreams() {
