@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = "";
-const ENC_CONFIG = "zo//c+06cj+q141zyMXhEQ==.i+qZAcRr040jJTbu.xV7sPgmI4NIrYvS3mApV3y6muIDip7ciCn/z9UFkq5z0d7kOC1lQH/12VNzlFfPAjJ3GvV+j6w7uiLBh2dONeNZK/nED9lzK2VDj9GwsfT2XbzT4GQzoP8lPQE3FrBRs5fWjT0gPusiTetW0Uxg/WQCG9rL0jkFcDrWMG18=";
+const ENC_CONFIG = "vhgEPUWzaj1jZNkn4QP1vw==.oxl90Ux85s9+0N0b.c4eb3tNvCeDYVdnaqvFn9x4+PwBsiNcs7YkolHcWAy02Ss3hq73ILKHBFlcu5oyOe8LSNtk/xdMcCefjnOjwczYcQdYsfSNGEZIc3Q7W7yzz3cCS575GbhKuaPhej585o4GQYguMs91MWfW7Zbupos6/7mmtNKGJpT4IKNQ=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -2564,6 +2564,33 @@ async function lockGate() {
   }
 }
 
+// ---- Theme: System / Light / Dark (applies to the Google layouts; Classic is always dark) ----------------------------------------
+const THEME_KEY = "flip_relay_theme";
+function themeMode() {
+  try { const t = localStorage.getItem(THEME_KEY); return t === "light" || t === "dark" ? t : "system"; } catch (e) { return "system"; }
+}
+function applyTheme() {
+  const m = themeMode();
+  document.body.classList.toggle("theme-light", m === "light");
+  document.body.classList.toggle("theme-dark", m === "dark");
+}
+function addThemeSettingsButton() {
+  const anchor = document.getElementById("disconnect-btn");
+  if (!anchor || document.getElementById("theme-btn")) return;
+  const b = document.createElement("button");
+  b.id = "theme-btn";
+  b.className = "settings-row";
+  anchor.parentNode.insertBefore(b, anchor);
+  const label = () => { const m = themeMode(); b.textContent = "Theme: " + (m === "light" ? "Light" : m === "dark" ? "Dark" : "System default") + " (tap to change)"; };
+  label();
+  b.addEventListener("click", () => {
+    const next = { system: "light", light: "dark", dark: "system" }[themeMode()];
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+    applyTheme();
+    label();
+  });
+}
+
 // Settings button: set / change / remove the code (the current code is needed to change or remove it).
 function addLockSettingsButton() {
   const anchor = document.getElementById("disconnect-btn");
@@ -2591,5 +2618,5 @@ function addLockSettingsButton() {
   });
 }
 
-configGate().then(lockGate).then(() => { init(); addLockSettingsButton(); });
+configGate().then(lockGate).then(() => { init(); applyTheme(); addLockSettingsButton(); addThemeSettingsButton(); });
 

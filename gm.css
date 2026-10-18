@@ -36,6 +36,16 @@ body.gm {
   }
 }
 
+/* Theme setting (Settings > Theme): Light / Dark force the palette whatever the system says; System follows the system. */
+body.gm.theme-light {
+  --gm-page: #e4e4e7; --gm-card: #f1f1f3; --gm-card-low: #f9f9ff; --gm-high: #ededf3; --gm-ink: #1a1b20; --gm-soft: #45464f;
+  --gm-blue: #0b57d0; --gm-sel: #dae2ff; --gm-sent: #d9e2ff; --gm-recv: #ededf3; --gm-mic: #efdbff; --gm-red: #b3261e;
+}
+body.gm.theme-dark {
+  --gm-page: #111318; --gm-card: #1b1d23; --gm-card-low: #1e2027; --gm-high: #272a32; --gm-ink: #e3e3ea; --gm-soft: #c4c6d0;
+  --gm-blue: #a8c7fa; --gm-sel: #2f4378; --gm-sent: #2f4378; --gm-recv: #2b2e37; --gm-mic: #4f378b; --gm-red: #f2b8b5;
+}
+
 /* ---------- shared bits ---------- */
 body.gm .topbar { background: transparent; border: none; color: var(--gm-ink); padding: 8px 16px; min-height: 64px; }
 body.gm .topbar h2 { font-weight: 400; font-size: 22px; }
