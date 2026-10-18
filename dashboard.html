@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Message+ dashboard</title>
 <style>
-  :root { --page:#e4e4e7; --card:#f1f1f3; --ink:#1a1b20; --soft:#45464f; --blue:#0b57d0; --red:#b3261e; --high:#ededf3; --line:rgba(128,128,128,.22); --onblue:#fff; }
-  @media (prefers-color-scheme: dark) { :root { --page:#111318; --card:#1b1d23; --ink:#e3e3ea; --soft:#c4c6d0; --blue:#a8c7fa; --red:#f2b8b5; --high:#272a32; --onblue:#062e6f; } }
+  :root { --page:#e4e4e7; --card:#f1f1f3; --ink:#1a1b20; --soft:#45464f; --blue:#0b57d0; --red:#b3261e; --green:#146c2e; --amber:#8a5a00; --high:#ededf3; --line:rgba(128,128,128,.22); --onblue:#fff; --okbg:#d8f1de; --warnbg:#fde7c7; --badbg:#f9d9d6; }
+  @media (prefers-color-scheme: dark) { :root { --page:#111318; --card:#1b1d23; --ink:#e3e3ea; --soft:#c4c6d0; --blue:#a8c7fa; --red:#f2b8b5; --green:#7fd99a; --amber:#f5c26b; --high:#272a32; --onblue:#062e6f; --okbg:#173a22; --warnbg:#3d2e0d; --badbg:#4a1f1b; } }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--page); color:var(--ink); font-family: Roboto, "Segoe UI", system-ui, sans-serif; }
-  main { max-width: 720px; margin: 0 auto; padding: 8px 12px 40px; }
+  main { max-width: 760px; margin: 0 auto; padding: 8px 12px 48px; }
   h1 { font-weight:400; font-size: 28px; margin: 18px 8px 6px; }
   .top { display:flex; align-items:center; gap:6px; padding:14px 0 6px; }
   .top h1 { margin:0 0 0 4px; font-size:24px; }
-  .back { width:44px; height:44px; border-radius:50%; background:transparent; padding:0; display:flex; align-items:center; justify-content:center; color:var(--ink); }
+  .back { width:44px; height:44px; border-radius:50%; background:transparent; padding:0; display:flex; align-items:center; justify-content:center; }
   .back svg { width:24px; height:24px; fill:var(--ink); }
   h3 { font-size:14px; font-weight:500; color:var(--blue); margin:22px 16px 8px; }
   .group { background:var(--card); border-radius:26px; overflow:hidden; }
@@ -27,7 +27,7 @@
   .chev { width:20px; height:20px; fill:var(--soft); flex:none; }
   .actions { display:flex; gap:8px; flex-wrap:wrap; padding:0 20px 16px 60px; }
   .danger-t .tt { color:var(--red); }
-  input, button, select { font: inherit; }
+  input, button, select, textarea { font: inherit; }
   input[type=text], input[type=password], input[type=number] { width:100%; padding:14px 16px; border:none; border-radius:16px; background:var(--high); color:var(--ink); margin-bottom:10px; }
   button { border:none; border-radius:22px; padding:10px 20px; background:var(--blue); color:var(--onblue); cursor:pointer; }
   button.ghost { background:var(--high); color:var(--ink); }
@@ -40,6 +40,11 @@
   .hidden { display:none !important; }
   .pill { display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; background:var(--high); margin-left:8px; vertical-align:middle; }
   .pill.warn { background:var(--red); color:#fff; }
+  .chip { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; margin:4px 6px 0 0; }
+  .chip.ok { background:var(--okbg); color:var(--green); }
+  .chip.warn { background:var(--warnbg); color:var(--amber); }
+  .chip.bad { background:var(--badbg); color:var(--red); }
+  .chip.grey { background:var(--high); color:var(--soft); }
   .bar { height:8px; border-radius:6px; background:var(--high); overflow:hidden; margin-top:8px; }
   .bar > div { height:100%; background:var(--blue); }
   .sw { width:52px; height:32px; border-radius:16px; background:var(--high); border:2px solid var(--soft); position:relative; flex:none; transition:.15s; }
@@ -48,11 +53,17 @@
   .sw.on::after { left:26px; top:4px; width:24px; height:24px; margin-top:-2px; background:var(--onblue); }
   .big { font-size:30px; margin:2px 0; }
   select { padding:12px; border-radius:16px; border:none; background:var(--high); color:var(--ink); margin-bottom:10px; }
+  .mono { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing:.08em; }
+  .codebig { font-size:30px; text-align:center; margin:10px 0; }
+  .qrbox { display:flex; justify-content:center; padding:12px; }
+  .qrbox canvas { background:#fff; padding:10px; border-radius:12px; image-rendering:pixelated; width:260px; height:260px; }
+  textarea { width:100%; min-height:140px; border:none; border-radius:16px; background:var(--high); color:var(--ink); padding:12px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size:12px; }
+  .skeleton { opacity:.55; }
+  .row2 { display:flex; gap:8px; flex-wrap:wrap; padding:12px 20px 16px; }
 </style>
 </head>
 <body>
 <main>
-  <!-- first run: connect, and choose a PIN. The Firebase secret is stored only in THIS browser, encrypted with the PIN. -->
   <div id="setup" class="card hidden">
     <h2>First time: connect and choose a PIN</h2>
     <p class="meta">Where to find these: console.firebase.google.com → your project → Build → Realtime Database (the address is at the top of the Data tab, like https://something-default-rtdb.firebaseio.com). The secret: gear icon → Project settings → Service accounts → Database secrets → Show.</p>
@@ -83,6 +94,174 @@
 </main>
 
 <script>
+// A small QR code generator (byte mode, error correction level M, versions 1 to 6). qrEncode(text) returns an array of rows of booleans (true = dark) or null.
+const QR = (() => {
+  const ECC_PER_BLOCK = [0, 10, 16, 26, 18, 24, 16];
+  const NUM_BLOCKS = [0, 1, 1, 1, 2, 2, 4];
+  const DATA_CODEWORDS = [0, 16, 28, 44, 64, 86, 108];
+
+  function multiply(x, y) {
+    let z = 0;
+    for (let i = 7; i >= 0; i--) {
+      z = (z << 1) ^ ((z >>> 7) * 0x11d);
+      z ^= ((y >>> i) & 1) * x;
+    }
+    return z & 0xff;
+  }
+  function rsDivisor(degree) {
+    const result = new Array(degree).fill(0);
+    result[degree - 1] = 1;
+    let root = 1;
+    for (let i = 0; i < degree; i++) {
+      for (let j = 0; j < result.length; j++) {
+        result[j] = multiply(result[j], root);
+        if (j + 1 < result.length) result[j] ^= result[j + 1];
+      }
+      root = multiply(root, 0x02);
+    }
+    return result;
+  }
+  function rsRemainder(data, divisor) {
+    const result = new Array(divisor.length).fill(0);
+    for (const b of data) {
+      const factor = (b ^ result.shift()) & 0xff;
+      result.push(0);
+      for (let i = 0; i < result.length; i++) result[i] ^= multiply(divisor[i], factor);
+    }
+    return result;
+  }
+  function rawCodewords(version) {
+    let result = (16 * version + 128) * version + 64;
+    if (version >= 2) {
+      const numAlign = Math.floor(version / 7) + 2;
+      result -= (25 * numAlign - 10) * numAlign - 55;
+    }
+    return Math.floor(result / 8);
+  }
+  function addEccAndInterleave(version, data) {
+    const numBlocks = NUM_BLOCKS[version], eccLen = ECC_PER_BLOCK[version];
+    const raw = rawCodewords(version);
+    const numShort = numBlocks - (raw % numBlocks);
+    const shortLen = Math.floor(raw / numBlocks);
+    const blocks = [];
+    const div = rsDivisor(eccLen);
+    let k = 0;
+    for (let i = 0; i < numBlocks; i++) {
+      const dataLen = shortLen - eccLen + (i < numShort ? 0 : 1);
+      const dat = data.slice(k, k + dataLen);
+      k += dataLen;
+      const ecc = rsRemainder(dat, div);
+      if (i < numShort) dat.push(0);
+      blocks.push(dat.concat(ecc));
+    }
+    const result = [];
+    for (let i = 0; i < blocks[0].length; i++) {
+      for (let j = 0; j < blocks.length; j++) {
+        if (i !== shortLen - eccLen || j >= numShort) result.push(blocks[j][i]);
+      }
+    }
+    return result;
+  }
+
+  function build(version, data) {
+    const size = version * 4 + 17;
+    const modules = Array.from({ length: size }, () => new Array(size).fill(false));
+    const isFn = Array.from({ length: size }, () => new Array(size).fill(false));
+    const setFn = (x, y, dark) => { modules[y][x] = dark; isFn[y][x] = true; };
+    for (let i = 0; i < size; i++) { setFn(6, i, i % 2 === 0); setFn(i, 6, i % 2 === 0); }
+    const finder = (cx, cy) => {
+      for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+        const dist = Math.max(Math.abs(dx), Math.abs(dy));
+        const x = cx + dx, y = cy + dy;
+        if (x >= 0 && x < size && y >= 0 && y < size) setFn(x, y, dist !== 2 && dist !== 4);
+      }
+    };
+    finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+    const align = version === 1 ? [] : [6, [0, 0, 18, 22, 26, 30, 34][version]];
+    for (let i = 0; i < align.length; i++) for (let j = 0; j < align.length; j++) {
+      if ((i === 0 && j === 0) || (i === 0 && j === align.length - 1) || (i === align.length - 1 && j === 0)) continue;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) setFn(align[i] + dx, align[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }
+    const drawFormat = (mask) => {
+      const d = (0 << 3) | mask;
+      let rem = d;
+      for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+      const bits = ((d << 10) | rem) ^ 0x5412;
+      const bit = (i) => ((bits >>> i) & 1) !== 0;
+      for (let i = 0; i <= 5; i++) setFn(8, i, bit(i));
+      setFn(8, 7, bit(6)); setFn(8, 8, bit(7)); setFn(7, 8, bit(8));
+      for (let i = 9; i < 15; i++) setFn(14 - i, 8, bit(i));
+      for (let i = 0; i < 8; i++) setFn(size - 1 - i, 8, bit(i));
+      for (let i = 8; i < 15; i++) setFn(8, size - 15 + i, bit(i));
+      setFn(8, size - 8, true);
+    };
+    drawFormat(0);
+    const all = addEccAndInterleave(version, data);
+    let bi = 0;
+    for (let right = size - 1; right >= 1; right -= 2) {
+      if (right === 6) right = 5;
+      for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
+        const x = right - j;
+        const upward = ((right + 1) & 2) === 0;
+        const y = upward ? size - 1 - vert : vert;
+        if (!isFn[y][x] && bi < all.length * 8) { modules[y][x] = ((all[bi >>> 3] >>> (7 - (bi & 7))) & 1) !== 0; bi++; }
+      }
+    }
+    const applyMask = (mask) => {
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        let inv;
+        switch (mask) {
+          case 0: inv = (x + y) % 2 === 0; break;
+          case 1: inv = y % 2 === 0; break;
+          case 2: inv = x % 3 === 0; break;
+          case 3: inv = (x + y) % 3 === 0; break;
+          case 4: inv = (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; break;
+          case 5: inv = ((x * y) % 2) + ((x * y) % 3) === 0; break;
+          case 6: inv = (((x * y) % 2) + ((x * y) % 3)) % 2 === 0; break;
+          default: inv = (((x + y) % 2) + ((x * y) % 3)) % 2 === 0;
+        }
+        if (!isFn[y][x] && inv) modules[y][x] = !modules[y][x];
+      }
+    };
+    const penalty = () => {
+      let r = 0;
+      for (let y = 0; y < size; y++) { let run = 1; for (let x = 1; x < size; x++) { if (modules[y][x] === modules[y][x - 1]) { run++; if (run === 5) r += 3; else if (run > 5) r++; } else run = 1; } }
+      for (let x = 0; x < size; x++) { let run = 1; for (let y = 1; y < size; y++) { if (modules[y][x] === modules[y - 1][x]) { run++; if (run === 5) r += 3; else if (run > 5) r++; } else run = 1; } }
+      for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) { const c = modules[y][x]; if (c === modules[y][x + 1] && c === modules[y + 1][x] && c === modules[y + 1][x + 1]) r += 3; }
+      let dark = 0; for (const row of modules) for (const m of row) if (m) dark++;
+      const total = size * size;
+      r += Math.floor(Math.abs(dark * 20 - total * 10) / total) * 10;
+      return r;
+    };
+    let best = 0, bestP = Infinity;
+    for (let m = 0; m < 8; m++) { applyMask(m); drawFormat(m); const p = penalty(); if (p < bestP) { bestP = p; best = m; } applyMask(m); }
+    applyMask(best); drawFormat(best);
+    return modules;
+  }
+
+  function encode(text) {
+    const bytes = Array.from(new TextEncoder().encode(text));
+    let version = 0;
+    for (let v = 1; v <= 6; v++) if (4 + 8 + bytes.length * 8 <= DATA_CODEWORDS[v] * 8) { version = v; break; }
+    if (!version) return null;
+    const cap = DATA_CODEWORDS[version] * 8;
+    const bits = [];
+    const push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+    push(0x4, 4); push(bytes.length, 8); for (const b of bytes) push(b, 8);
+    push(0, Math.min(4, cap - bits.length));
+    push(0, (8 - (bits.length % 8)) % 8);
+    for (let pad = 0xec; bits.length < cap; pad ^= 0xec ^ 0x11) push(pad, 8);
+    const data = new Array(bits.length / 8).fill(0);
+    bits.forEach((b, i) => { data[i >>> 3] |= b << (7 - (i & 7)); });
+    return build(version, data);
+  }
+  return { encode };
+})();
+if (typeof module !== "undefined") module.exports = QR;
+
+const RULES_CURRENT = {"rules": {".read": false, ".write": false, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (root.child('admin/migrationOpen').val() === true && newData.val() === $roomId) || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}}};
+const STORAGE_RULES = "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /attachments/{room}/{allPaths=**} {\n      allow get: if true;\n      allow list: if false;\n      allow create: if request.resource.size < 64 * 1024 * 1024;\n      allow delete: if true;\n    }\n  }\n}\n";
+
 const $ = (id) => document.getElementById(id);
 const STORE = "msgplus_dashboard_v1";
 let cfg = null; // { url, secret } once unlocked
@@ -114,6 +293,7 @@ async function db(method, path, body, extra) {
   if (!r.ok) throw new Error("Firebase said " + r.status);
   return r.json();
 }
+const dbq = (path, extra) => db("GET", path, undefined, extra).catch(() => null); // a read that never throws (a missing or refused node is just empty)
 const BUCKET = "flip-relay.firebasestorage.app";
 async function storageBytes(room) {
   let total = 0, token = null, files = 0;
@@ -140,8 +320,14 @@ async function storageDelete(room) {
 
 const mb = (n) => (n / 1048576).toFixed(n > 10485760 ? 0 : 1) + " MB";
 const ago = (ms) => { if (!ms) return "never"; const s = (Date.now() - ms) / 1000; return s < 90 ? "just now" : s < 5400 ? Math.round(s / 60) + " min ago" : s < 172800 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago"; };
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-// ---------- small UI helpers (the same look as the app's settings) ----------
+// ---------- a little cache, so a screen shows at once and refreshes in the background ----------
+const CACHE_KEY = "dash_cache_v2";
+function cget(k) { try { return (JSON.parse(localStorage.getItem(CACHE_KEY) || "{}"))[k] || null; } catch (e) { return null; } }
+function cset(k, v) { try { const all = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}"); all[k] = { at: Date.now(), v }; localStorage.setItem(CACHE_KEY, JSON.stringify(all)); } catch (e) { /* storage full or blocked */ } }
+
+// ---------- UI pieces (the same look as the app's settings) ----------
 const ICON = {
   phone: "M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z",
   tablet: "M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 1.99-.9 1.99-2L23 6c0-1.1-.9-2-2-2zm-2 14H5V6h14v12z",
@@ -152,12 +338,14 @@ const ICON = {
   clock: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z",
   edit: "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
   out: "M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z",
-  refresh: "M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z",
   info: "M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z",
+  qr: "M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2zM17 17h2v2h-2zM19 19h2v2h-2z",
+  key: "M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z",
+  list: "M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z",
+  cloud: "M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z",
 };
 const CHEV = "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z";
 const svg = (d, cls) => `<svg class="${cls || "ic"}" viewBox="0 0 24 24"><path d="${d}"/></svg>`;
-const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 function group(title) {
   const wrap = document.createElement("div");
@@ -166,14 +354,14 @@ function group(title) {
   g.className = "group";
   wrap.appendChild(g);
   wrap.add = (el) => { if (el) g.appendChild(el); return wrap; };
-  wrap.empty = () => !g.children.length;
   return wrap;
 }
-function item({ icon, title, sub, pill, warn, onclick, toggle, on, danger }) {
+function item({ icon, title, sub, pill, warn, onclick, toggle, on, danger, chips }) {
   const el = document.createElement("div");
   el.className = "item" + (onclick || toggle ? "" : " static") + (danger ? " danger-t" : "");
+  const chipHtml = (chips || []).map((c) => `<span class="chip ${c[1]}">${esc(c[0])}</span>`).join("");
   el.innerHTML = (icon ? svg(ICON[icon]) : "") +
-    `<div class="tx"><div class="tt">${esc(title)}${pill ? `<span class="pill${warn ? " warn" : ""}">${esc(pill)}</span>` : ""}</div>${sub ? `<div class="st">${esc(sub)}</div>` : ""}</div>` +
+    `<div class="tx"><div class="tt">${esc(title)}${pill ? `<span class="pill${warn ? " warn" : ""}">${esc(pill)}</span>` : ""}</div>${sub ? `<div class="st">${esc(sub)}</div>` : ""}${chipHtml ? `<div>${chipHtml}</div>` : ""}</div>` +
     (toggle ? `<div class="sw${on ? " on" : ""}"></div>` : onclick ? svg(CHEV, "chev") : "");
   if (toggle) el.onclick = () => toggle(!on);
   else if (onclick) el.onclick = onclick;
@@ -182,91 +370,137 @@ function item({ icon, title, sub, pill, warn, onclick, toggle, on, danger }) {
 function actions(buttons) {
   const el = document.createElement("div");
   el.className = "actions";
-  for (const b of buttons) {
-    const x = document.createElement("button");
-    x.textContent = b.label;
-    if (b.cls) x.className = b.cls;
-    x.onclick = b.onclick;
-    el.appendChild(x);
-  }
+  for (const b of buttons) { const x = document.createElement("button"); x.textContent = b.label; if (b.cls) x.className = b.cls; x.onclick = b.onclick; el.appendChild(x); }
   return el;
 }
+function card(title) { const c = document.createElement("div"); c.className = "card"; c.innerHTML = title ? `<h2>${esc(title)}</h2>` : ""; return c; }
+function note(text) { const d = document.createElement("div"); d.className = "meta"; d.style.padding = "4px 16px 0"; d.textContent = text; return d; }
+function empty(text) { return Object.assign(document.createElement("div"), { className: "pad meta", textContent: text }); }
 
-// ---------- navigation: a stack of screens, like the settings of the app ----------
+// ---------- navigation ----------
 const stack = [];
-const TITLES = { phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", cleanup: "Daily cleanup", pin: "Change PIN" };
+let leave = []; // cleanups of the screen being left (timers, codes shown)
+const TITLES = { phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", cleanup: "Daily cleanup", pin: "Change PIN", pair: "Pair a new device", rules: "Database rules", retire: "Retire the old secret", storage: "Picture and video files" };
 function go(name, arg) { stack.push({ name, arg }); render(); }
 function back() { if (stack.length > 1) stack.pop(); render(); }
 $("back").onclick = back;
 
 let busy = 0;
 async function render() {
+  for (const f of leave) { try { f(); } catch (e) { /* ignore */ } }
+  leave = [];
   const cur = stack[stack.length - 1] || { name: "home" };
   const mine = ++busy;
   $("topbar").classList.toggle("hidden", cur.name === "home");
   $("title").textContent = cur.name === "room" ? cur.arg.label : (TITLES[cur.name] || "");
   const view = $("view");
-  view.innerHTML = '<div class="pad meta">Loading...</div>';
+  const cached = cur.name === "home" ? cget("home") : null;
+  const fn = { home: screenHome, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, cleanup: screenCleanup, pin: screenPin, pair: screenPair, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
+  if (cached && cached.html) { view.innerHTML = cached.html; view.classList.add("skeleton"); } else view.innerHTML = '<div class="pad meta">Loading...</div>';
   try {
-    const fn = { home: screenHome, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, cleanup: screenCleanup, pin: screenPin }[cur.name];
     const out = await fn(cur.arg, () => mine === busy);
     if (mine !== busy || !out) return;
+    view.classList.remove("skeleton");
     view.innerHTML = "";
     view.appendChild(out);
+    if (cur.name === "home") cset("home", { html: view.innerHTML });
   } catch (e) {
-    if (mine === busy) view.innerHTML = `<div class="pad err">Could not load: ${esc(e.message)} — is the secret right?</div>`;
+    if (mine === busy) { view.classList.remove("skeleton"); view.innerHTML = `<div class="pad err">Could not load: ${esc(e.message)} — is the secret right?</div>`; }
   }
 }
 
-// ---------- preferences ----------
+// ---------- preferences + shared reads ----------
 const allowDelete = () => localStorage.getItem("dash_allow_delete") !== "0";
-async function registry() { return { reg: (await db("GET", "registry")) || {}, names: (await db("GET", "admin/roomNames")) || {} }; }
+async function registry() {
+  const [reg, names] = await Promise.all([dbq("registry"), dbq("admin/roomNames")]);
+  return { reg: reg || {}, names: names || {} };
+}
 const tabletApprovalOn = (reg) => Object.values(reg).some((r) => r && r.requireTabletApproval === true);
 const countWaiting = (reg) => {
   let phones = 0, tablets = 0;
   for (const r of Object.values(reg)) { if (!r) continue; if (r.approved !== true) phones++; for (const t of Object.values(r.tablets || {})) if (t.approved !== true) tablets++; }
   return { phones, tablets };
 };
+function detectRules(r) {
+  try {
+    const rooms = r.rules.rooms.$roomId;
+    if (rooms[".read"] === true) return "open";
+    const w = rooms.members.$uid[".write"];
+    if (w.includes("pairCodes")) return "current";
+    if (w.includes("migrationOpen")) return "previous";
+    return "custom";
+  } catch (e) { return "custom"; }
+}
+async function readRules() {
+  try {
+    const r = await fetch(`${cfg.url.replace(/\/$/, "")}/.settings/rules.json?auth=${encodeURIComponent(cfg.secret)}`);
+    if (!r.ok) return null;
+    const text = await r.text();
+    return { text, json: JSON.parse(text) };
+  } catch (e) { return null; }
+}
+async function roomsLocked(anyRoom) { // from this browser, with no sign-in at all: does a room open?
+  if (!anyRoom) return null;
+  try { const r = await fetch(`${cfg.url.replace(/\/$/, "")}/rooms/${anyRoom}/messages/incoming.json?shallow=true&limitToFirst=1`); return r.status === 401 || r.status === 403; } catch (e) { return null; }
+}
+const fp16 = async (t) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(t)))).slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
+
+// per-room facts shown in several places
+function roomFacts(room, reg, names, members) {
+  const r = reg[room] || {};
+  const tablets = Object.values(r.tablets || {});
+  const phoneNew = !!(r.lastSeen && r.createdAt && r.lastSeen - r.createdAt > 120000); // an old build never updates its check-in
+  const phoneSeen = r.lastSeen ? Date.now() - r.lastSeen : null;
+  return { room, name: names[room] || room, r, tablets, members, phoneNew, phoneSeen, model: r.model || "", number: r.phoneNumber || "" };
+}
 
 // ---------- home ----------
 async function screenHome() {
-  const { reg, names } = await registry();
-  const rooms = Object.keys((await db("GET", "rooms", undefined, "&shallow=true")) || {});
+  const [{ reg, names }, roomList, live, days, migration, rulesNow] = await Promise.all([
+    registry(), dbq("rooms", "&shallow=true"), dbq("admin/cleanupLive"), dbq("admin/cleanupDays"), dbq("admin/migrationOpen"), readRules(),
+  ]);
+  const rooms = Object.keys(roomList || {});
+  const locked = await roomsLocked(rooms[0]);
   const approveOn = tabletApprovalOn(reg);
   const w = countWaiting(reg);
   const phoneN = Object.keys(reg).length;
   const tabletN = Object.values(reg).reduce((a, r) => a + Object.keys((r && r.tablets) || {}).length, 0);
-  const live = (await db("GET", "admin/cleanupLive")) === true;
-  const days = (await db("GET", "admin/cleanupDays")) || 14;
+  const rs = rulesNow ? detectRules(rulesNow.json) : null;
   const root = document.createElement("div");
   const head = document.createElement("h1");
   head.textContent = "Message+ dashboard";
   root.appendChild(head);
+
+  // ---- security at a glance
+  const sec = group("Security at a glance");
+  sec.add(item({ icon: "lock", title: "Rooms are locked to strangers", sub: locked === null ? "Could not check from this browser" : locked ? "Someone with only a pairing code gets nothing" : "A room opens without any sign-in: anyone with a pairing code can read it. Open Database rules to fix this.",
+    chips: [[locked === null ? "unknown" : locked ? "locked" : "OPEN", locked === null ? "grey" : locked ? "ok" : "bad"]], onclick: () => go("rules") }));
+  sec.add(item({ icon: "list", title: "Database rules", sub: rs === "current" ? "Current rules are in place (with 10-minute pairing codes)" : rs === "previous" ? "Older protective rules are in place; the newest adds 10-minute codes" : rs === "open" ? "The old open rules are still in place" : rs === null ? "Could not read the rules from here" : "Custom rules",
+    chips: [[rs === "current" ? "up to date" : rs === "previous" ? "update available" : rs === "open" ? "not protected" : "custom", rs === "current" ? "ok" : rs === "previous" ? "warn" : rs === "open" ? "bad" : "grey"]], onclick: () => go("rules") }));
+  sec.add(item({ icon: "key", title: "Retire the old secret", sub: "A checklist that shows whether his phone and tablet have moved over", onclick: () => go("retire") }));
+  root.appendChild(sec);
 
   const dev = group("Devices");
   dev.add(item({ icon: "phone", title: "Phones", sub: `${phoneN} paired`, pill: w.phones ? w.phones + " waiting" : "", warn: true, onclick: () => go("phones") }));
   if (approveOn) dev.add(item({ icon: "tablet", title: "Tablets", sub: `${tabletN} listed`, pill: w.tablets ? w.tablets + " waiting" : "", warn: true, onclick: () => go("tablets") }));
   root.appendChild(dev);
 
-  root.appendChild(group("Approvals").add(item({
+  const pairG = group("Pairing");
+  pairG.add(item({ icon: "qr", title: "Pair a new device", sub: "Makes a QR code and a 12-character code that work once, for 10 minutes", onclick: () => go("pair") }));
+  pairG.add(item({
+    icon: "shield", title: "Let old devices join with the 6-character code",
+    sub: migration === true ? "On: a tablet or phone paired before the 16-character code can still join. Turn it off once everyone has updated." : "Off: new devices need a code from the phone or from here.",
+    toggle: async (v) => { await db("PUT", "admin/migrationOpen", v); render(); }, on: migration === true,
+  }));
+  pairG.add(item({
     icon: "shield", title: "Approve new tablets",
     sub: approveOn ? "On: a tablet or web page that joins waits for your Approve" : "Off: tablets join on their own and are not listed",
-    toggle: async (v) => {
-      const codes = Object.keys(reg);
-      for (const c of codes) await db("PATCH", `registry/${c}`, { requireTabletApproval: v });
-      await db("PUT", "admin/approveTablets", v);
-      render();
-    }, on: approveOn,
-  })));
+    toggle: async (v) => { for (const c of Object.keys(reg)) await db("PATCH", `registry/${c}`, { requireTabletApproval: v }); await db("PUT", "admin/approveTablets", v); render(); }, on: approveOn,
+  }));
+  root.appendChild(pairG);
 
-  root.appendChild(group("Rooms").add(item({ icon: "folder", title: "Rooms", sub: `${rooms.length} room${rooms.length === 1 ? "" : "s"} — storage, names and details`, onclick: () => go("rooms") })));
-
-  const mig = (await db("GET", "admin/migrationOpen")) === true;
-  root.appendChild(group("Pairing").add(item({
-    icon: "shield", title: "Let old devices join with the 6-character code",
-    sub: mig ? "On: a tablet or phone paired before the 16-character code can still join. Turn it off once everyone has updated." : "Off: new devices need the 16-character code or the QR code.",
-    toggle: async (v) => { await db("PUT", "admin/migrationOpen", v); render(); }, on: mig,
-  })));
+  root.appendChild(group("Rooms").add(item({ icon: "folder", title: "Rooms", sub: `${rooms.length} room${rooms.length === 1 ? "" : "s"} — guest list, devices, storage`, onclick: () => go("rooms") }))
+    .add(item({ icon: "cloud", title: "Picture and video files", sub: "Who can list the files, and the rules to lock that", onclick: () => go("storage") })));
 
   const del = group("Deleting");
   del.add(item({
@@ -279,13 +513,13 @@ async function screenHome() {
       render();
     }, on: allowDelete(),
   }));
-  if (allowDelete()) del.add(item({ icon: "clock", title: "Daily cleanup", sub: (live ? "On" : "Off") + " · removes things older than " + days + " days", onclick: () => go("cleanup") }));
+  if (allowDelete()) del.add(item({ icon: "clock", title: "Daily cleanup", sub: (live === true ? "On" : "Off") + " · removes things older than " + (days || 14) + " days", onclick: () => go("cleanup") }));
   root.appendChild(del);
 
   root.appendChild(group("Security")
     .add(item({ icon: "lock", title: "Change PIN", onclick: () => go("pin") }))
     .add(item({ icon: "out", title: "Lock", onclick: () => { cfg = null; stack.length = 0; show("login"); } }))
-    .add(item({ icon: "trash", title: "Forget the Firebase secret on this device", danger: true, onclick: () => { if (confirm("Remove the saved Firebase secret from this device?")) { localStorage.removeItem(STORE); cfg = null; stack.length = 0; show("setup"); } } })));
+    .add(item({ icon: "trash", title: "Forget the Firebase secret on this device", danger: true, onclick: () => { if (confirm("Remove the saved Firebase secret from this device?")) { localStorage.removeItem(STORE); localStorage.removeItem(CACHE_KEY); cfg = null; stack.length = 0; show("setup"); } } })));
   return root;
 }
 
@@ -293,25 +527,19 @@ async function screenHome() {
 async function screenPhones() {
   const { reg, names } = await registry();
   const root = document.createElement("div");
-  const note = document.createElement("div");
-  note.className = "meta pad";
-  note.style.padding = "4px 16px 0";
-  note.textContent = "A new phone does nothing (no sync, no uploads) until you press Approve.";
-  root.appendChild(note);
+  root.appendChild(note("A new phone does nothing (no sync, no uploads) until you press Approve."));
   const codes = Object.keys(reg).sort();
-  if (!codes.length) { root.appendChild(Object.assign(document.createElement("div"), { className: "pad meta", textContent: "No phones have checked in yet." })); return root; }
+  if (!codes.length) { root.appendChild(empty("No phones have checked in yet.")); return root; }
   const g = group("");
   for (const code of codes) {
     const r = reg[code] || {};
     const waiting = r.approved !== true;
     g.add(item({
       icon: "phone", title: names[code] ? `${names[code]} (${code})` : code,
-      sub: [r.model || "", r.phoneNumber ? "number " + r.phoneNumber : "number unknown", r.app || "", "first seen " + ago(r.createdAt), "last seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
+      sub: [r.model || "", r.phoneNumber ? "number " + r.phoneNumber : "number unknown", r.app || "", "last seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
       pill: waiting ? "waiting for approval" : "approved", warn: waiting,
     }));
-    g.add(actions([
-      { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}`, { approved: waiting }); render(); } },
-    ]));
+    g.add(actions([{ label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}`, { approved: waiting }); render(); } }]));
   }
   root.appendChild(g);
   return root;
@@ -339,58 +567,56 @@ async function screenTablets() {
       ]));
     }
   }
-  if (!any) root.appendChild(Object.assign(document.createElement("div"), { className: "pad meta", textContent: "No tablets have connected yet." }));
+  if (!any) root.appendChild(empty("No tablets have connected yet."));
   else root.appendChild(g);
   return root;
 }
 
-// ---------- rooms ----------
-async function screenRooms(_, alive) {
-  const names = (await db("GET", "admin/roomNames")) || {};
-  const list = Object.keys((await db("GET", "rooms", undefined, "&shallow=true")) || {}).sort();
+// ---------- rooms (fast: facts from the registry and guest lists; sizes only when asked) ----------
+async function screenRooms() {
+  const [{ reg, names }, roomList] = await Promise.all([registry(), dbq("rooms", "&shallow=true")]);
+  const list = Object.keys(roomList || {}).sort();
+  const memberSets = await Promise.all(list.map((r) => dbq(`rooms/${r}/members`, "&shallow=true")));
+  const sizes = (cget("sizes") || { v: {} }).v;
   const root = document.createElement("div");
-  const sum = document.createElement("div");
-  sum.className = "card";
-  sum.style.marginTop = "8px";
-  sum.innerHTML = `<h2>Storage</h2><div class="big">Measuring...</div><div class="meta">Message text, trash, calls and attachment files. Free plan: 1 GB of database data is more than this will ever need; Storage files are counted separately.</div>`;
+  const sum = card("Storage");
+  const totalKnown = Object.values(sizes).reduce((a, s) => a + (s.bytes || 0), 0);
+  sum.innerHTML += `<div class="big">${Object.keys(sizes).length ? mb(totalKnown) : "—"}</div><div class="meta">${Object.keys(sizes).length ? "as last measured " + ago((cget("sizes") || {}).at) : "Sizes are measured only when you ask, because it downloads each room's messages."}</div>`;
+  const mbtn = document.createElement("button");
+  mbtn.className = "ghost"; mbtn.style.marginTop = "10px"; mbtn.textContent = "Measure sizes now";
+  mbtn.onclick = async () => {
+    mbtn.disabled = true;
+    const out = {};
+    for (let i = 0; i < list.length; i++) {
+      mbtn.textContent = `Measuring ${i + 1} of ${list.length}...`;
+      const room = list[i];
+      let bytes = 0, count = 0, last = 0;
+      for (const p of ["messages/incoming", "messages/sent", "deletedMessages", "calls"]) {
+        const txt = JSON.stringify((await dbq(`rooms/${room}/${p}`)) || {});
+        bytes += txt.length;
+        if (p.startsWith("messages")) for (const v of Object.values(JSON.parse(txt))) { count++; if (v && v.timestamp > last) last = v.timestamp; }
+      }
+      const files = await storageBytes(room);
+      out[room] = { bytes: bytes + (files ? files.total : 0), count, last, files: files ? files.files : null };
+    }
+    cset("sizes", out);
+    render();
+  };
+  sum.appendChild(mbtn);
   root.appendChild(sum);
   const g = group("");
-  const rows = [];
-  for (const room of list) {
-    const el = item({ icon: "folder", title: names[room] || room, sub: "Measuring...", onclick: () => go("room", { room, label: names[room] || room }) });
-    const bar = document.createElement("div");
-    bar.className = "bar";
-    bar.innerHTML = "<div style='width:0'></div>";
-    el.querySelector(".tx").appendChild(bar);
+  list.forEach((room, i) => {
+    const f = roomFacts(room, reg, names, Object.keys(memberSets[i] || {}).length);
+    const s = sizes[room];
+    const el = item({
+      icon: "folder", title: f.name,
+      sub: [f.model, f.phoneSeen != null ? "phone seen " + ago(f.r.lastSeen) : "", s ? `${s.count.toLocaleString()} messages · ${mb(s.bytes)}` : ""].filter(Boolean).join(" · "),
+      chips: [[`${f.members} on the guest list`, f.members ? "ok" : "grey"], [`${f.tablets.length} tablet${f.tablets.length === 1 ? "" : "s"}`, "grey"]],
+      onclick: () => go("room", { room, label: f.name }),
+    });
     g.add(el);
-    rows.push({ room, el, bar });
-  }
-  if (!list.length) root.appendChild(Object.assign(document.createElement("div"), { className: "pad meta", textContent: "No rooms." }));
-  else root.appendChild(g);
-  // measure in the background, one room at a time, so the screen is usable straight away
-  (async () => {
-    let total = 0, biggest = 1;
-    for (const { room, el, bar } of rows) {
-      if (!alive()) return;
-      let bytes = 0, count = 0, last = 0;
-      try {
-        for (const p of ["messages/incoming", "messages/sent", "deletedMessages", "calls"]) {
-          const txt = JSON.stringify((await db("GET", `rooms/${room}/${p}`)) || {});
-          bytes += txt.length;
-          if (p.startsWith("messages")) { for (const v of Object.values(JSON.parse(txt))) { count++; if (v && v.timestamp > last) last = v.timestamp; } }
-        }
-      } catch (e) { el.querySelector(".st").textContent = "Could not read: " + e.message; continue; }
-      const hb = await db("GET", `rooms/${room}/heartbeat`).catch(() => null);
-      const files = await storageBytes(room);
-      const fb = files ? files.total : 0;
-      total += bytes + fb;
-      biggest = Math.max(biggest, bytes + fb);
-      el.querySelector(".st").textContent = `${count.toLocaleString()} messages · ${mb(bytes + fb)}` + (files ? ` (${files.files} files)` : "") + ` · last message ${ago(last)}` + (hb && hb.at ? ` · phone seen ${ago(hb.at)}` : "") + (Date.now() - last > 30 * 864e5 ? " · inactive" : "");
-      bar.firstChild.style.width = Math.max(2, (bytes + fb) / biggest * 100) + "%";
-      sum.querySelector(".big").textContent = mb(total);
-    }
-    if (alive()) sum.querySelector(".big").textContent = mb(total) + ` in ${list.length} room${list.length === 1 ? "" : "s"}`;
-  })();
+  });
+  if (!list.length) root.appendChild(empty("No rooms.")); else root.appendChild(g);
   return root;
 }
 
@@ -408,7 +634,7 @@ const KIND_LABEL = { text: "Text messages", picture: "Pictures", video: "Videos"
 async function roomMessages(room) {
   const out = [];
   for (const kind of ["incoming", "sent"]) {
-    const t = (await db("GET", `rooms/${room}/messages/${kind}`)) || {};
+    const t = (await dbq(`rooms/${room}/messages/${kind}`)) || {};
     for (const [key, v] of Object.entries(t)) if (v && typeof v === "object") out.push({ kind, key, v, size: JSON.stringify(v).length });
   }
   return out;
@@ -433,31 +659,25 @@ async function storageItems(room) {
 
 async function screenRoom({ room, label }) {
   const root = document.createElement("div");
-  const reg = (await db("GET", `registry/${room}`)) || {};
-  const memberCount = Object.keys((await db("GET", "rooms/" + room + "/members", undefined, "&shallow=true")) || {}).length;
+  const [reg, members, roomKey, names] = await Promise.all([dbq(`registry/${room}`), dbq(`rooms/${room}/members`), dbq(`roomKeys/${room}`), dbq("admin/roomNames")]);
+  const r = reg || {};
+  const memberEntries = Object.entries(members || {});
   const info = group("Phone");
-  info.add(item({ icon: "phone", title: reg.model || "Phone", sub: [reg.phoneNumber ? "number " + reg.phoneNumber : "number unknown", "pairing code " + room, "last seen " + ago(reg.lastSeen)].join(" · "), pill: reg.approved === true ? "approved" : "waiting", warn: reg.approved !== true }));
-  info.add(item({ icon: "shield", title: "Devices on the guest list", sub: memberCount + " (each phone, tablet or web page that joined this room with its own sign-in)" }));
+  info.add(item({ icon: "phone", title: r.model || "Phone", sub: [r.phoneNumber ? "number " + r.phoneNumber : "number unknown", "pairing code " + room, "last seen " + ago(r.lastSeen)].join(" · "), pill: r.approved === true ? "approved" : "waiting", warn: r.approved !== true,
+    chips: [[r.lastSeen && r.createdAt && r.lastSeen - r.createdAt > 120000 ? "new app" : "old app (not checked in with the new version yet)", r.lastSeen && r.createdAt && r.lastSeen - r.createdAt > 120000 ? "ok" : "warn"]] }));
   root.appendChild(info);
 
-  const stats = group("What is stored");
-  const msgs = await roomMessages(room);
-  const s = {};
-  for (const k of Object.keys(KIND_LABEL)) s[k] = { n: 0, bytes: 0, fileBytes: 0, files: 0 };
-  for (const m of msgs) { const x = s[kindOf(m.v)]; x.n++; x.bytes += m.size; }
-  const files = await storageItems(room);
-  if (files) for (const f of files) { const x = s[extKind(f.name)]; x.files++; x.fileBytes += Number(f.size || 0); }
-  let total = 0;
-  for (const [k, l] of Object.entries(KIND_LABEL)) {
-    const x = s[k]; if (!x.n && !x.files) continue;
-    total += x.bytes + x.fileBytes;
-    stats.add(item({ icon: "info", title: l, sub: `${x.n.toLocaleString()} in the database (${mb(x.bytes)})` + (files ? ` · ${x.files} files (${mb(x.fileBytes)})` : "") }));
+  const guests = group("Guest list (" + memberEntries.length + ")");
+  for (const [uid, v] of memberEntries) {
+    const kind = v === roomKey ? "joined with the permanent code" : v === room ? "joined with the old room code (migration)" : "joined with a one-time code";
+    guests.add(item({ icon: "tablet", title: "Device " + uid.slice(0, 8), sub: kind }));
+    guests.add(actions([{ label: "Remove from the guest list", cls: "ghost", onclick: async () => { if (confirm("Remove this device from the guest list? It loses access until it is paired again.")) { await db("DELETE", `rooms/${room}/members/${uid}`); render(); } } }]));
   }
-  const oldest = msgs.length ? Math.min(...msgs.map((m) => m.v.timestamp || Date.now())) : 0;
-  stats.add(item({ icon: "info", title: `Total ${mb(total)}`, sub: `${msgs.length.toLocaleString()} messages · oldest ${oldest ? new Date(oldest).toLocaleDateString() : "—"}` + (files ? "" : " · Storage files could not be listed") }));
-  root.appendChild(stats);
+  if (!memberEntries.length) guests.add(item({ icon: "info", title: "Nobody yet", sub: "Devices appear here once they have updated and joined" }));
+  root.appendChild(guests);
 
   const manage = group("Manage");
+  manage.add(item({ icon: "qr", title: "Pair a new device to this room", sub: "A QR code and a 12-character code for 10 minutes", onclick: () => go("pair", { room }) }));
   manage.add(item({ icon: "edit", title: "Name this room", sub: label === room ? "A name to recognise it by" : label, onclick: async () => {
     const n = prompt("A name to recognise this room by:", label === room ? "" : label);
     if (n === null) return;
@@ -466,6 +686,31 @@ async function screenRoom({ room, label }) {
     render();
   } }));
   root.appendChild(manage);
+
+  const stats = group("What is stored");
+  const more = document.createElement("div");
+  more.className = "row2";
+  const btn = document.createElement("button");
+  btn.className = "ghost"; btn.textContent = "Count what is stored (slow for big rooms)";
+  more.appendChild(btn);
+  const out = document.createElement("div");
+  out.className = "st"; out.style.padding = "0 20px 16px";
+  stats.add(more); stats.add(out);
+  btn.onclick = async () => {
+    btn.disabled = true; out.textContent = "Counting...";
+    const msgs = await roomMessages(room);
+    const s = {};
+    for (const k of Object.keys(KIND_LABEL)) s[k] = { n: 0, bytes: 0, fileBytes: 0, files: 0 };
+    for (const m of msgs) { const x = s[kindOf(m.v)]; x.n++; x.bytes += m.size; }
+    const files = await storageItems(room);
+    if (files) for (const f of files) { const x = s[extKind(f.name)]; x.files++; x.fileBytes += Number(f.size || 0); }
+    let total = 0; const lines = [];
+    for (const [k, l] of Object.entries(KIND_LABEL)) { const x = s[k]; if (!x.n && !x.files) continue; total += x.bytes + x.fileBytes; lines.push(`${l}: ${x.n.toLocaleString()} (${mb(x.bytes)})` + (files ? ` · ${x.files} files (${mb(x.fileBytes)})` : "")); }
+    const oldest = msgs.length ? Math.min(...msgs.map((m) => m.v.timestamp || Date.now())) : 0;
+    out.innerHTML = esc(lines.join("\n")).replace(/\n/g, "<br>") + `<br><b>Total ${mb(total)}</b> · ${msgs.length.toLocaleString()} messages · oldest ${oldest ? new Date(oldest).toLocaleDateString() : "—"}` + (files ? "" : " · picture/video files could not be listed");
+    btn.disabled = false;
+  };
+  root.appendChild(stats);
 
   if (allowDelete()) {
     const del = group("Deleting");
@@ -486,6 +731,7 @@ async function screenRoom({ room, label }) {
       await db("DELETE", `rooms/${room}`);
       await storageDelete(room);
       await db("PUT", `admin/roomNames/${room}`, null);
+      await db("DELETE", `roomKeys/${room}`);
       stack.pop(); render();
     } }));
     root.appendChild(del);
@@ -496,47 +742,198 @@ async function screenRoom({ room, label }) {
       const fs = (await storageItems(room)) || [];
       return { cutoff, msgs: ms, oldFiles: fs.filter((f) => new Date(f.timeCreated).getTime() < cutoff && (type === "all" || extKind(f.name) === type)) };
     };
-    const out = box.querySelector("#d-msg");
+    const msgOut = box.querySelector("#d-msg");
     box.querySelector("#d-preview").onclick = async () => {
-      out.textContent = "Counting...";
-      const r = await matching();
-      out.textContent = `${r.msgs.length.toLocaleString()} messages (${mb(r.msgs.reduce((a, m) => a + m.size, 0))}) and ${r.oldFiles.length} files (${mb(r.oldFiles.reduce((a, f) => a + Number(f.size || 0), 0))}) older than ${new Date(r.cutoff).toLocaleDateString()} would be removed.`;
+      msgOut.textContent = "Counting...";
+      const x = await matching();
+      msgOut.textContent = `${x.msgs.length.toLocaleString()} messages (${mb(x.msgs.reduce((a, m) => a + m.size, 0))}) and ${x.oldFiles.length} files (${mb(x.oldFiles.reduce((a, f) => a + Number(f.size || 0), 0))}) older than ${new Date(x.cutoff).toLocaleDateString()} would be removed.`;
     };
     box.querySelector("#d-delete").onclick = async () => {
-      const r = await matching();
-      if (!r.msgs.length && !r.oldFiles.length) { out.textContent = "Nothing that old."; return; }
-      if (prompt(`Remove ${r.msgs.length.toLocaleString()} messages and ${r.oldFiles.length} files from "${label}" (older than ${new Date(r.cutoff).toLocaleDateString()})?\nType DELETE to confirm:`) !== "DELETE") return;
-      out.textContent = "Removing...";
-      const prior = Number(await db("GET", `rooms/${room}/expiredBefore`)) || 0;
-      await db("PUT", `rooms/${room}/expiredBefore`, Math.max(prior, r.cutoff)); // first, so devices keep their copy
+      const x = await matching();
+      if (!x.msgs.length && !x.oldFiles.length) { msgOut.textContent = "Nothing that old."; return; }
+      if (prompt(`Remove ${x.msgs.length.toLocaleString()} messages and ${x.oldFiles.length} files from "${label}" (older than ${new Date(x.cutoff).toLocaleDateString()})?\nType DELETE to confirm:`) !== "DELETE") return;
+      msgOut.textContent = "Removing...";
+      const prior = Number(await dbq(`rooms/${room}/expiredBefore`)) || 0;
+      await db("PUT", `rooms/${room}/expiredBefore`, Math.max(prior, x.cutoff)); // first, so devices keep their copy
       for (const kind of ["incoming", "sent"]) {
-        const keys = r.msgs.filter((m) => m.kind === kind).map((m) => m.key);
-        for (let i = 0; i < keys.length; i += 400) {
-          const patch = {}; for (const k of keys.slice(i, i + 400)) patch[k] = null;
-          await db("PATCH", `rooms/${room}/messages/${kind}`, patch);
-        }
+        const keys = x.msgs.filter((m) => m.kind === kind).map((m) => m.key);
+        for (let i = 0; i < keys.length; i += 400) { const patch = {}; for (const k of keys.slice(i, i + 400)) patch[k] = null; await db("PATCH", `rooms/${room}/messages/${kind}`, patch); }
       }
-      for (const f of r.oldFiles) await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(f.name)}`, { method: "DELETE" });
-      out.textContent = "Done.";
+      for (const f of x.oldFiles) await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(f.name)}`, { method: "DELETE" });
+      msgOut.textContent = "Done.";
     };
   }
   return root;
 }
 
+// ---------- pair a new device: a code that works once, for 10 minutes ----------
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function randomCode(n) { const b = crypto.getRandomValues(new Uint8Array(n)); return Array.from(b).map((x) => CODE_ALPHABET[x % 32]).join(""); }
+function drawQr(canvas, text) {
+  const m = QR.encode(text);
+  if (!m) return false;
+  const n = m.length, q = 2, s = 8;
+  canvas.width = canvas.height = (n + 2 * q) * s;
+  const c = canvas.getContext("2d");
+  c.fillStyle = "#fff"; c.fillRect(0, 0, canvas.width, canvas.height);
+  c.fillStyle = "#000";
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (m[y][x]) c.fillRect((x + q) * s, (y + q) * s, s, s);
+  return true;
+}
+async function screenPair(arg) {
+  const roomList = Object.keys((await dbq("rooms", "&shallow=true")) || {}).sort();
+  const names = (await dbq("admin/roomNames")) || {};
+  const root = document.createElement("div");
+  if (!roomList.length) { root.appendChild(empty("No rooms yet.")); return root; }
+  const c = card("");
+  c.innerHTML = `<div class="meta">For the room:</div>`;
+  const sel = document.createElement("select");
+  for (const r of roomList) { const o = document.createElement("option"); o.value = r; o.textContent = (names[r] ? names[r] + " (" + r + ")" : r); if (arg && arg.room === r) o.selected = true; sel.appendChild(o); }
+  c.appendChild(sel);
+  const qrbox = document.createElement("div"); qrbox.className = "qrbox"; const canvas = document.createElement("canvas"); qrbox.appendChild(canvas); c.appendChild(qrbox);
+  const codeEl = document.createElement("div"); codeEl.className = "codebig mono"; c.appendChild(codeEl);
+  const timerEl = document.createElement("div"); timerEl.className = "meta"; timerEl.style.textAlign = "center"; c.appendChild(timerEl);
+  const statusEl = document.createElement("div"); statusEl.className = "meta"; statusEl.style.textAlign = "center"; statusEl.style.marginTop = "8px"; c.appendChild(statusEl);
+  root.appendChild(c);
+  root.appendChild(note("Scan the QR code with the tablet's pairing screen, or type the 12 characters. Each code works for 10 minutes and for one device; a new one appears by itself."));
+
+  let code = null, expires = 0, room = sel.value, base = -1, alive = true, making = false;
+  async function drop() { if (code) { const old = code; code = null; try { await db("DELETE", `rooms/${room}/pairCodes/${old}`); } catch (e) { /* gone already */ } } }
+  async function make() {
+    if (making || !alive) return;
+    making = true;
+    try {
+      await drop();
+      const fresh = randomCode(12);
+      expires = Date.now() + 600000;
+      await db("PUT", `rooms/${room}/pairCodes/${fresh}`, expires);
+      try { await db("PUT", `keyIndex/${await fp16(fresh)}`, room); } catch (e) { /* the lookup already exists */ }
+      code = fresh;
+      drawQr(canvas, `FR1:${room}:${fresh}`);
+      codeEl.textContent = fresh.slice(0, 4) + "-" + fresh.slice(4, 8) + "-" + fresh.slice(8);
+      base = Object.keys((await dbq(`rooms/${room}/members`, "&shallow=true")) || {}).length;
+    } catch (e) { statusEl.textContent = "Could not make a code: " + e.message; }
+    making = false;
+  }
+  sel.onchange = async () => { await drop(); room = sel.value; make(); };
+  const timer = setInterval(async () => {
+    if (!alive) return;
+    const left = Math.round((expires - Date.now()) / 1000);
+    if (!code || left <= 0) { make(); return; }
+    timerEl.textContent = `Valid for ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+  }, 1000);
+  const watch = setInterval(async () => {
+    if (!alive || !code || base < 0) return;
+    const n = Object.keys((await dbq(`rooms/${room}/members`, "&shallow=true")) || {}).length;
+    if (n > base) { statusEl.textContent = "A device joined with that code. Here is a new one for the next device."; await make(); }
+  }, 3000);
+  leave.push(() => { alive = false; clearInterval(timer); clearInterval(watch); drop(); });
+  make();
+  return root;
+}
+
+// ---------- database rules ----------
+async function screenRules() {
+  const now = await readRules();
+  const rs = now ? detectRules(now.json) : null;
+  const root = document.createElement("div");
+  const c = card("State");
+  c.innerHTML += `<div class="big">${rs === "current" ? "Up to date" : rs === "previous" ? "Update available" : rs === "open" ? "Not protected" : rs === null ? "Could not read" : "Custom"}</div>
+    <div class="meta">${rs === "current" ? "Rooms are limited to devices on their guest list, and 10-minute pairing codes work." : rs === "previous" ? "Rooms are protected. The new rules add the 10-minute pairing codes." : rs === "open" ? "Any room can be read and written by anyone who knows its pairing code." : rs === null ? "The rules could not be read from this browser." : "These rules are not one of the known sets."}</div>`;
+  root.appendChild(c);
+  const g = group("Actions");
+  g.add(item({ icon: "shield", title: "Apply the current rules", sub: "Protects rooms with guest lists and turns on 10-minute pairing codes. Your devices keep working (they use their own sign-in).",
+    onclick: async () => {
+      if (!RULES_CURRENT) { alert("These rules are not built into this copy of the dashboard."); return; }
+      if (!confirm("Publish the new database rules now?\n\nThe rules in place now are saved first, so you can put them back with one tap.")) return;
+      if (now) { try { localStorage.setItem("dash_rules_backup", now.text); } catch (e) { /* storage blocked */ } }
+      const r = await fetch(`${cfg.url.replace(/\/$/, "")}/.settings/rules.json?auth=${encodeURIComponent(cfg.secret)}`, { method: "PUT", body: JSON.stringify(RULES_CURRENT) });
+      alert(r.ok ? "Published." : "Firebase refused it (HTTP " + r.status + "). Nothing changed.");
+      render();
+    } }));
+  g.add(item({ icon: "out", title: "Put the previous rules back", sub: localStorage.getItem("dash_rules_backup") ? "Restores the rules that were in place before the last time you applied new ones" : "Nothing saved yet", danger: true,
+    onclick: async () => {
+      const t = localStorage.getItem("dash_rules_backup");
+      if (!t) { alert("No earlier rules are saved in this browser."); return; }
+      if (!confirm("Put the previous rules back?")) return;
+      const r = await fetch(`${cfg.url.replace(/\/$/, "")}/.settings/rules.json?auth=${encodeURIComponent(cfg.secret)}`, { method: "PUT", body: t });
+      alert(r.ok ? "Restored." : "Firebase refused it (HTTP " + r.status + ").");
+      render();
+    } }));
+  root.appendChild(g);
+  const t = card("The rules this dashboard would publish");
+  const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = JSON.stringify(RULES_CURRENT, null, 2);
+  t.appendChild(ta);
+  const cp = document.createElement("button"); cp.className = "ghost"; cp.style.marginTop = "8px"; cp.textContent = "Copy";
+  cp.onclick = () => { ta.select(); try { navigator.clipboard.writeText(ta.value); } catch (e) { document.execCommand("copy"); } cp.textContent = "Copied"; };
+  t.appendChild(cp);
+  root.appendChild(t);
+  return root;
+}
+
+// ---------- retire the old secret ----------
+async function screenRetire() {
+  const [{ reg, names }, roomList] = await Promise.all([registry(), dbq("rooms", "&shallow=true")]);
+  const rooms = Object.keys(roomList || {}).sort();
+  const memberSets = await Promise.all(rooms.map((r) => dbq(`rooms/${r}/members`, "&shallow=true")));
+  const root = document.createElement("div");
+  root.appendChild(note("The old secret is built into every older copy of the apps. Retiring it makes those copies useless to anyone who finds them, but it also stops an old phone or tablet that has not updated. Do it only when each room's phone shows \"new app\"."));
+  const g = group("Each room");
+  let allReady = true;
+  rooms.forEach((room, i) => {
+    const f = roomFacts(room, reg, names, Object.keys(memberSets[i] || {}).length);
+    const ready = f.phoneNew && f.members > 0;
+    if (!ready) allReady = false;
+    g.add(item({ icon: "phone", title: f.name, sub: [f.model, "phone seen " + ago(f.r.lastSeen)].filter(Boolean).join(" · "),
+      chips: [[f.phoneNew ? "phone has the new app" : "phone not updated yet", f.phoneNew ? "ok" : "warn"], [`${f.members} on the guest list`, f.members ? "ok" : "warn"], [ready ? "ready" : "not ready", ready ? "ok" : "warn"]],
+      onclick: () => go("room", { room, label: f.name }) }));
+  });
+  root.appendChild(g);
+  const c = card(allReady ? "Ready" : "Not ready yet");
+  c.innerHTML += `<div class="meta">${allReady ? "Every room's phone has moved over. You can retire the old secret now." : "At least one room's phone has not updated. Wait: nothing breaks for them while the old secret stays valid."}</div>`;
+  root.appendChild(c);
+  const steps = card("How (when ready)");
+  steps.innerHTML += `<ol class="meta" style="padding-left:20px;line-height:1.6">
+    <li>Turn off "Let old devices join with the 6-character code" on the home screen.</li>
+    <li>Firebase console → Project settings → <b>Service accounts</b> → <b>Database secrets</b>.</li>
+    <li>If the console lets you add a second secret, add one first and copy it. Otherwise note that deleting the only secret ends the old one at once.</li>
+    <li>Tell Claude the new secret, or enter it here at "Forget the Firebase secret" so this dashboard keeps working; the build system uses it too.</li>
+    <li>Delete the old secret in the console.</li></ol>`;
+  root.appendChild(steps);
+  return root;
+}
+
+// ---------- picture and video files ----------
+async function screenStorage() {
+  const root = document.createElement("div");
+  const c = card("Who can list the files");
+  const open = await (async () => { try { const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?prefix=attachments/&maxResults=1`); return r.status; } catch (e) { return null; } })();
+  c.innerHTML += `<div class="big">${open === 200 ? "Anyone can" : open === null ? "Unknown" : "Locked"}</div><div class="meta">${open === 200 ? "Anyone who knows a room's pairing code can list that room's picture and video names. New files get unguessable names, but listing is still open." : open === null ? "Could not check from this browser." : "File listing is refused."}</div>`;
+  root.appendChild(c);
+  const t = card("Storage rules to publish");
+  t.innerHTML += `<div class="meta">In the Firebase console open <b>Storage</b> → <b>Rules</b>, replace everything with this, and publish. Files stay readable by their link; only listing is switched off. (Then this dashboard can no longer list files, so file sizes and deleting old files here stop working.)</div>`;
+  const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = STORAGE_RULES;
+  t.appendChild(ta);
+  const cp = document.createElement("button"); cp.className = "ghost"; cp.style.marginTop = "8px"; cp.textContent = "Copy";
+  cp.onclick = () => { ta.select(); try { navigator.clipboard.writeText(ta.value); } catch (e) { document.execCommand("copy"); } cp.textContent = "Copied"; };
+  t.appendChild(cp);
+  root.appendChild(t);
+  return root;
+}
+
 // ---------- daily cleanup ----------
 async function screenCleanup() {
-  const days = (await db("GET", "admin/cleanupDays")) || 14;
-  const live = (await db("GET", "admin/cleanupLive")) === true;
+  const [days, live] = await Promise.all([dbq("admin/cleanupDays"), dbq("admin/cleanupLive")]);
   const root = document.createElement("div");
   const g = group("Daily cleanup");
-  g.add(item({ icon: "clock", title: live ? "On" : "Off", sub: live ? "Really removing old messages and files every day (about 03:17 UTC)" : "It only reports what it would remove", toggle: async (v) => {
-    if (v && !confirm("Turn the daily cleanup ON? From tonight it permanently removes messages and files older than " + days + " days from Firebase. Tablets on the newest build keep their copy.")) return;
+  g.add(item({ icon: "clock", title: live === true ? "On" : "Off", sub: live === true ? "Really removing old messages and files every day (about 03:17 UTC)" : "It only reports what it would remove", toggle: async (v) => {
+    if (v && !confirm("Turn the daily cleanup ON? From tonight it permanently removes messages and files older than " + (days || 14) + " days from Firebase. Tablets on the newest build keep their copy.")) return;
     await db("PUT", "admin/cleanupLive", v);
     render();
-  }, on: live }));
+  }, on: live === true }));
   const box = document.createElement("div");
   box.className = "pad";
-  box.innerHTML = `<div class="meta" style="margin:0 0 8px">Delete messages and files older than (days)</div><input id="days" type="number" min="1" max="365" value="${days}" /><button id="save-days">Save</button> <span id="days-msg" class="meta"></span>
+  box.innerHTML = `<div class="meta" style="margin:0 0 8px">Delete messages and files older than (days)</div><input id="days" type="number" min="1" max="365" value="${days || 14}" /><button id="save-days">Save</button> <span id="days-msg" class="meta"></span>
     <div class="meta" style="margin-top:12px">Turn it on only after all your tablets have updated, because the web app does not keep expired messages.</div>`;
   g.add(box);
   box.querySelector("#save-days").onclick = async () => {
@@ -566,7 +963,7 @@ async function screenPin() {
 }
 
 // keep the "waiting" counts fresh while the home / device screens are open
-setInterval(() => { const cur = stack[stack.length - 1]; if (cfg && !$("app").classList.contains("hidden") && cur && ["home", "phones", "tablets"].includes(cur.name) && !document.hidden) render(); }, 30000);
+setInterval(() => { const cur = stack[stack.length - 1]; if (cfg && !$("app").classList.contains("hidden") && cur && ["home", "phones", "tablets"].includes(cur.name) && !document.hidden) render(); }, 45000);
 
 // ---------- sign-in screens ----------
 function show(which) { for (const id of ["setup", "login", "app"]) $(id).classList.toggle("hidden", id !== which); }
