@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = ""; // holds THIS page's own sign-in token (renewed every 40 minutes), never a master key
-const ENC_CONFIG = "PQPikSW5DrjMthKHkAvw5w==.gTgtvYPW3zHPT3hB.r+M07nKYO5PYjbn0KuXdl4qMME3UdzA/jStgC7wjfvAiADDhpNo3EhbFKQbY9ECOqK7j8BFz7uUtQ7cIB/F/1mgTOR4ijqquHA==";
+const ENC_CONFIG = "vd32Rm/TgRjIv1xmafu8Fg==.Rgk0u3Jtb1AspONg.zMz0KCqAr3y/6tIVXGh3VKunki5NoJKiB/5wLdnQjDq9pMrm3KUVhSDt+OzTVoQV+bO7jXJMjuKmAh/SpQctB+13Q9xqIms+Dg==";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -910,7 +910,7 @@ function parsePairingText(raw) {
   const s = (raw || "").trim().toUpperCase();
   if (s.startsWith("FR1:")) { const p = s.split(":"); if (p.length >= 3) return { room: p[1], key: p[2].replace(/-/g, "") }; }
   const compact = s.replace(/[-\s]/g, "");
-  return compact.length === 16 ? { room: null, key: compact } : { room: compact, key: null };
+  return compact.length === 16 || compact.length === 12 ? { room: null, key: compact } : { room: compact, key: null };
 }
 async function resolvePairing(raw) {
   const p = parsePairingText(raw);
