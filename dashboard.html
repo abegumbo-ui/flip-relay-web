@@ -730,6 +730,9 @@ async function screenRoom({ room, label }) {
   };
   root.appendChild(stats);
 
+  if (!allowDelete()) {
+    root.appendChild(group("Deleting").add(item({ icon: "trash", title: "Deleting is switched off", sub: "Delete options are hidden. Tap here, then turn on \"Allow deleting\" on the home screen.", onclick: () => { stack.length = 0; stack.push({ name: "home" }); render(); } })));
+  }
   if (allowDelete()) {
     const del = group("Deleting");
     const box = document.createElement("div");
