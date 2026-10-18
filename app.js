@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = "";
-const ENC_CONFIG = "Jw1YV2R8GvdLl1rpTDNPMg==.6SpKjx5Y+clH57Ig.ZGYwatTfFSk8aEwsPOhLuabKx1B/RI8NI7MxEq1TDe2kvFezc3s31+Fy/zHYZcwgz2KRRIZb8tRlDG7sGXNmnIjTtDDQsSjdHP+HSkv8hETD76uwuT1FZ+hvx2c41qo3Mm/Mj3WoLYNVccFR7HRcFbYvbs8JRlTAVotd4ZQ=";
+const ENC_CONFIG = "//kXj7NUcVKUZY1qxjKCYQ==.CUdYIVUSiAOojEwo.PMe8Z9eJr50Zw0RPEgxeVu+hP4UaGUCZm3E+9I86Q5JxYqJBW8vf2ZgyWnDGjkIZbqa7lAORi9ejUzMpQCrk830CqZv7VILlk88yRMfUEpUPp1xKkKsdxxoNrsSQQ9uZCAj71AxobUv3ZKhGNMCdASOCVXIU+UIZEbz9Gnc=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -84,12 +84,98 @@ function saveCache() {
 // the same person shows up as two separate conversations.
 function normalizeNumber(n) {
   if (!n) return "";
+  if (n.startsWith("g:") || n.startsWith("m:")) return n; // a group (g:) or mass-text (m:) conversation key
   const digits = n.replace(/[^\d]/g, "");
   if (digits.length === 11 && digits.startsWith("1")) {
     return digits.slice(1);
   }
   return digits;
 }
+
+// ---------- groups and mass texts ----------
+// g:n1,n2,n3 = a group (one shared MMS thread); m:n1,n2,n3 = a mass text ("Just me": each person gets it separately, replies come back
+// one by one). Numbers are 10-digit and sorted, exactly as on the tablet.
+function isMulti(key) {
+  return typeof key === "string" && (key.startsWith("g:") || key.startsWith("m:"));
+}
+
+function multiKey(prefix, numbers) {
+  const parts = [...new Set(numbers.map(normalizeNumber).filter(Boolean))].sort();
+  return prefix + parts.join(",");
+}
+
+// A message the phone sent to several people is reported as one address like "n1,n2,n3": that is the group's key.
+function groupKeyFromAddress(to) {
+  if (!to) return "";
+  if (isMulti(to)) return to;
+  if (/[,;|]/.test(to)) {
+    const parts = [...new Set(to.split(/[,;|]/).map(normalizeNumber).filter(Boolean))].sort();
+    if (parts.length >= 2) return "g:" + parts.join(",");
+  }
+  return normalizeNumber(to);
+}
+
+// "gm:<sender>;<n1,n2,...>" = a reply on a group MMS (everyone on it, you included): the group whose members are all of them but you.
+function matchGroup(list) {
+  const p = new Set(list.split(",").map(normalizeNumber).filter(Boolean));
+  const seen = new Set();
+  for (const m of messages) {
+    if (!m.number || !m.number.startsWith("g:") || seen.has(m.number)) continue;
+    seen.add(m.number);
+    const g = m.number.slice(2).split(",").filter(Boolean);
+    if (g.every((n) => p.has(n)) && p.size - g.length === 1) return m.number;
+  }
+  return null;
+}
+
+let groupNames = {};
+function groupNamesKey() { return "flip_relay_web_groupnames_" + roomId; }
+function loadGroupNames() {
+  try { groupNames = JSON.parse(localStorage.getItem(groupNamesKey()) || "{}"); } catch (e) { groupNames = {}; }
+  fetch(roomUrl("groupNames")).then((r) => (r.ok ? r.json() : null)).then((d) => {
+    if (d && typeof d === "object") {
+      groupNames = d;
+      try { localStorage.setItem(groupNamesKey(), JSON.stringify(d)); } catch (e) { /* storage blocked */ }
+      renderConversationList();
+      if (currentChatNumber && isMulti(currentChatNumber)) el("chat-title").textContent = displayName(currentChatNumber);
+    }
+  }).catch(() => {});
+}
+function setGroupName(key, name) {
+  if (name) groupNames[key] = name; else delete groupNames[key];
+  try { localStorage.setItem(groupNamesKey(), JSON.stringify(groupNames)); } catch (e) { /* storage blocked */ }
+  fetch(roomUrl("groupNames/" + encodeURIComponent(key)), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(name || null) }).catch(() => {});
+}
+function renameGroup(key) {
+  const n = prompt("Name this group:", groupNames[key] || "");
+  if (n === null) return;
+  setGroupName(key, n.trim());
+  el("chat-title").textContent = displayName(key);
+  renderConversationList();
+}
+
+// Mass-text bookkeeping: the phone reports one sent message per person; they all belong to the ONE conversation the message was written in.
+const massRecent = []; // { key, body, at }
+function memberOfKey(key, number) { return key.slice(2).split(",").includes(number); }
+// 1 = confirmed our pending message there, 2 = another copy of one already confirmed (ignored), 0 = not a mass text
+function foldIntoMassText(to, body, ts) {
+  const now = Date.now();
+  for (let i = massRecent.length - 1; i >= 0; i--) if (now - massRecent[i].at > 180000) massRecent.splice(i, 1);
+  const e = messages.find((m) => m.direction === "out" && m.number && m.number.startsWith("m:") && m.id.startsWith("local-") &&
+    memberOfKey(m.number, to) && (m.body || "") === (body || "") && Math.abs(m.timestamp - ts) < 120000);
+  if (e) {
+    massRecent.push({ key: e.number, body, at: now });
+    e.id = "mass-" + e.timestamp + "-" + Math.random().toString(36).slice(2, 8);
+    e.source = "web";
+    return 1;
+  }
+  if (massRecent.some((r) => memberOfKey(r.key, to) && (r.body || "") === (body || ""))) return 2;
+  return 0;
+}
+
+// "Show where messages were sent from": a small phone / computer icon by each sent message.
+const SHOW_SOURCE_KEY = "flip_relay_web_show_source";
+function showSourceOn() { try { return localStorage.getItem(SHOW_SOURCE_KEY) === "1"; } catch (e) { return false; } }
 
 // ---------- read state (mirrors the tablet app's ReadState) ----------
 
@@ -469,12 +555,54 @@ function toggleSearch() {
 // handles a number with no existing messages fine (an empty thread is
 // exactly what a brand-new conversation looks like), so no changes were
 // needed there.
-async function onNewMessageClick() {
+// New group / mass text: collect several numbers (contact picker where the browser has one, typed numbers otherwise), then ask Group or Just me.
+async function createGroupFlow() {
+  const numbers = [];
+  const names = {};
   if (navigator.contacts && navigator.contacts.select) {
-    const choice = await showActionSheet("New Message", [
+    try {
+      const picked = await navigator.contacts.select(["name", "tel"], { multiple: true });
+      for (const c of picked || []) {
+        const n = normalizeNumber((c.tel && c.tel[0]) || "");
+        if (n) { numbers.push(n); names[n] = (c.name && c.name[0]) || n; }
+      }
+    } catch (e) { logDebug("Contact picker unavailable/cancelled: " + e); }
+  }
+  for (;;) {
+    const have = numbers.length ? "Added: " + numbers.map((n) => names[n] || n).join(", ") + "\n\n" : "";
+    const typed = prompt(have + "Add a number (leave empty when you are done):");
+    if (typed === null || typed.trim() === "") break;
+    const n = normalizeNumber(typed);
+    if (n && !numbers.includes(n)) numbers.push(n);
+  }
+  if (numbers.length < 2) { if (numbers.length === 1) openChat(numbers[0]); return; }
+  const mode = await showActionSheet("Recipients reply to", [
+    { label: "👥 Group - one shared conversation, everyone sees every reply", value: "g:" },
+    { label: "👤 Just me - a mass text: each person gets it separately, replies come only to you", value: "m:" },
+  ]);
+  if (!mode) return;
+  openChat(multiKey(mode, numbers));
+}
+
+async function onNewMessageClick() {
+  {
+    const choice0 = await showActionSheet("New Message", [
       { label: "⌨️ Type a number", value: "type" },
-      { label: "👤 Choose from Contacts", value: "contacts" },
+      { label: "👥 Create group", value: "group" },
+      ...(navigator.contacts && navigator.contacts.select ? [{ label: "👤 Choose from Contacts", value: "contacts" }] : []),
     ]);
+    if (choice0 === "group") { await createGroupFlow(); return; }
+    if (choice0 === null) return;
+    if (choice0 === "type") {
+      const number0 = prompt("Phone number?");
+      if (!number0) return;
+      const normalized0 = normalizeNumber(number0);
+      if (normalized0) openChat(normalized0);
+      return;
+    }
+  }
+  if (navigator.contacts && navigator.contacts.select) {
+    const choice = "contacts"; // the sheet above already chose; the original code below handles the contact picker
     if (choice === "contacts") {
       try {
         const supported = await navigator.contacts.getProperties();
@@ -560,6 +688,7 @@ async function refreshFromFirebase() {
 }
 
 function clearAttachment() {
+  stagedAttachments = [];
   pendingAttachmentFile = null;
   pendingAttachmentKind = null;
   pendingAttachmentName = null;
@@ -600,16 +729,17 @@ function showActionSheet(title, options) {
 // Creates a throwaway <input type=file>, with "capture" set for the live
 // camera/camcorder path or left off for a plain gallery/file pick, and
 // resolves with whatever the user chose (or null if they backed out).
-function pickFile({ accept, capture }) {
+function pickFile({ accept, capture, multiple }) {
   return new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = accept;
     if (capture) input.capture = capture;
+    if (multiple) input.multiple = true;
     let resolved = false;
     input.addEventListener("change", () => {
       resolved = true;
-      resolve(input.files[0] || null);
+      resolve(multiple ? Array.from(input.files) : (input.files[0] || null));
     }, { once: true });
     // No reliable "cancel" event for <input type=file> -- if the picker
     // closes without a change event, treat it as a cancel after it's had
@@ -641,20 +771,24 @@ async function onAttachClick() {
   ]);
   if (!mode) return;
 
-  const file = await pickFile({
+  const picked = await pickFile({
     accept: type === "photo" ? "image/*" : "video/*",
     capture: mode === "live" ? "environment" : null,
+    multiple: mode !== "live",
   });
-  if (!file) return;
+  const files = Array.isArray(picked) ? picked : (picked ? [picked] : []);
+  if (!files.length) return;
   // 60MB, matching the tablet's own cap -- the phone re-encodes video down
   // to a small size once it receives it (VideoTranscoder), so this only
   // needs to protect against picking something absurd, not the actual MMS
   // limit.
-  if (file.size > 60 * 1024 * 1024) {
-    alert("That file is too large to send (over 60MB).");
-    return;
+  for (const file of files) {
+    if (file.size > 60 * 1024 * 1024) {
+      alert(file.name + " is too large to send (over 60MB) and was left out.");
+      continue;
+    }
+    setPendingAttachment(file, type, null);
   }
-  setPendingAttachment(file, type, null);
 }
 
 // Uses the Contact Picker API where it's available (Android Chrome, this
@@ -697,6 +831,7 @@ function buildAndAttachVcard(name, tel) {
 }
 
 function setPendingAttachment(file, kind, name) {
+  if (pendingAttachmentFile) stagedAttachments.push({ file: pendingAttachmentFile, kind: pendingAttachmentKind, name: pendingAttachmentName });
   pendingAttachmentFile = file;
   pendingAttachmentKind = kind;
   pendingAttachmentName = name;
@@ -709,6 +844,10 @@ function setPendingAttachment(file, kind, name) {
     el("attachment-label").textContent = kind === "video"
         ? "🎥 Video attached"
         : "👤 " + (name || "Contact");
+    el("attachment-label").classList.remove("hidden");
+  }
+  if (stagedAttachments.length) { // more than one: show how many (the X takes them all off again)
+    el("attachment-label").textContent = "\uD83D\uDCCE " + (stagedAttachments.length + 1) + " attachments in this message";
     el("attachment-label").classList.remove("hidden");
   }
   el("attachment-preview").classList.remove("hidden");
@@ -750,6 +889,9 @@ async function connectToRoom(code, persist) {
     loadCache();
     loadReadState();
     loadPinnedState();
+    loadGroupNames();
+    loadArchived();
+    checkDeviceApproval();
     if (incomingSnapshot && typeof incomingSnapshot === "object") {
       for (const key of Object.keys(incomingSnapshot)) upsertIncoming(key, incomingSnapshot[key]);
     }
@@ -880,7 +1022,23 @@ const GM_AVATARS = [["#eaa695", "#eaa696"], ["#d8b4f7", "#c8a2f8"], ["#83e7ca", 
   ["#c098f0", "#bf9bea"], ["#ffa480", "#ffb189"], ["#ef9eb0", "#d784c8"], ["#ffb77b", "#ffb282"]];
 const GM_PERSON = '<svg viewBox="0 0 24 24"><path d="M12,12c2.21,0 4,-1.79 4,-4s-1.79,-4 -4,-4 -4,1.79 -4,4 1.79,4 4,4zM12,14c-2.67,0 -8,1.34 -8,4v2h16v-2c0,-2.66 -5.33,-4 -8,-4z"/></svg>';
 
+function gmMiniAvatar(name, cls) {
+  const saved = name && /^\p{L}/u.test(name);
+  if (!saved) return '<div class="gm-avatar unknown ' + cls + '">' + GM_PERSON + "</div>";
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+  const pair = GM_AVATARS[Math.abs(h) % GM_AVATARS.length];
+  return '<div class="gm-avatar ' + cls + '" style="background:linear-gradient(135deg,' + pair[0] + "," + pair[1] + ')">' + escapeHtml(name[0].toUpperCase()) + "</div>";
+}
+
+// A group's picture: up to three small letter circles in a triangle, like Google Messages.
+function gmClusterHtml(key) {
+  const names = key.slice(2).split(",").filter(Boolean).slice(0, 3).map((n) => displayName(n));
+  return '<div class="gm-avatar gm-cluster">' + names.map((nm, i) => gmMiniAvatar(nm, "gm-mini gm-mini" + i)).join("") + "</div>";
+}
+
 function gmAvatarHtml(number) {
+  if (isMulti(number)) return gmClusterHtml(number);
   const name = displayName(number) || "";
   const saved = name && name !== number && /^\p{L}/u.test(name);
   if (!saved) return '<div class="gm-avatar unknown">' + GM_PERSON + "</div>";
@@ -1231,10 +1389,22 @@ function upsertIncoming(key, data) {
   if (!data) return false;
   if (seenIncomingKeys.has(key)) return false;
   seenIncomingKeys.add(key);
+  const rawSender = data.sender || "";
+  let inNumber, fromNumber = null;
+  if (rawSender.startsWith("gm:")) { // a reply on a group MMS: file it in the matching group, remember who wrote it
+    const semi = rawSender.indexOf(";");
+    const who = normalizeNumber(rawSender.slice(3, semi < 0 ? undefined : semi));
+    const grp = semi < 0 ? null : matchGroup(rawSender.slice(semi + 1));
+    inNumber = grp || who;
+    fromNumber = grp ? who : null;
+  } else {
+    inNumber = normalizeNumber(rawSender);
+  }
   messages.push({
     id: key,
     direction: "in",
-    number: normalizeNumber(data.sender),
+    fromNumber,
+    number: inNumber,
     contactName: data.contactName || null,
     body: data.body || "",
     imageUrl: data.imageUrl || null,
@@ -1255,16 +1425,29 @@ function upsertSent(key, data) {
   if (seenSentKeys.has(key)) return false;
   seenSentKeys.add(key);
 
-  const number = normalizeNumber(data.to);
+  const number = groupKeyFromAddress(data.to);
   const body = data.body || "";
   const timestamp = data.timestamp || Date.now();
 
-  const localIdx = messages.findIndex((m) =>
-    m.direction === "out" && m.id.startsWith("local-") &&
-    m.number === number && m.body === body &&
-    Math.abs(m.timestamp - timestamp) < 120000
-  );
-  if (localIdx !== -1) messages.splice(localIdx, 1);
+  const folded = foldIntoMassText(number, body, timestamp);
+  if (folded === 1) return true;
+  if (folded === 2) return false;
+  if (number.startsWith("m:")) massRecent.push({ key: number, body, at: Date.now() });
+
+  // A sent picture / voice message / video is matched to its "Sending..." copy by what it carries (same kind, close in time), not by
+  // its caption: the phone writes its own caption text for media. The closest in time wins.
+  const recKind = data.imageUrl ? "picture" : (data.attachmentType || null);
+  let localIdx = -1, bestGap = Infinity;
+  messages.forEach((m, i) => {
+    if (m.direction !== "out" || !m.id.startsWith("local-") || m.number !== number) return;
+    const gap = Math.abs(m.timestamp - timestamp);
+    if (gap >= 120000) return;
+    const echoKind = m.attachmentKind || (m.imageUrl ? "picture" : null);
+    const same = m.body === body || (recKind && recKind === (echoKind === "photo" ? "picture" : echoKind));
+    if (same && gap < bestGap) { bestGap = gap; localIdx = i; }
+  });
+  const matchedEcho = localIdx !== -1;
+  if (matchedEcho) messages.splice(localIdx, 1);
 
   messages.push({
     id: key,
@@ -1276,6 +1459,7 @@ function upsertSent(key, data) {
     attachmentUrl: data.attachmentUrl || null,
     attachmentKind: data.attachmentType || null,
     attachmentName: data.attachmentName || null,
+    source: matchedEcho ? "web" : "phone",
     timestamp,
   });
   return true;
@@ -1311,16 +1495,29 @@ async function uploadToStorage(file, path) {
   return `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o/${encodedPath}?alt=media`;
 }
 
+// Everything added to this message goes out one after the other, the typed text with the last one.
+let stagedAttachments = [];
+let lastSendTs = 0;
+
 async function onSendClick() {
   const input = el("compose-input");
   const rawBody = input.value.trim();
-  const file = pendingAttachmentFile;
-  const kind = pendingAttachmentKind; // "photo" | "video" | "contact" | null
-  const attachmentName = pendingAttachmentName;
-  if (!rawBody && !file) return;
+  const items = stagedAttachments.slice();
+  if (pendingAttachmentFile) items.push({ file: pendingAttachmentFile, kind: pendingAttachmentKind, name: pendingAttachmentName });
+  if (!rawBody && !items.length) return;
   if (!currentChatNumber) return;
+  stagedAttachments = [];
+  input.value = "";
+  clearAttachment();
+  if (!items.length) { await sendOne(rawBody, null, null, null); return; }
+  for (let i = 0; i < items.length; i++) {
+    await sendOne(i === items.length - 1 ? rawBody : "", items[i].file, items[i].kind, items[i].name);
+  }
+}
 
-  const timestamp = Date.now();
+async function sendOne(rawBody, file, kind, attachmentName) {
+  const timestamp = Math.max(Date.now(), lastSendTs + 1);
+  lastSendTs = timestamp;
   // Same marker convention the tablet app's ChatActivity uses for its own
   // local echo, so upsertSent()'s dedup match (which compares body text)
   // lines up with what the phone actually confirms back as "sent".
@@ -1346,8 +1543,6 @@ async function onSendClick() {
   };
   messages.push(msg);
   saveCache();
-  input.value = "";
-  clearAttachment();
   renderChat(currentChatNumber);
   renderConversationList();
   // One-shot re-render right at the pending timeout, so a still-stuck
@@ -1512,11 +1707,18 @@ async function onMessageLongPress(m) {
 function showMessageInfo(m) {
   const isPending = m.direction === "out" && m.id.startsWith("local-");
   const status = m.direction === "out" ? (isPending ? "Sending..." : "Sent") : "Received";
+  const kind = m.imageUrl ? "Picture (MMS)" : m.attachmentKind === "video" ? "Video (MMS)" : m.attachmentKind === "audio" ? "Voice message (MMS)" : m.attachmentKind ? "Contact card (MMS)" : "Text message";
+  const bytes = new TextEncoder().encode(m.body || "").length;
   const lines = [
+    (m.direction === "out" ? "Sent: " : "Received: ") + new Date(m.timestamp).toLocaleString(),
     "Status: " + status,
-    "Time: " + new Date(m.timestamp).toLocaleString(),
-    "Number: " + m.number,
+    (m.direction === "out" ? "To: " : "From: ") + (isMulti(m.number) ? displayName(m.number) : (displayName(m.number) === m.number ? m.number : displayName(m.number) + " (" + m.number + ")")),
+    "Type: " + kind,
+    "Text size: " + bytes + (bytes === 1 ? " byte" : " bytes"),
   ];
+  if (m.fromNumber) lines.push("Written by: " + displayName(m.fromNumber));
+  if (m.direction === "out") lines.push("Sent from: " + (m.source === "web" ? "this page (through the phone)" : "the phone"));
+  lines.push("Message ID: " + m.id, "Conversation: " + m.number);
   alert(lines.join("\n"));
 }
 
@@ -1653,6 +1855,7 @@ async function onForceResyncClick() {
 
 function onSettingsClick() {
   showScreen("settings");
+  addExtraSettings();
   loadDeletedMessages();
 }
 
@@ -2034,12 +2237,30 @@ function formatCallDuration(seconds) {
   return `${m}:${s < 10 ? "0" + s : s}`;
 }
 
+let callsTab = 0; // 0 = All, 1 = Contacts, 2 = Not contacts, 3 = Missed
 function renderCallsList() {
   const list = el("calls-list");
   list.innerHTML = "";
-  el("calls-empty-state").classList.toggle("hidden", allCalls.length > 0);
+  let bar = document.getElementById("calls-tabs");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "calls-tabs";
+    bar.style.cssText = "display:flex;gap:6px;padding:6px 12px;overflow-x:auto";
+    list.parentNode.insertBefore(bar, list);
+  }
+  bar.innerHTML = "";
+  ["All", "Contacts", "Not contacts", "Missed"].forEach((label, i) => {
+    const b = document.createElement("button");
+    b.className = "toolbar-btn";
+    b.textContent = label;
+    if (i === callsTab) b.style.fontWeight = "700";
+    b.addEventListener("click", () => { callsTab = i; renderCallsList(); });
+    bar.appendChild(b);
+  });
+  const shown = allCalls.filter((c) => callsTab === 0 || (callsTab === 1 && c.contactName) || (callsTab === 2 && !c.contactName) || (callsTab === 3 && c.type === "missed"));
+  el("calls-empty-state").classList.toggle("hidden", shown.length > 0);
 
-  for (const call of allCalls) {
+  for (const call of shown) {
     const row = document.createElement("div");
     row.className = "deleted-group-row";
     const when = call.timestamp ? new Date(call.timestamp).toLocaleString(undefined, {
@@ -2098,6 +2319,10 @@ function conversationsByNumber() {
 }
 
 function displayName(number) {
+  if (isMulti(number)) { // a group: the name you gave it, or its members' names
+    if (groupNames[number]) return groupNames[number];
+    return number.slice(2).split(",").filter(Boolean).map((n) => displayName(n)).join(", ");
+  }
   const withName = messages.find((m) => m.number === number && m.contactName);
   return (withName && withName.contactName) || number;
 }
@@ -2179,11 +2404,16 @@ async function showConversationLongPressMenu(number) {
     return;
   }
   const pinned = isPinned(number);
-  const choice = await showActionSheet(displayName(number) || number, [
+  const options = [
     { label: pinned ? "📌 Unpin" : "📌 Pin to top", value: "pin" },
+    { label: "🗄️ Archive", value: "archive" },
     { label: "☑️ Select", value: "select" },
-    { label: "🚫 Block/Unblock", value: "block" },
-  ]);
+  ];
+  if (isMulti(number)) options.splice(2, 0, { label: "✏️ Rename group", value: "rename" });
+  else options.push({ label: "🚫 Block/Unblock", value: "block" });
+  const choice = await showActionSheet(displayName(number) || number, options);
+  if (choice === "archive") { setArchived(number, true); renderConversationList(); return; }
+  if (choice === "rename") { const n = prompt("Name this group:", groupNames[number] || ""); if (n !== null) { setGroupName(number, n.trim()); renderConversationList(); } return; }
   if (choice === "pin") togglePinned(number);
   else if (choice === "select") enterConversationSelectionMode(number);
   else if (choice === "block") toggleBlocked(number);
@@ -2217,7 +2447,7 @@ async function toggleBlocked(number) {
 }
 
 function filteredConversations() {
-  let convos = conversationsByNumber();
+  let convos = conversationsByNumber().filter((c) => !archived.has(c.number));
   const q = conversationSearchQuery.trim().toLowerCase();
   if (q) {
     convos = convos.filter(({ number }) => {
@@ -2239,7 +2469,8 @@ function renderConversationList() {
     const item = document.createElement("div");
     const selected = conversationSelectionMode && selectedConversationNumbers.has(number);
     item.className = "conversation-item" + (unread ? " unread" : "") + (selected ? " selected" : "") + (number === currentChatNumber ? " open" : "");
-    const prefix = last.direction === "out" ? "You: " : last.direction === "scheduled" ? "Scheduled: " : "";
+    const prefix = last.direction === "out" ? "You: " : last.direction === "scheduled" ? "Scheduled: "
+      : (isMulti(number) && last.fromNumber ? displayName(last.fromNumber) + ": " : "");
     const preview = last.imageUrl ? "📷 Picture" + (last.body ? ": " + last.body : "") : last.body;
     const checkHtml = conversationSelectionMode
         ? `<div class="select-circle${selected ? " checked" : ""}"></div>` : "";
@@ -2266,7 +2497,9 @@ function renderConversationList() {
 function openChat(number) {
   currentChatNumber = number;
   el("chat-title").textContent = displayName(number);
-  el("chat-subtitle").textContent = number;
+  el("chat-subtitle").textContent = isMulti(number) ? (number.startsWith("m:") ? "Mass text - tap the name to rename" : "Group - tap the name to rename") : number;
+  el("chat-title").style.cursor = isMulti(number) ? "pointer" : "";
+  el("chat-title").onclick = isMulti(number) ? () => renameGroup(number) : null;
   showScreen("chat");
   renderChat(number);
   markRead(number);
@@ -2307,6 +2540,21 @@ function renderChat(number) {
     const isScheduled = m.direction === "scheduled";
     const isOut = m.direction === "out";
     row.className = "bubble-row " + (isScheduled ? "out" : m.direction);
+    // in a group, say who wrote each message (their picture and name above the first of a run), like Google Messages
+    if (!isOut && !isScheduled && isMulti(number) && m.fromNumber) {
+      const prev = thread[thread.indexOf(m) - 1];
+      if (!prev || prev.direction !== "in" || prev.fromNumber !== m.fromNumber) {
+        const who = displayName(m.fromNumber);
+        const hdr = document.createElement("div");
+        hdr.className = "gm-sender";
+        const pal = ["#b4146b", "#0b57d0", "#1e8e3e", "#c25e00", "#8430ce", "#c5221f"];
+        let hh = 0;
+        for (let i = 0; i < who.length; i++) hh = (hh * 31 + who.charCodeAt(i)) | 0;
+        hdr.innerHTML = gmMiniAvatar(who, "gm-sender-avatar") + '<span style="color:' + pal[Math.abs(hh) % pal.length] + '">' + escapeHtml(who) + "</span>";
+        list.appendChild(hdr);
+      }
+      row.classList.add("indent");
+    }
     // A "local-" id is this browser's own optimistic echo, shown the
     // instant Send was clicked, before the phone has confirmed anything --
     // upsertSent() replaces it with the real Firebase record (a normal
@@ -2366,6 +2614,13 @@ function renderChat(number) {
       const t = document.createElement("div");
       t.className = "gm-time gm-only " + (isOut ? "out" : "in") + (stuck ? " stuck" : "");
       t.textContent = formatTime(m.timestamp) + (isOut ? (stuck ? " \u00B7 Not sent" : stillPending ? " \u00B7 Sending..." : "") : "");
+      if (isOut && showSourceOn()) { // phone / computer icon at the far right of the line
+        const ic = document.createElement("span");
+        ic.className = "gm-source";
+        ic.title = m.source === "web" ? "Sent from this page" : "Sent from the phone";
+        ic.textContent = m.source === "web" ? "\uD83D\uDCBB" : "\uD83D\uDCF1";
+        t.appendChild(ic);
+      }
       list.appendChild(t);
     }
   }
@@ -2393,6 +2648,110 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   });
+}
+
+// ---------- archive (hide a conversation from the list without deleting it) ----------
+let archived = new Set();
+function archivedKey() { return "flip_relay_web_archived_" + roomId; }
+function loadArchived() {
+  try { archived = new Set(JSON.parse(localStorage.getItem(archivedKey()) || "[]")); } catch (e) { archived = new Set(); }
+}
+function setArchived(number, on) {
+  if (on) archived.add(number); else archived.delete(number);
+  try { localStorage.setItem(archivedKey(), JSON.stringify([...archived])); } catch (e) { /* storage blocked */ }
+}
+// a new message in an archived conversation brings it back to the list
+const _origUpsertIncoming = upsertIncoming;
+upsertIncoming = function (key, data) {
+  const added = _origUpsertIncoming(key, data);
+  if (added) { const last = messages[messages.length - 1]; if (last && archived.has(last.number) && Date.now() - last.timestamp < 60000) setArchived(last.number, false); }
+  return added;
+};
+
+// ---------- this device in the owner's list + approval (registry/<room>/tablets/<id>, shown on the dashboard) ----------
+function webDeviceId() {
+  try {
+    let id = localStorage.getItem("flip_relay_web_device_id");
+    if (!id) { id = "web-" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem("flip_relay_web_device_id", id); }
+    return id;
+  } catch (e) { return "web-unknown"; }
+}
+function webDeviceName() {
+  const ua = navigator.userAgent || "";
+  const os = /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iOS" : /Windows/.test(ua) ? "Windows" : /Mac/.test(ua) ? "Mac" : /Linux/.test(ua) ? "Linux" : "Browser";
+  const br = /Edg\//.test(ua) ? "Edge" : /Firefox\//.test(ua) ? "Firefox" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "browser";
+  return "Web app (" + br + " on " + os + ")";
+}
+let approvalOverlay = null;
+async function checkDeviceApproval() {
+  if (!roomId) return;
+  try {
+    const rres = await fetch(`${DATABASE_URL}/registry/${roomId}.json?auth=${DATABASE_SECRET}`);
+    const reg = rres.ok ? await rres.json() : null;
+    let allowed = true;
+    if (reg && typeof reg === "object") {
+      const require = reg.requireTabletApproval === true;
+      const id = webDeviceId();
+      const mine = reg.tablets && reg.tablets[id];
+      const now = Date.now();
+      const base = `${DATABASE_URL}/registry/${roomId}/tablets/${id}.json`;
+      if (!mine) {
+        await fetch(base + "?auth=" + DATABASE_SECRET, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ approved: !require, name: webDeviceName(), model: webDeviceName(), app: "Web app", firstSeen: now, lastSeen: now }) });
+        allowed = !require;
+      } else {
+        fetch(base + "?auth=" + DATABASE_SECRET + "&x-http-method-override=PATCH", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lastSeen: now }) }).catch(() => {});
+        allowed = mine.approved !== false || !require;
+        if (mine.approved === false && require) allowed = false;
+      }
+    }
+    setApprovalOverlay(!allowed);
+    if (!allowed) setTimeout(checkDeviceApproval, 8000);
+  } catch (e) { logDebug("approval check skipped: " + e); }
+}
+function setApprovalOverlay(show) {
+  if (show && !approvalOverlay) {
+    approvalOverlay = document.createElement("div");
+    approvalOverlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:var(--bg,#fff);color:var(--fg,#111);display:flex;align-items:center;justify-content:center;text-align:center;padding:32px;";
+    approvalOverlay.innerHTML = "<div><h2>Waiting for approval</h2><p>The owner of this phone has to approve this device on the dashboard before it can show any messages.</p><p>" + escapeHtml(webDeviceName()) + "</p><p>This page checks again by itself.</p></div>";
+    document.body.appendChild(approvalOverlay);
+  } else if (!show && approvalOverlay) { approvalOverlay.remove(); approvalOverlay = null; }
+}
+
+// ---------- extra settings: show sent-from icon, backup / restore of this page's own data ----------
+function addExtraSettings() {
+  const body = document.getElementById("settings-body");
+  if (!body || document.getElementById("extra-settings")) return;
+  const box = document.createElement("div");
+  box.id = "extra-settings";
+  const mk = (label, fn) => { const b = document.createElement("button"); b.className = "settings-row"; b.textContent = label; b.addEventListener("click", fn); box.appendChild(b); return b; };
+  const src = mk("", () => { try { localStorage.setItem(SHOW_SOURCE_KEY, showSourceOn() ? "0" : "1"); } catch (e) { /* blocked */ } src.textContent = "Show where messages were sent from: " + (showSourceOn() ? "On" : "Off"); if (currentChatNumber) renderChat(currentChatNumber); });
+  src.textContent = "Show where messages were sent from: " + (showSourceOn() ? "On" : "Off");
+  mk("Archived conversations", async () => {
+    const list = [...archived];
+    if (!list.length) { await showActionSheet("Archived", [{ label: "Nothing archived", value: "x" }]); return; }
+    const pick = await showActionSheet("Tap one to bring it back", list.map((n) => ({ label: displayName(n), value: n })));
+    if (pick) { setArchived(pick, false); renderConversationList(); }
+  });
+  mk("Save this page's settings to a file", () => {
+    const data = {};
+    try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith("flip_relay_web_") && !/_cache|device_id|lock|salt|hash/i.test(k)) data[k] = localStorage.getItem(k); } } catch (e) { /* blocked */ }
+    const blob = new Blob([JSON.stringify({ room: roomId, data }, null, 1)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "flip-relay-web-settings.json";
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+  mk("Restore settings from a file", async () => {
+    const f = await pickFile({ accept: "application/json" });
+    if (!f) return;
+    try {
+      const j = JSON.parse(await f.text());
+      for (const [k, v] of Object.entries(j.data || {})) if (k.startsWith("flip_relay_web_")) localStorage.setItem(k, v);
+      alert("Restored. The page reloads now.");
+      location.reload();
+    } catch (e) { alert("That file could not be read."); }
+  });
+  body.insertBefore(box, body.firstChild);
 }
 
 // ---- App code (lock screen) -------------------------------------------------------------------------------------------
