@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = "";
-const ENC_CONFIG = "Ea5OgOjbIWzz9zU5mt7Vng==.iiey9WGuN3h8wrav.LYup8NbRLNveRs5YgKjreonnF+7aDov+BY/88/i7B4vQhfCeGjSB2K+6eWiLg0OSgGpl8f/VYf03XyTRf9X9Lk0oi3cSxppV6zijJdEow6IS9WN2feCZZPRsyGf67GL1N8nUah2t7I4u8j1zZj5ekxf+QdVTqo3jPSqrl2Q=";
+const ENC_CONFIG = "mNlQdWRFJggeAAVml8vHzA==.Cf8ImdHj/3rudJ1S.c7NIBGtwRfWfhkZrFwo2OPLdcdfhm+TAnMCRRbV1KZTCCCpD4Ur0debFvZmwvuMMcjLJ69Rn8z4zVbJbvLIk70rUKtviPIai2k6LYpKrNKbYSLnWadQLVWKOxLFKvnIVEskmZblGFegGGNUaLFIJBZhQXdLr7DlakaRXXBc=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -2746,8 +2746,8 @@ function addExtraSettings() {
   const mk = (label, fn) => { const b = document.createElement("button"); b.className = "settings-row"; b.textContent = label; b.addEventListener("click", fn); box.appendChild(b); return b; };
   const src = mk("", () => { try { localStorage.setItem(SHOW_SOURCE_KEY, showSourceOn() ? "0" : "1"); } catch (e) { /* blocked */ } src.textContent = "Show where messages were sent from: " + (showSourceOn() ? "On" : "Off"); if (currentChatNumber) renderChat(currentChatNumber); });
   src.textContent = "Show where messages were sent from: " + (showSourceOn() ? "On" : "Off");
-  const hg = mk("", () => { try { localStorage.setItem(HIDE_GROUPS_KEY, groupsHidden() ? "0" : "1"); } catch (e) { /* blocked */ } hg.textContent = "Hide group texts: " + (groupsHidden() ? "On" : "Off"); renderConversationList(); });
-  hg.textContent = "Hide group texts: " + (groupsHidden() ? "On" : "Off");
+  const hg = mk("", () => { try { localStorage.setItem(HIDE_GROUPS_KEY, groupsHidden() ? "0" : "1"); } catch (e) { /* blocked */ } hg.textContent = "Hide group texts (this page only): " + (groupsHidden() ? "On" : "Off"); renderConversationList(); });
+  hg.textContent = "Hide group texts (this page only): " + (groupsHidden() ? "On" : "Off");
   mk("Archived conversations", async () => {
     const list = [...archived];
     if (!list.length) { await showActionSheet("Archived", [{ label: "Nothing archived", value: "x" }]); return; }
