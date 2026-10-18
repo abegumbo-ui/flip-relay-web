@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Message+ dashboard</title>
+<link rel="manifest" href="/flip-relay-web/dashboard.webmanifest" />
+<meta name="theme-color" content="#0b57d0" />
+<link rel="apple-touch-icon" href="/flip-relay-web/dash-icon-192.png" />
+<link rel="icon" type="image/png" href="/flip-relay-web/dash-icon-192.png" />
 <style>
   :root { --page:#e4e4e7; --card:#f1f1f3; --ink:#1a1b20; --soft:#45464f; --blue:#0b57d0; --red:#b3261e; --green:#146c2e; --amber:#8a5a00; --high:#ededf3; --line:rgba(128,128,128,.22); --onblue:#fff; --okbg:#d8f1de; --warnbg:#fde7c7; --badbg:#f9d9d6; }
   @media (prefers-color-scheme: dark) { :root { --page:#111318; --card:#1b1d23; --ink:#e3e3ea; --soft:#c4c6d0; --blue:#a8c7fa; --red:#f2b8b5; --green:#7fd99a; --amber:#f5c26b; --high:#272a32; --onblue:#062e6f; --okbg:#173a22; --warnbg:#3d2e0d; --badbg:#4a1f1b; } }
@@ -1019,6 +1023,10 @@ $("l-forgot").onclick = () => {
 $("l-pin").addEventListener("keydown", (e) => { if (e.key === "Enter") $("l-go").click(); });
 
 show(localStorage.getItem(STORE) ? "login" : "setup");
+// installable as its own app (separate from the Flip Relay web app): register its own tiny service worker
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("/flip-relay-web/dash-sw.js", { scope: "/flip-relay-web/dashboard.html" }).catch(() => {});
+}
 </script>
 </body>
 </html>
