@@ -4,8 +4,8 @@
 // The database address and key are NOT in this file: the build encrypts them with the site passphrase (ENC_CONFIG) and the
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
-let DATABASE_SECRET = "";
-const ENC_CONFIG = "nXiSoVTCZgf2KpRZxDa+zA==.BotG/Ecbv3eEnnKF.GUbxszaMuKw8Kn5I3ujC23OPnEo0ohQayOS79EY93uW7Bp35tYc+EzJZbRWY0Z1h4YZYqzI1AX9P9XOp6rKd5TGzGufGyW2+qJyAqlcPhr0APUK3JUSk9lEpHB2AQ1YboAi7u0YKY1PxhINtd0uK75MZ+atsQbWKfb1JZQM=";
+let DATABASE_SECRET = ""; // holds THIS page's own sign-in token (renewed every 40 minutes), never a master key
+const ENC_CONFIG = "PQPikSW5DrjMthKHkAvw5w==.gTgtvYPW3zHPT3hB.r+M07nKYO5PYjbn0KuXdl4qMME3UdzA/jStgC7wjfvAiADDhpNo3EhbFKQbY9ECOqK7j8BFz7uUtQ7cIB/F/1mgTOR4ijqquHA==";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -861,6 +861,39 @@ function setPendingAttachment(file, kind, name) {
   el("attachment-preview").classList.remove("hidden");
 }
 
+function randHex16() { const b = new Uint8Array(8); crypto.getRandomValues(b); return Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join(""); }
+// ---------- this page's own Firebase identity (anonymous sign-in) ----------
+const FB_API_KEY = "AIzaSyCphMISERkBe6ajJIJDJAwQ0rmyrQzw7aA"; // Firebase's public project identifier, not a secret
+let fbUid = null, fbRefresh = null, fbTimer = null;
+async function fbSignIn() {
+  try { const saved = JSON.parse(localStorage.getItem("flip_relay_web_fbauth") || "null"); if (saved) fbRefresh = saved.refresh; } catch (e) { /* none */ }
+  let j;
+  if (fbRefresh) {
+    const r = await fetch("https://securetoken.googleapis.com/v1/token?key=" + FB_API_KEY, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(fbRefresh) });
+    if (r.ok) { const d = await r.json(); j = { idToken: d.id_token, refreshToken: d.refresh_token, localId: d.user_id }; }
+  }
+  if (!j) {
+    const r = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=" + FB_API_KEY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ returnSecureToken: true }) });
+    if (!r.ok) throw new Error("sign-in failed (HTTP " + r.status + ")");
+    j = await r.json();
+  }
+  DATABASE_SECRET = j.idToken; fbUid = j.localId; fbRefresh = j.refreshToken;
+  try { localStorage.setItem("flip_relay_web_fbauth", JSON.stringify({ refresh: fbRefresh, uid: fbUid })); } catch (e) { /* storage blocked */ }
+  if (!fbTimer) fbTimer = setInterval(() => { fbSignIn().catch((e) => logDebug("token renewal failed: " + e)); }, 40 * 60 * 1000);
+  return fbUid;
+}
+// Puts this page on the room's guest list: with the long key if it has one, else with the old room code (works only while the owner's migration door is open).
+async function joinRoomWeb(room) {
+  if (!fbUid) await fbSignIn();
+  const done = "flip_relay_web_joined_" + room;
+  try { if (localStorage.getItem(done)) return true; } catch (e) { /* storage blocked */ }
+  let key = null;
+  try { key = localStorage.getItem(roomKeyStore(room)); } catch (e) { /* storage blocked */ }
+  const r = await fetch(`${DATABASE_URL}/rooms/${room}/members/${fbUid}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(key || room) });
+  if (r.ok) { try { localStorage.setItem(done, "1"); } catch (e) { /* storage blocked */ } return true; }
+  return false;
+}
+
 // ---------- the long pairing key (16 characters): typed instead of the short code; picked up quietly for existing rooms ----------
 async function sha256Hex16(text) {
   const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -881,30 +914,22 @@ function parsePairingText(raw) {
 }
 async function resolvePairing(raw) {
   const p = parsePairingText(raw);
-  if (!p.key) return p.room ? p.room : null;
+  if (!p.key) return null;
+  if (!fbUid) await fbSignIn();
   const room = p.room || await rootRead("keyIndex/" + await sha256Hex16(p.key));
-  if (!room) return null;
-  const stored = await rootRead("roomKeys/" + room);
-  if (typeof stored !== "string" || stored.toUpperCase() !== p.key) return null;
+  if (typeof room !== "string" || !room) return null;
   try { localStorage.setItem(roomKeyStore(room), p.key); } catch (e) { /* storage blocked */ }
-  return room;
-}
-async function fetchRoomKeyQuietly() {
-  try {
-    if (!roomId || localStorage.getItem(roomKeyStore(roomId))) return;
-    const k = await rootRead("roomKeys/" + roomId);
-    if (typeof k === "string" && k.length === 16) localStorage.setItem(roomKeyStore(roomId), k);
-  } catch (e) { /* later */ }
+  try { localStorage.removeItem("flip_relay_web_joined_" + room); } catch (e) { /* storage blocked */ }
+  return (await joinRoomWeb(room)) ? room : null; // joining only works with the right key
 }
 
 async function onConnectClick() {
   const typed = el("code-input").value;
-  if (/[-:\s]/.test(typed.trim()) || typed.trim().replace(/[-\s]/g, "").length === 16) {
-    el("pairing-error").textContent = "Checking the code...";
-    const room = await resolvePairing(typed);
-    if (!room) { el("pairing-error").textContent = "That 16-character code is not right. Check it against the flip phone's Pairing Code screen."; return; }
-    el("code-input").value = room;
-  }
+  if (!parsePairingText(typed).key) { el("pairing-error").textContent = "Type the 16-character code from the flip phone's Pairing Code screen."; return; }
+  el("pairing-error").textContent = "Checking the code...";
+  const room = await resolvePairing(typed);
+  if (!room) { el("pairing-error").textContent = "That 16-character code is not right. Check it against the flip phone's Pairing Code screen."; return; }
+  el("code-input").value = room;
   const code = el("code-input").value.trim().toUpperCase();
   if (code.length < 4) {
     el("pairing-error").textContent = "That doesn't look like a full code.";
@@ -919,6 +944,7 @@ async function onConnectClick() {
 // of failing silently.
 async function connectToRoom(code, persist) {
   roomId = code;
+  try { await fbSignIn(); await joinRoomWeb(code); } catch (e) { logDebug("sign-in/join problem: " + e); }
   clearDebugLog();
   setPairingProgress(true, "Connecting to " + code + "...");
 
@@ -943,7 +969,6 @@ async function connectToRoom(code, persist) {
     loadGroupNames();
     loadArchived();
     checkDeviceApproval();
-    fetchRoomKeyQuietly();
     if (incomingSnapshot && typeof incomingSnapshot === "object") {
       for (const key of Object.keys(incomingSnapshot)) upsertIncoming(key, incomingSnapshot[key]);
     }
@@ -1611,13 +1636,13 @@ async function sendOne(rawBody, file, kind, attachmentName) {
     let attachmentType = null;
     let attachmentUrl = null;
     if (kind === "photo") {
-      imagePath = `attachments/${roomId}/${timestamp}.jpg`;
+      imagePath = `attachments/${roomId}/${timestamp}-${randHex16()}.jpg`;
       imageUrl = await uploadToStorage(file, imagePath);
     } else if (kind === "video" || kind === "contact") {
       if (file.size > 60 * 1024 * 1024) throw new Error("Attachment too large");
       attachmentType = kind === "video" ? "video" : "vcard";
       const ext = kind === "video" ? (file.name.split(".").pop() || "mp4") : "vcf";
-      const path = `attachments/${roomId}/${timestamp}.${ext}`;
+      const path = `attachments/${roomId}/${timestamp}-${randHex16()}.${ext}`;
       attachmentUrl = await uploadToStorage(file, path);
     }
     await fetch(roomUrl("messages/outgoing"), {
@@ -2798,7 +2823,7 @@ async function checkDeviceApproval() {
       const now = Date.now();
       const base = `${DATABASE_URL}/registry/${roomId}/tablets/${id}.json`;
       if (!mine) {
-        await fetch(base + "?auth=" + DATABASE_SECRET, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ approved: !require, name: webDeviceName(), model: webDeviceName(), app: "Web app", firstSeen: now, lastSeen: now }) });
+        await fetch(base + "?auth=" + DATABASE_SECRET + "&x-http-method-override=PATCH", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ approved: !require, name: webDeviceName(), model: webDeviceName(), app: "Web app", firstSeen: now, lastSeen: now }) });
         allowed = !require;
       } else {
         fetch(base + "?auth=" + DATABASE_SECRET + "&x-http-method-override=PATCH", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lastSeen: now }) }).catch(() => {});
@@ -2893,7 +2918,7 @@ async function configGate() {
   if (ENC_CONFIG.indexOf("__") === 0) return; // local/unbuilt copy: nothing encrypted
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(CFG_KEY) || "null"); } catch (e) {}
-  if (saved && saved.url && saved.secret) { DATABASE_URL = saved.url; DATABASE_SECRET = saved.secret; return; }
+  if (saved && saved.url) { DATABASE_URL = saved.url; return; }
   await lockCard({
     title: "Enter the site passphrase",
     text: "Asked once on each device. Without it this page cannot reach your messages.",
@@ -2903,7 +2928,7 @@ async function configGate() {
     validate: async (v) => {
       try {
         const c = await decryptConfig(v[0].replace(/\s+/g, "").toLowerCase());
-        DATABASE_URL = c.url; DATABASE_SECRET = c.secret;
+        DATABASE_URL = c.url;
         localStorage.setItem(CFG_KEY, JSON.stringify(c));
         return "";
       } catch (e) {
