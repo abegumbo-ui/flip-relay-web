@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = "";
-const ENC_CONFIG = "9JewvdN926bkgZVHrakcdg==.4bbTnh3iekX1aiMn.ounkYIUY4UXsRDckteq4QJSe75ZMojTeCpkOWAmWCuhmvA6gwZWLC2sjIX6LLMeatTUy/saKD4LvagPdJONXMOZmdldb0P31GvLsryZGfIHiLQdPkylSVjPUFnGGGfLEtQNQGoQPtSSkdIXqI/UFgamB/bZO7Mg+YaVKgEs=";
+const ENC_CONFIG = "2YmSDLhRBA1x589Q8lnACA==.NUiPh6y71TLSQqp3.7Z+jDTKcuTRNDIQjDkCGarv5S5zCEOQTGWvQTDih5qkyZlbJNsUP+6LeInfeipyQXuedUeQfKny1YDR4lhIs1R4vEtz+yF1KhkYkMRK9fe650IDUq70x07dblHVEjzbvwEi3IPuQQcJNawStLpYrhPB8+4if+pK5bI1pVP4=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
