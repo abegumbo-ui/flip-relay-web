@@ -482,7 +482,7 @@ async function screenHome() {
 
   const dev = group("Devices");
   dev.add(item({ icon: "phone", title: "Phones", sub: `${phoneN} paired`, pill: w.phones ? w.phones + " waiting" : "", warn: true, onclick: () => go("phones") }));
-  if (approveOn) dev.add(item({ icon: "tablet", title: "Tablets", sub: `${tabletN} listed`, pill: w.tablets ? w.tablets + " waiting" : "", warn: true, onclick: () => go("tablets") }));
+  dev.add(item({ icon: "tablet", title: "Tablets", sub: `${tabletN} listed`, pill: w.tablets ? w.tablets + " waiting" : "", warn: true, onclick: () => go("tablets") }));
   root.appendChild(dev);
 
   const pairG = group("Pairing");
@@ -539,7 +539,13 @@ async function screenPhones() {
       sub: [r.model || "", r.phoneNumber ? "number " + r.phoneNumber : "number unknown", r.app || "", "last seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
       pill: waiting ? "waiting for approval" : "approved", warn: waiting,
     }));
-    g.add(actions([{ label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}`, { approved: waiting }); render(); } }]));
+    g.add(actions([
+      { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}`, { approved: waiting }); render(); } },
+      { label: "Remove from the list", cls: "ghost", onclick: async () => {
+        if (!confirm("Remove this phone from the list? Its messages are not touched. If the phone is still in use it shows up here again the next time it checks in.")) return;
+        await db("DELETE", `registry/${code}`); render();
+      } },
+    ]));
   }
   root.appendChild(g);
   return root;
@@ -548,7 +554,6 @@ async function screenPhones() {
 // ---------- tablets ----------
 async function screenTablets() {
   const { reg, names } = await registry();
-  if (!tabletApprovalOn(reg)) { stack.pop(); render(); return null; }
   const root = document.createElement("div");
   const g = group("");
   let any = false;
@@ -675,6 +680,19 @@ async function screenRoom({ room, label }) {
   }
   if (!memberEntries.length) guests.add(item({ icon: "info", title: "Nobody yet", sub: "Devices appear here once they have updated and joined" }));
   root.appendChild(guests);
+
+  const tabs = Object.entries(r.tablets || {});
+  const tg = group("Tablets and web pages (" + tabs.length + ")");
+  for (const [id, t] of tabs) {
+    const waiting = t.approved !== true;
+    tg.add(item({ icon: "tablet", title: t.name || t.model || "Device", sub: [t.app || "", "first seen " + ago(t.firstSeen), "last seen " + ago(t.lastSeen)].filter(Boolean).join(" · "), pill: waiting ? "blocked or waiting" : "approved", warn: waiting }));
+    tg.add(actions([
+      { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${room}/tablets/${id}`, { approved: waiting }); render(); } },
+      { label: "Remove from the list", cls: "ghost", onclick: async () => { if (confirm("Remove this device from the list? It shows up again the next time it connects.")) { await db("DELETE", `registry/${room}/tablets/${id}`); render(); } } },
+    ]));
+  }
+  if (!tabs.length) tg.add(item({ icon: "info", title: "None listed", sub: "Tablets and web pages appear here when they check in" }));
+  root.appendChild(tg);
 
   const manage = group("Manage");
   manage.add(item({ icon: "qr", title: "Pair a new device to this room", sub: "A QR code and a 12-character code for 10 minutes", onclick: () => go("pair", { room }) }));
