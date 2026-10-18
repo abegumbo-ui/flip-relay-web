@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = "";
-const ENC_CONFIG = "0apwCZRxV5alIojC2155Ww==.fVLZP/k2/HDteuDg.Da9JPCGj8f2GUAdbDFIertDNzFCXo4vpIGhcFpMC0KOCHTs9bJ1FEzZoGPqRW8bIRVKgSvEtmy7tJyGKhuN/gyFTyLyvnz1r6yTgHG0twqwFkelnCq3kWngLZSbQKLDQ08bRo8PbEBVB7kpJ32D+2oG9PQqMVQCM2ZbfxP8=";
+const ENC_CONFIG = "5jWUkzhGu95W0nkbjLm6aw==.sMQxdrvwbeg0gUPx.FDehqP6mn7UD+wSrRsnogWiBnWrmEKJ0YRqZloGcrpqzexgqrrePCPB7XlyWokIKorSpG+N6wF/OKzK4T+sqQXB1OwXpFtDDa0+QbB0qMMrknT0+RWz2FpMeNHjT/fS92R2W1KXXh+ncDPSJAMPcoVX1qbj+KT+rWxxdgSo=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -2679,6 +2679,26 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+// ---------- swipe sideways between Conversations, Group texts and Calls (a setting, off by default) ----------
+const SWIPE_KEY = "flip_relay_web_swipe";
+function swipeOn() { try { return localStorage.getItem(SWIPE_KEY) === "1"; } catch (e) { return false; } }
+(function setupSwipe() {
+  let x0 = null, y0 = null;
+  document.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (x0 == null || !swipeOn()) { x0 = null; return; }
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 110 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    if (currentScreenName === "conversations" && !selectionMode && !conversationSelectionMode) {
+      if (dx < 0) { if (!groupsView && !groupsHidden()) { groupsView = true; renderConversationList(); } else onCallsClick(); }
+      else if (groupsView) { groupsView = false; renderConversationList(); }
+    } else if (currentScreenName === "calls" && dx > 0 && callsTab === 0) {
+      showScreen("conversations");
+    }
+  });
+})();
+
 // ---------- archive (hide a conversation from the list without deleting it) ----------
 let archived = new Set();
 function archivedKey() { return "flip_relay_web_archived_" + roomId; }
@@ -2761,6 +2781,8 @@ function addExtraSettings() {
   src.textContent = "Show where messages were sent from: " + (showSourceOn() ? "On" : "Off");
   const hg = mk("", () => { try { localStorage.setItem(HIDE_GROUPS_KEY, groupsHidden() ? "0" : "1"); } catch (e) { /* blocked */ } hg.textContent = "Hide group texts (this page only): " + (groupsHidden() ? "On" : "Off"); renderConversationList(); });
   hg.textContent = "Hide group texts (this page only): " + (groupsHidden() ? "On" : "Off");
+  const sw = mk("", () => { try { localStorage.setItem(SWIPE_KEY, swipeOn() ? "0" : "1"); } catch (e) { /* blocked */ } sw.textContent = "Swipe between screens: " + (swipeOn() ? "On" : "Off"); });
+  sw.textContent = "Swipe between screens: " + (swipeOn() ? "On" : "Off");
   mk("Archived conversations", async () => {
     const list = [...archived];
     if (!list.length) { await showActionSheet("Archived", [{ label: "Nothing archived", value: "x" }]); return; }
