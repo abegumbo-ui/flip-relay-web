@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = "";
-const ENC_CONFIG = "5jWUkzhGu95W0nkbjLm6aw==.sMQxdrvwbeg0gUPx.FDehqP6mn7UD+wSrRsnogWiBnWrmEKJ0YRqZloGcrpqzexgqrrePCPB7XlyWokIKorSpG+N6wF/OKzK4T+sqQXB1OwXpFtDDa0+QbB0qMMrknT0+RWz2FpMeNHjT/fS92R2W1KXXh+ncDPSJAMPcoVX1qbj+KT+rWxxdgSo=";
+const ENC_CONFIG = "giXRiYZotP7KUtJOAJi/+Q==.TnlyjWJDW3nhmeRM.a5Ddg4djL4akoE913NOOvqf9Ct8PsY9lQCdi+V+Sqjiihbfrr95Ev8AQfNxIU72uJejhqAN7ZDo8HNpeGrlA5EKzKlW2Vc0/HQGhuRKqvPGiQ07lr7FfQ9IXR8R/B5tvbYFkVeUoVGDuepcSmLAWrASt17rDC3n95ZQCpTg=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -144,7 +144,11 @@ function loadGroupNames() {
 function setGroupName(key, name) {
   if (name) groupNames[key] = name; else delete groupNames[key];
   try { localStorage.setItem(groupNamesKey(), JSON.stringify(groupNames)); } catch (e) { /* storage blocked */ }
-  fetch(roomUrl("groupNames/" + encodeURIComponent(key)), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(name || null) }).catch(() => {});
+  // the phone has ONE conversation for a group and a mass text with the same people: write the name for both kinds
+  const members = key.slice(2);
+  for (const k of ["g:" + members, "m:" + members]) {
+    fetch(roomUrl("groupNames/" + encodeURIComponent(k)), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(name || null) }).catch(() => {});
+  }
 }
 function renameGroup(key) {
   const n = prompt("Name this group:", groupNames[key] || "");
