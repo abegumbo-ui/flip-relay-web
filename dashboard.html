@@ -5,36 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Message+ dashboard</title>
 <style>
-  :root { --page:#e4e4e7; --card:#f1f1f3; --ink:#1a1b20; --soft:#45464f; --blue:#0b57d0; --red:#b3261e; --high:#ededf3; }
-  @media (prefers-color-scheme: dark) { :root { --page:#111318; --card:#1b1d23; --ink:#e3e3ea; --soft:#c4c6d0; --blue:#a8c7fa; --red:#f2b8b5; --high:#272a32; } }
+  :root { --page:#e4e4e7; --card:#f1f1f3; --ink:#1a1b20; --soft:#45464f; --blue:#0b57d0; --red:#b3261e; --high:#ededf3; --line:rgba(128,128,128,.22); --onblue:#fff; }
+  @media (prefers-color-scheme: dark) { :root { --page:#111318; --card:#1b1d23; --ink:#e3e3ea; --soft:#c4c6d0; --blue:#a8c7fa; --red:#f2b8b5; --high:#272a32; --onblue:#062e6f; } }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--page); color:var(--ink); font-family: Roboto, "Segoe UI", system-ui, sans-serif; }
-  main { max-width: 900px; margin: 0 auto; padding: 16px; }
-  h1 { font-weight:400; font-size: 26px; margin: 8px 0 16px; }
-  .card { background:var(--card); border-radius:24px; padding:20px; margin-bottom:16px; }
-  .card h2 { font-size:16px; margin:0 0 12px; color:var(--blue); font-weight:500; }
+  main { max-width: 720px; margin: 0 auto; padding: 8px 12px 40px; }
+  h1 { font-weight:400; font-size: 28px; margin: 18px 8px 6px; }
+  .top { display:flex; align-items:center; gap:6px; padding:14px 0 6px; }
+  .top h1 { margin:0 0 0 4px; font-size:24px; }
+  .back { width:44px; height:44px; border-radius:50%; background:transparent; padding:0; display:flex; align-items:center; justify-content:center; color:var(--ink); }
+  .back svg { width:24px; height:24px; fill:var(--ink); }
+  h3 { font-size:14px; font-weight:500; color:var(--blue); margin:22px 16px 8px; }
+  .group { background:var(--card); border-radius:26px; overflow:hidden; }
+  .item { display:flex; align-items:center; gap:16px; padding:16px 20px; min-height:68px; cursor:pointer; }
+  .item + .item { border-top:1px solid var(--line); }
+  .item.static { cursor:default; }
+  .ic { width:24px; height:24px; flex:none; fill:var(--soft); }
+  .tx { flex:1; min-width:0; }
+  .tt { font-size:17px; }
+  .st { font-size:13px; color:var(--soft); margin-top:3px; overflow-wrap:anywhere; }
+  .chev { width:20px; height:20px; fill:var(--soft); flex:none; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; padding:0 20px 16px 60px; }
+  .danger-t .tt { color:var(--red); }
   input, button, select { font: inherit; }
   input[type=text], input[type=password], input[type=number] { width:100%; padding:14px 16px; border:none; border-radius:16px; background:var(--high); color:var(--ink); margin-bottom:10px; }
-  button { border:none; border-radius:22px; padding:11px 20px; background:var(--blue); color:#fff; cursor:pointer; }
-  @media (prefers-color-scheme: dark) { button { color:#062e6f; } }
+  button { border:none; border-radius:22px; padding:10px 20px; background:var(--blue); color:var(--onblue); cursor:pointer; }
   button.ghost { background:var(--high); color:var(--ink); }
   button.danger { background:var(--red); color:#fff; }
-  .row { display:flex; gap:12px; align-items:center; padding:14px 0; border-top:1px solid rgba(128,128,128,.2); flex-wrap:wrap; }
-  .row:first-of-type { border-top:none; }
-  .grow { flex:1; min-width:200px; }
-  .name { font-size:17px; }
+  .pad { padding:20px; }
+  .card { background:var(--card); border-radius:26px; padding:20px; margin-bottom:16px; }
+  .card h2 { font-size:16px; margin:0 0 12px; color:var(--blue); font-weight:500; }
   .meta { color:var(--soft); font-size:13px; margin-top:3px; }
-  .bar { height:10px; border-radius:6px; background:var(--high); overflow:hidden; margin-top:6px; }
-  .bar > div { height:100%; background:var(--blue); }
   .err { color:var(--red); min-height:20px; }
   .hidden { display:none !important; }
-  .pill { display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; background:var(--high); margin-left:6px; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; background:var(--high); margin-left:8px; vertical-align:middle; }
+  .pill.warn { background:var(--red); color:#fff; }
+  .bar { height:8px; border-radius:6px; background:var(--high); overflow:hidden; margin-top:8px; }
+  .bar > div { height:100%; background:var(--blue); }
+  .sw { width:52px; height:32px; border-radius:16px; background:var(--high); border:2px solid var(--soft); position:relative; flex:none; transition:.15s; }
+  .sw::after { content:""; position:absolute; top:6px; left:6px; width:16px; height:16px; border-radius:50%; background:var(--soft); transition:.15s; }
+  .sw.on { background:var(--blue); border-color:var(--blue); }
+  .sw.on::after { left:26px; top:4px; width:24px; height:24px; margin-top:-2px; background:var(--onblue); }
+  .big { font-size:30px; margin:2px 0; }
+  select { padding:12px; border-radius:16px; border:none; background:var(--high); color:var(--ink); margin-bottom:10px; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Message+ dashboard</h1>
-
   <!-- first run: connect, and choose a PIN. The Firebase secret is stored only in THIS browser, encrypted with the PIN. -->
   <div id="setup" class="card hidden">
     <h2>First time: connect and choose a PIN</h2>
@@ -57,66 +74,11 @@
   </div>
 
   <div id="app" class="hidden">
-    <div class="card" id="devices-card">
-      <h2>Devices <span id="pending-pill"></span></h2>
-      <div class="meta" style="margin-bottom:8px">Every phone and tablet that uses one of your pairing codes. A new phone does nothing (no sync, no uploads) until you press Approve. With "Approve new tablets" on, a tablet or web page that joins a code also waits for your Approve.</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-        <button id="dev-phones" class="ghost">Phones</button>
-        <button id="dev-tablets" class="ghost">Tablets</button>
-        <button id="dev-refresh" class="ghost">Refresh</button>
-      </div>
-      <div id="devices" class="meta">Tap Phones or Tablets.</div>
+    <div id="topbar" class="top hidden">
+      <button id="back" class="back ghost" title="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+      <h1 id="title"></h1>
     </div>
-
-    <div class="card">
-      <h2>Storage</h2>
-      <div id="usage">Measuring...</div>
-      <div class="meta">Free plan: 1 GB of database data is more than this will ever need; Storage files are counted separately.</div>
-    </div>
-
-    <div class="card">
-      <h2>Rooms</h2>
-      <div id="rooms">Loading...</div>
-      <button id="refresh" class="ghost">Refresh</button>
-    </div>
-
-    <div id="detail" class="card hidden">
-      <h2 id="d-title">Room</h2>
-      <div id="d-body">Loading...</div>
-      <hr style="border:none;border-top:1px solid rgba(128,128,128,.2);margin:18px 0" />
-      <label class="meta">Delete everything in this room older than</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="d-n" type="number" min="1" value="2" style="width:100px" />
-        <select id="d-unit" style="padding:12px;border-radius:16px;border:none;background:var(--high);color:var(--ink);margin-bottom:10px"><option value="365">years</option><option value="30">months</option><option value="1">days</option></select>
-        <select id="d-type" style="padding:12px;border-radius:16px;border:none;background:var(--high);color:var(--ink);margin-bottom:10px"><option value="all">all kinds</option><option value="text">only text</option><option value="picture">only pictures</option><option value="video">only videos</option><option value="voice">only voice messages</option><option value="contact">only contacts</option></select>
-      </div>
-      <button id="d-preview" class="ghost">Count what would go</button>
-      <button id="d-delete" class="danger">Delete</button>
-      <div id="d-msg" class="meta" style="margin-top:8px"></div>
-      <div class="meta">Devices keep their own copy of what is removed here (it is marked as expired, not deleted).</div>
-      <button id="d-close" class="ghost" style="margin-top:12px">Back to rooms</button>
-    </div>
-
-    <div class="card">
-      <h2>Settings</h2>
-      <label class="meta">Delete messages and files older than (days) — used by the daily cleanup</label>
-      <input id="days" type="number" min="1" max="365" />
-      <button id="save-days">Save</button>
-      <span id="days-msg" class="meta"></span>
-      <hr style="border:none;border-top:1px solid rgba(128,128,128,.2);margin:18px 0" />
-      <label class="meta">Daily cleanup</label>
-      <div id="live-state" class="name" style="margin:6px 0 10px"></div>
-      <button id="live-btn">Turn on</button>
-      <div class="meta">Off = it only reports what it would remove. On = it really removes old messages and files every day (about 03:17 UTC). Turn it on only after all your tablets have updated, because the web app does not keep expired messages.</div>
-      <hr style="border:none;border-top:1px solid rgba(128,128,128,.2);margin:18px 0" />
-      <label class="meta">Change PIN</label>
-      <input id="new-pin" type="password" placeholder="New PIN or password" autocomplete="new-password" />
-      <button id="save-pin" class="ghost">Change PIN</button>
-      <span id="pin-msg" class="meta"></span>
-      <hr style="border:none;border-top:1px solid rgba(128,128,128,.2);margin:18px 0" />
-      <button id="lock" class="ghost">Lock</button>
-      <button id="forget" class="danger">Forget the Firebase secret on this device</button>
-    </div>
+    <div id="view"></div>
   </div>
 </main>
 
@@ -179,141 +141,253 @@ async function storageDelete(room) {
 const mb = (n) => (n / 1048576).toFixed(n > 10485760 ? 0 : 1) + " MB";
 const ago = (ms) => { if (!ms) return "never"; const s = (Date.now() - ms) / 1000; return s < 90 ? "just now" : s < 5400 ? Math.round(s / 60) + " min ago" : s < 172800 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago"; };
 
-// ---------- devices: who is paired, and the owner's Approve ----------
-let devView = null; // null = collapsed, "phone" or "tablet"
-async function loadDevices() {
-  const box = $("devices");
-  let reg, names;
+// ---------- small UI helpers (the same look as the app's settings) ----------
+const ICON = {
+  phone: "M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z",
+  tablet: "M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 1.99-.9 1.99-2L23 6c0-1.1-.9-2-2-2zm-2 14H5V6h14v12z",
+  folder: "M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z",
+  shield: "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z",
+  trash: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+  lock: "M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z",
+  clock: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z",
+  edit: "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+  out: "M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z",
+  refresh: "M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z",
+  info: "M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z",
+};
+const CHEV = "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z";
+const svg = (d, cls) => `<svg class="${cls || "ic"}" viewBox="0 0 24 24"><path d="${d}"/></svg>`;
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function group(title) {
+  const wrap = document.createElement("div");
+  if (title) { const h = document.createElement("h3"); h.textContent = title; wrap.appendChild(h); }
+  const g = document.createElement("div");
+  g.className = "group";
+  wrap.appendChild(g);
+  wrap.add = (el) => { if (el) g.appendChild(el); return wrap; };
+  wrap.empty = () => !g.children.length;
+  return wrap;
+}
+function item({ icon, title, sub, pill, warn, onclick, toggle, on, danger }) {
+  const el = document.createElement("div");
+  el.className = "item" + (onclick || toggle ? "" : " static") + (danger ? " danger-t" : "");
+  el.innerHTML = (icon ? svg(ICON[icon]) : "") +
+    `<div class="tx"><div class="tt">${esc(title)}${pill ? `<span class="pill${warn ? " warn" : ""}">${esc(pill)}</span>` : ""}</div>${sub ? `<div class="st">${esc(sub)}</div>` : ""}</div>` +
+    (toggle ? `<div class="sw${on ? " on" : ""}"></div>` : onclick ? svg(CHEV, "chev") : "");
+  if (toggle) el.onclick = () => toggle(!on);
+  else if (onclick) el.onclick = onclick;
+  return el;
+}
+function actions(buttons) {
+  const el = document.createElement("div");
+  el.className = "actions";
+  for (const b of buttons) {
+    const x = document.createElement("button");
+    x.textContent = b.label;
+    if (b.cls) x.className = b.cls;
+    x.onclick = b.onclick;
+    el.appendChild(x);
+  }
+  return el;
+}
+
+// ---------- navigation: a stack of screens, like the settings of the app ----------
+const stack = [];
+const TITLES = { phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", cleanup: "Daily cleanup", pin: "Change PIN" };
+function go(name, arg) { stack.push({ name, arg }); render(); }
+function back() { if (stack.length > 1) stack.pop(); render(); }
+$("back").onclick = back;
+
+let busy = 0;
+async function render() {
+  const cur = stack[stack.length - 1] || { name: "home" };
+  const mine = ++busy;
+  $("topbar").classList.toggle("hidden", cur.name === "home");
+  $("title").textContent = cur.name === "room" ? cur.arg.label : (TITLES[cur.name] || "");
+  const view = $("view");
+  view.innerHTML = '<div class="pad meta">Loading...</div>';
   try {
-    reg = (await db("GET", "registry")) || {};
-    names = (await db("GET", "admin/roomNames")) || {};
-  } catch (e) { box.textContent = "Could not load: " + e.message; return; }
-  box.innerHTML = "";
-  let waiting = 0;
+    const fn = { home: screenHome, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, cleanup: screenCleanup, pin: screenPin }[cur.name];
+    const out = await fn(cur.arg, () => mine === busy);
+    if (mine !== busy || !out) return;
+    view.innerHTML = "";
+    view.appendChild(out);
+  } catch (e) {
+    if (mine === busy) view.innerHTML = `<div class="pad err">Could not load: ${esc(e.message)} — is the secret right?</div>`;
+  }
+}
+
+// ---------- preferences ----------
+const allowDelete = () => localStorage.getItem("dash_allow_delete") !== "0";
+async function registry() { return { reg: (await db("GET", "registry")) || {}, names: (await db("GET", "admin/roomNames")) || {} }; }
+const tabletApprovalOn = (reg) => Object.values(reg).some((r) => r && r.requireTabletApproval === true);
+const countWaiting = (reg) => {
+  let phones = 0, tablets = 0;
+  for (const r of Object.values(reg)) { if (!r) continue; if (r.approved !== true) phones++; for (const t of Object.values(r.tablets || {})) if (t.approved !== true) tablets++; }
+  return { phones, tablets };
+};
+
+// ---------- home ----------
+async function screenHome() {
+  const { reg, names } = await registry();
+  const rooms = Object.keys((await db("GET", "rooms", undefined, "&shallow=true")) || {});
+  const approveOn = tabletApprovalOn(reg);
+  const w = countWaiting(reg);
+  const phoneN = Object.keys(reg).length;
+  const tabletN = Object.values(reg).reduce((a, r) => a + Object.keys((r && r.tablets) || {}).length, 0);
+  const live = (await db("GET", "admin/cleanupLive")) === true;
+  const days = (await db("GET", "admin/cleanupDays")) || 14;
+  const root = document.createElement("div");
+  const head = document.createElement("h1");
+  head.textContent = "Message+ dashboard";
+  root.appendChild(head);
+
+  const dev = group("Devices");
+  dev.add(item({ icon: "phone", title: "Phones", sub: `${phoneN} paired`, pill: w.phones ? w.phones + " waiting" : "", warn: true, onclick: () => go("phones") }));
+  if (approveOn) dev.add(item({ icon: "tablet", title: "Tablets", sub: `${tabletN} listed`, pill: w.tablets ? w.tablets + " waiting" : "", warn: true, onclick: () => go("tablets") }));
+  root.appendChild(dev);
+
+  root.appendChild(group("Approvals").add(item({
+    icon: "shield", title: "Approve new tablets",
+    sub: approveOn ? "On: a tablet or web page that joins waits for your Approve" : "Off: tablets join on their own and are not listed",
+    toggle: async (v) => {
+      const codes = Object.keys(reg);
+      for (const c of codes) await db("PATCH", `registry/${c}`, { requireTabletApproval: v });
+      await db("PUT", "admin/approveTablets", v);
+      render();
+    }, on: approveOn,
+  })));
+
+  root.appendChild(group("Rooms").add(item({ icon: "folder", title: "Rooms", sub: `${rooms.length} room${rooms.length === 1 ? "" : "s"} — storage, names and details`, onclick: () => go("rooms") })));
+
+  const del = group("Deleting");
+  del.add(item({
+    icon: "trash", title: "Allow deleting",
+    sub: allowDelete() ? "On: you can delete old messages and rooms" : "Off: nothing can be deleted from here, and the automatic daily cleanup is stopped",
+    toggle: async (v) => {
+      if (!v && !confirm("Turn deleting off? This also stops the automatic daily cleanup, and hides every delete option.")) return;
+      localStorage.setItem("dash_allow_delete", v ? "1" : "0");
+      if (!v) await db("PUT", "admin/cleanupLive", false);
+      render();
+    }, on: allowDelete(),
+  }));
+  if (allowDelete()) del.add(item({ icon: "clock", title: "Daily cleanup", sub: (live ? "On" : "Off") + " · removes things older than " + days + " days", onclick: () => go("cleanup") }));
+  root.appendChild(del);
+
+  root.appendChild(group("Security")
+    .add(item({ icon: "lock", title: "Change PIN", onclick: () => go("pin") }))
+    .add(item({ icon: "out", title: "Lock", onclick: () => { cfg = null; stack.length = 0; show("login"); } }))
+    .add(item({ icon: "trash", title: "Forget the Firebase secret on this device", danger: true, onclick: () => { if (confirm("Remove the saved Firebase secret from this device?")) { localStorage.removeItem(STORE); cfg = null; stack.length = 0; show("setup"); } } })));
+  return root;
+}
+
+// ---------- phones ----------
+async function screenPhones() {
+  const { reg, names } = await registry();
+  const root = document.createElement("div");
+  const note = document.createElement("div");
+  note.className = "meta pad";
+  note.style.padding = "4px 16px 0";
+  note.textContent = "A new phone does nothing (no sync, no uploads) until you press Approve.";
+  root.appendChild(note);
   const codes = Object.keys(reg).sort();
-  // the waiting count always covers everything, whichever list is open
-  for (const c of codes) { const rr = reg[c] || {}; if (rr.approved !== true) waiting++; for (const t of Object.values(rr.tablets || {})) if (t.approved !== true) waiting++; }
-  $("pending-pill").innerHTML = waiting ? `<span class="pill" style="background:var(--red);color:#fff">${waiting} waiting</span>` : "";
-  $("dev-phones").style.fontWeight = devView === "phone" ? "700" : "";
-  $("dev-tablets").style.fontWeight = devView === "tablet" ? "700" : "";
-  if (!devView) { box.textContent = "Tap Phones or Tablets."; return; }
-  waiting = 0;
-  if (!codes.length) box.textContent = "No devices have checked in yet.";
+  if (!codes.length) { root.appendChild(Object.assign(document.createElement("div"), { className: "pad meta", textContent: "No phones have checked in yet." })); return root; }
+  const g = group("");
   for (const code of codes) {
     const r = reg[code] || {};
-    const tablets = r.tablets || {};
-    const wrap = document.createElement("div");
-    wrap.className = "row";
-    const phoneWaiting = r.approved !== true;
-    const title = (names[code] || code) + (names[code] ? "  (" + code + ")" : "");
-    wrap.innerHTML = `<div class="grow"><div class="name"></div><div class="meta"></div></div><button class="ap"></button><button class="ghost req"></button>`;
-    wrap.querySelector(".name").innerHTML = "";
-    wrap.querySelector(".name").textContent = "Phone " + title;
-    const pill = document.createElement("span");
-    pill.className = "pill";
-    pill.textContent = phoneWaiting ? "WAITING FOR APPROVAL" : "approved";
-    if (phoneWaiting) pill.style.cssText = "background:var(--red);color:#fff";
-    wrap.querySelector(".name").appendChild(pill);
-    wrap.querySelector(".meta").textContent = [r.model || "", r.phoneNumber ? "number " + r.phoneNumber : "number unknown", r.app || "", "first seen " + ago(r.createdAt), "last seen " + ago(r.lastSeen)].filter(Boolean).join(" · ");
-    const ap = wrap.querySelector(".ap");
-    ap.textContent = phoneWaiting ? "Approve" : "Block";
-    ap.className = "ap " + (phoneWaiting ? "" : "danger");
-    ap.onclick = async () => { await db("PATCH", `registry/${code}`, { approved: phoneWaiting }); loadDevices(); };
-    const req = wrap.querySelector(".req");
-    const requires = r.requireTabletApproval === true;
-    req.textContent = requires ? "Approve new tablets: ON" : "Approve new tablets: OFF";
-    req.onclick = async () => { await db("PATCH", `registry/${code}`, { requireTabletApproval: !requires }); loadDevices(); };
-    if (devView === "phone") box.appendChild(wrap);
-    if (devView !== "tablet") continue;
-    for (const [id, t] of Object.entries(tablets)) {
-      const tw = document.createElement("div");
-      tw.className = "row";
-      const tWaiting = t.approved !== true;
-      tw.innerHTML = `<div class="grow"><div class="name"></div><div class="meta"></div></div><button class="tap"></button><button class="ghost trm">Remove</button>`;
-      tw.querySelector(".name").textContent = (t.name || t.model || "Device") + " (phone " + (names[code] || code) + ") ";
-      const tp = document.createElement("span");
-      tp.className = "pill";
-      tp.textContent = tWaiting ? "WAITING FOR APPROVAL" : "approved";
-      if (tWaiting) tp.style.cssText = "background:var(--red);color:#fff";
-      tw.querySelector(".name").appendChild(tp);
-      tw.querySelector(".meta").textContent = [t.app || "", "id " + String(id).slice(0, 8), "first seen " + ago(t.firstSeen), "last seen " + ago(t.lastSeen)].filter(Boolean).join(" · ");
-      const tap = tw.querySelector(".tap");
-      tap.textContent = tWaiting ? "Approve" : "Block";
-      tap.className = "tap " + (tWaiting ? "" : "danger");
-      tap.onclick = async () => { await db("PATCH", `registry/${code}/tablets/${id}`, { approved: tWaiting }); loadDevices(); };
-      tw.querySelector(".trm").onclick = async () => { if (confirm("Remove this device from the list? It shows up again the next time it connects.")) { await db("DELETE", `registry/${code}/tablets/${id}`); loadDevices(); } };
-      box.appendChild(tw);
+    const waiting = r.approved !== true;
+    g.add(item({
+      icon: "phone", title: names[code] ? `${names[code]} (${code})` : code,
+      sub: [r.model || "", r.phoneNumber ? "number " + r.phoneNumber : "number unknown", r.app || "", "first seen " + ago(r.createdAt), "last seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
+      pill: waiting ? "waiting for approval" : "approved", warn: waiting,
+    }));
+    g.add(actions([
+      { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}`, { approved: waiting }); render(); } },
+    ]));
+  }
+  root.appendChild(g);
+  return root;
+}
+
+// ---------- tablets ----------
+async function screenTablets() {
+  const { reg, names } = await registry();
+  if (!tabletApprovalOn(reg)) { stack.pop(); render(); return null; }
+  const root = document.createElement("div");
+  const g = group("");
+  let any = false;
+  for (const code of Object.keys(reg).sort()) {
+    for (const [id, t] of Object.entries(reg[code].tablets || {})) {
+      any = true;
+      const waiting = t.approved !== true;
+      g.add(item({
+        icon: "tablet", title: t.name || t.model || "Device",
+        sub: [`phone ${names[code] || code}`, t.app || "", "first seen " + ago(t.firstSeen), "last seen " + ago(t.lastSeen)].filter(Boolean).join(" · "),
+        pill: waiting ? "waiting for approval" : "approved", warn: waiting,
+      }));
+      g.add(actions([
+        { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}/tablets/${id}`, { approved: waiting }); render(); } },
+        { label: "Remove", cls: "ghost", onclick: async () => { if (confirm("Remove this device from the list? It shows up again the next time it connects.")) { await db("DELETE", `registry/${code}/tablets/${id}`); render(); } } },
+      ]));
     }
   }
+  if (!any) root.appendChild(Object.assign(document.createElement("div"), { className: "pad meta", textContent: "No tablets have connected yet." }));
+  else root.appendChild(g);
+  return root;
 }
-$("dev-refresh").onclick = loadDevices;
-$("dev-phones").onclick = () => { devView = devView === "phone" ? null : "phone"; loadDevices(); };
-$("dev-tablets").onclick = () => { devView = devView === "tablet" ? null : "tablet"; loadDevices(); };
-setInterval(() => { if (!$("app").classList.contains("hidden") && cfg) loadDevices().catch(() => {}); }, 30000);
 
-async function load() {
-  loadDevices();
-  $("rooms").textContent = "Loading...";
+// ---------- rooms ----------
+async function screenRooms(_, alive) {
   const names = (await db("GET", "admin/roomNames")) || {};
   const list = Object.keys((await db("GET", "rooms", undefined, "&shallow=true")) || {}).sort();
-  const days = await db("GET", "admin/cleanupDays");
-  $("days").value = days || 14;
-  liveOn = (await db("GET", "admin/cleanupLive")) === true;
-  showLive();
-  const box = $("rooms");
-  box.innerHTML = "";
-  let totalBytes = 0, biggest = 1;
+  const root = document.createElement("div");
+  const sum = document.createElement("div");
+  sum.className = "card";
+  sum.style.marginTop = "8px";
+  sum.innerHTML = `<h2>Storage</h2><div class="big">Measuring...</div><div class="meta">Message text, trash, calls and attachment files. Free plan: 1 GB of database data is more than this will ever need; Storage files are counted separately.</div>`;
+  root.appendChild(sum);
+  const g = group("");
   const rows = [];
   for (const room of list) {
-    const row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `<div class="grow"><div class="name"></div><div class="meta">Measuring...</div><div class="bar"><div style="width:0"></div></div></div>
-      <button class="ghost rn">Name</button><button class="danger rm">Delete room</button>`;
-    row.querySelector(".name").textContent = names[room] || room;
-    row.querySelector(".name").style.cursor = "pointer";
-    row.querySelector(".name").title = "Open this room";
-    row.querySelector(".name").onclick = () => openRoom(room, names[room] || room);
-    box.appendChild(row);
-    rows.push({ room, row });
+    const el = item({ icon: "folder", title: names[room] || room, sub: "Measuring...", onclick: () => go("room", { room, label: names[room] || room }) });
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.innerHTML = "<div style='width:0'></div>";
+    el.querySelector(".tx").appendChild(bar);
+    g.add(el);
+    rows.push({ room, el, bar });
   }
-  if (!list.length) box.textContent = "No rooms.";
-  for (const { room, row } of rows) {
-    let bytes = 0, count = 0, last = 0, parts = {};
-    try {
-      for (const p of ["messages/incoming", "messages/sent", "deletedMessages", "calls"]) {
-        const txt = JSON.stringify((await db("GET", `rooms/${room}/${p}`)) || {});
-        parts[p] = txt.length; bytes += txt.length;
-        if (p.startsWith("messages")) { const o = JSON.parse(txt); for (const v of Object.values(o)) { count++; if (v && v.timestamp > last) last = v.timestamp; } }
-      }
-    } catch (e) { row.querySelector(".meta").textContent = "Could not read: " + e.message; continue; }
-    const hb = await db("GET", `rooms/${room}/heartbeat`).catch(() => null);
-    const files = await storageBytes(room);
-    const fileBytes = files ? files.total : 0;
-    totalBytes += bytes + fileBytes;
-    row._bytes = bytes + fileBytes;
-    biggest = Math.max(biggest, bytes + fileBytes);
-    row.querySelector(".meta").innerHTML = `${count.toLocaleString()} messages · ${mb(bytes)} data` + (files ? ` · ${files.files} files, ${mb(fileBytes)}` : "") +
-      ` · last message ${ago(last)}` + (hb && hb.at ? ` · phone seen ${ago(hb.at)}` : "") + (Date.now() - last > 30 * 864e5 ? '<span class="pill">inactive</span>' : "");
-    row.querySelector(".bar > div").style.width = Math.max(2, (bytes + fileBytes) / biggest * 100) + "%";
-    row.querySelector(".rn").onclick = async () => {
-      const n = prompt("A name to recognise this room by:", names[room] || "");
-      if (n === null) return;
-      await db("PUT", `admin/roomNames/${room}`, n || null);
-      load();
-    };
-    row.querySelector(".rm").onclick = async () => {
-      const label = names[room] || room;
-      if (prompt(`This permanently deletes ALL messages, calls and files of "${label}" from Firebase.\nType DELETE to confirm:`) !== "DELETE") return;
-      await db("DELETE", `rooms/${room}`);
-      await storageDelete(room);
-      await db("PUT", `admin/roomNames/${room}`, null);
-      load();
-    };
-  }
-  $("usage").innerHTML = `<div style="font-size:28px">${mb(totalBytes)}</div><div class="meta">in ${list.length} room${list.length === 1 ? "" : "s"} (message text, trash, calls and attachment files)</div>`;
+  if (!list.length) root.appendChild(Object.assign(document.createElement("div"), { className: "pad meta", textContent: "No rooms." }));
+  else root.appendChild(g);
+  // measure in the background, one room at a time, so the screen is usable straight away
+  (async () => {
+    let total = 0, biggest = 1;
+    for (const { room, el, bar } of rows) {
+      if (!alive()) return;
+      let bytes = 0, count = 0, last = 0;
+      try {
+        for (const p of ["messages/incoming", "messages/sent", "deletedMessages", "calls"]) {
+          const txt = JSON.stringify((await db("GET", `rooms/${room}/${p}`)) || {});
+          bytes += txt.length;
+          if (p.startsWith("messages")) { for (const v of Object.values(JSON.parse(txt))) { count++; if (v && v.timestamp > last) last = v.timestamp; } }
+        }
+      } catch (e) { el.querySelector(".st").textContent = "Could not read: " + e.message; continue; }
+      const hb = await db("GET", `rooms/${room}/heartbeat`).catch(() => null);
+      const files = await storageBytes(room);
+      const fb = files ? files.total : 0;
+      total += bytes + fb;
+      biggest = Math.max(biggest, bytes + fb);
+      el.querySelector(".st").textContent = `${count.toLocaleString()} messages · ${mb(bytes + fb)}` + (files ? ` (${files.files} files)` : "") + ` · last message ${ago(last)}` + (hb && hb.at ? ` · phone seen ${ago(hb.at)}` : "") + (Date.now() - last > 30 * 864e5 ? " · inactive" : "");
+      bar.firstChild.style.width = Math.max(2, (bytes + fb) / biggest * 100) + "%";
+      sum.querySelector(".big").textContent = mb(total);
+    }
+    if (alive()) sum.querySelector(".big").textContent = mb(total) + ` in ${list.length} room${list.length === 1 ? "" : "s"}`;
+  })();
+  return root;
 }
 
-// ---------- one room in detail ----------
+// ---------- one room ----------
 function kindOf(v) {
   if (v.imageUrl) return "picture";
   const k = v.attachmentType || v.attachmentKind;
@@ -324,8 +398,6 @@ function kindOf(v) {
   return "text";
 }
 const KIND_LABEL = { text: "Text messages", picture: "Pictures", video: "Videos", voice: "Voice messages", contact: "Contacts", other: "Other attachments" };
-let currentRoom = null, currentRoomName = "";
-
 async function roomMessages(room) {
   const out = [];
   for (const kind of ["incoming", "sent"]) {
@@ -335,7 +407,6 @@ async function roomMessages(room) {
   return out;
 }
 const extKind = (name) => /\.(jpe?g|png|gif|webp)$/i.test(name) ? "picture" : /\.(mp4|3gp|mov)$/i.test(name) ? "video" : /\.(amr|mp3|m4a|aac|ogg)$/i.test(name) ? "voice" : /\.vcf$/i.test(name) ? "contact" : "other";
-
 async function storageItems(room) {
   const items = [];
   try {
@@ -353,81 +424,144 @@ async function storageItems(room) {
   return items;
 }
 
-async function openRoom(room, label) {
-  currentRoom = room; currentRoomName = label;
-  $("detail").classList.remove("hidden");
-  $("rooms").parentElement.classList.add("hidden");
-  $("d-title").textContent = label;
-  $("d-body").textContent = "Counting...";
-  $("d-msg").textContent = "";
+async function screenRoom({ room, label }) {
+  const root = document.createElement("div");
+  const reg = (await db("GET", `registry/${room}`)) || {};
+  const info = group("Phone");
+  info.add(item({ icon: "phone", title: reg.model || "Phone", sub: [reg.phoneNumber ? "number " + reg.phoneNumber : "number unknown", "pairing code " + room, "last seen " + ago(reg.lastSeen)].join(" · "), pill: reg.approved === true ? "approved" : "waiting", warn: reg.approved !== true }));
+  root.appendChild(info);
+
+  const stats = group("What is stored");
   const msgs = await roomMessages(room);
-  const stats = {};
-  for (const k of Object.keys(KIND_LABEL)) stats[k] = { n: 0, bytes: 0, fileBytes: 0, files: 0 };
-  for (const m of msgs) { const s = stats[kindOf(m.v)]; s.n++; s.bytes += m.size; }
+  const s = {};
+  for (const k of Object.keys(KIND_LABEL)) s[k] = { n: 0, bytes: 0, fileBytes: 0, files: 0 };
+  for (const m of msgs) { const x = s[kindOf(m.v)]; x.n++; x.bytes += m.size; }
   const files = await storageItems(room);
-  if (files) for (const f of files) { const s = stats[extKind(f.name)]; s.files++; s.fileBytes += Number(f.size || 0); }
-  let html = "", total = 0;
-  for (const [k, label2] of Object.entries(KIND_LABEL)) {
-    const s = stats[k]; if (!s.n && !s.files) continue;
-    total += s.bytes + s.fileBytes;
-    html += `<div class="row"><div class="grow"><div class="name">${label2}</div><div class="meta">${s.n.toLocaleString()} in the database (${mb(s.bytes)})` + (files ? ` · ${s.files} files in Storage (${mb(s.fileBytes)})` : "") + `</div></div></div>`;
+  if (files) for (const f of files) { const x = s[extKind(f.name)]; x.files++; x.fileBytes += Number(f.size || 0); }
+  let total = 0;
+  for (const [k, l] of Object.entries(KIND_LABEL)) {
+    const x = s[k]; if (!x.n && !x.files) continue;
+    total += x.bytes + x.fileBytes;
+    stats.add(item({ icon: "info", title: l, sub: `${x.n.toLocaleString()} in the database (${mb(x.bytes)})` + (files ? ` · ${x.files} files (${mb(x.fileBytes)})` : "") }));
   }
   const oldest = msgs.length ? Math.min(...msgs.map((m) => m.v.timestamp || Date.now())) : 0;
-  $("d-body").innerHTML = html + `<div class="meta" style="margin-top:10px">Total ${mb(total)} · ${msgs.length.toLocaleString()} messages · oldest ${oldest ? new Date(oldest).toLocaleDateString() : "—"}` + (files ? "" : " · Storage files could not be listed") + "</div>";
-}
+  stats.add(item({ icon: "info", title: `Total ${mb(total)}`, sub: `${msgs.length.toLocaleString()} messages · oldest ${oldest ? new Date(oldest).toLocaleDateString() : "—"}` + (files ? "" : " · Storage files could not be listed") }));
+  root.appendChild(stats);
 
-function chosenCutoff() { return Date.now() - (parseFloat($("d-n").value) || 1) * parseInt($("d-unit").value, 10) * 86400000; }
+  const manage = group("Manage");
+  manage.add(item({ icon: "edit", title: "Name this room", sub: label === room ? "A name to recognise it by" : label, onclick: async () => {
+    const n = prompt("A name to recognise this room by:", label === room ? "" : label);
+    if (n === null) return;
+    await db("PUT", `admin/roomNames/${room}`, n || null);
+    stack[stack.length - 1].arg.label = n || room;
+    render();
+  } }));
+  root.appendChild(manage);
 
-async function matching(room) {
-  const cutoff = chosenCutoff(), type = $("d-type").value;
-  const msgs = (await roomMessages(room)).filter((m) => (m.v.timestamp || 0) > 0 && m.v.timestamp < cutoff && (type === "all" || kindOf(m.v) === type));
-  const files = (await storageItems(room)) || [];
-  const oldFiles = files.filter((f) => new Date(f.timeCreated).getTime() < cutoff && (type === "all" || extKind(f.name) === type));
-  return { cutoff, msgs, oldFiles };
-}
-
-$("d-preview").onclick = async () => {
-  $("d-msg").textContent = "Counting...";
-  const r = await matching(currentRoom);
-  $("d-msg").textContent = `${r.msgs.length.toLocaleString()} messages (${mb(r.msgs.reduce((a, m) => a + m.size, 0))}) and ${r.oldFiles.length} files (${mb(r.oldFiles.reduce((a, f) => a + Number(f.size || 0), 0))}) older than ${new Date(r.cutoff).toLocaleDateString()} would be removed.`;
-};
-$("d-delete").onclick = async () => {
-  const r = await matching(currentRoom);
-  if (!r.msgs.length && !r.oldFiles.length) { $("d-msg").textContent = "Nothing that old."; return; }
-  if (prompt(`Remove ${r.msgs.length.toLocaleString()} messages and ${r.oldFiles.length} files from "${currentRoomName}" (older than ${new Date(r.cutoff).toLocaleDateString()})?\nType DELETE to confirm:`) !== "DELETE") return;
-  $("d-msg").textContent = "Removing...";
-  const prior = Number(await db("GET", `rooms/${currentRoom}/expiredBefore`)) || 0;
-  await db("PUT", `rooms/${currentRoom}/expiredBefore`, Math.max(prior, r.cutoff)); // first, so devices keep their copy
-  for (const kind of ["incoming", "sent"]) {
-    const keys = r.msgs.filter((m) => m.kind === kind).map((m) => m.key);
-    for (let i = 0; i < keys.length; i += 400) {
-      const patch = {}; for (const k of keys.slice(i, i + 400)) patch[k] = null;
-      await db("PATCH", `rooms/${currentRoom}/messages/${kind}`, patch);
-    }
+  if (allowDelete()) {
+    const del = group("Deleting");
+    const box = document.createElement("div");
+    box.className = "pad";
+    box.innerHTML = `<div class="meta" style="margin:0 0 8px">Delete everything in this room older than</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="d-n" type="number" min="1" value="2" style="width:100px" />
+        <select id="d-unit"><option value="365">years</option><option value="30">months</option><option value="1">days</option></select>
+        <select id="d-type"><option value="all">all kinds</option><option value="text">only text</option><option value="picture">only pictures</option><option value="video">only videos</option><option value="voice">only voice messages</option><option value="contact">only contacts</option></select>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="d-preview" class="ghost">Count what would go</button><button id="d-delete" class="danger">Delete</button></div>
+      <div id="d-msg" class="meta" style="margin-top:8px"></div>
+      <div class="meta">Devices keep their own copy of what is removed here (it is marked as expired, not deleted).</div>`;
+    del.add(box);
+    del.add(item({ icon: "trash", title: "Delete this room", sub: "Removes all its messages, calls and files from Firebase", danger: true, onclick: async () => {
+      if (prompt(`This permanently deletes ALL messages, calls and files of "${label}" from Firebase.\nType DELETE to confirm:`) !== "DELETE") return;
+      await db("DELETE", `rooms/${room}`);
+      await storageDelete(room);
+      await db("PUT", `admin/roomNames/${room}`, null);
+      stack.pop(); render();
+    } }));
+    root.appendChild(del);
+    const chosenCutoff = () => Date.now() - (parseFloat(box.querySelector("#d-n").value) || 1) * parseInt(box.querySelector("#d-unit").value, 10) * 86400000;
+    const matching = async () => {
+      const cutoff = chosenCutoff(), type = box.querySelector("#d-type").value;
+      const ms = (await roomMessages(room)).filter((m) => (m.v.timestamp || 0) > 0 && m.v.timestamp < cutoff && (type === "all" || kindOf(m.v) === type));
+      const fs = (await storageItems(room)) || [];
+      return { cutoff, msgs: ms, oldFiles: fs.filter((f) => new Date(f.timeCreated).getTime() < cutoff && (type === "all" || extKind(f.name) === type)) };
+    };
+    const out = box.querySelector("#d-msg");
+    box.querySelector("#d-preview").onclick = async () => {
+      out.textContent = "Counting...";
+      const r = await matching();
+      out.textContent = `${r.msgs.length.toLocaleString()} messages (${mb(r.msgs.reduce((a, m) => a + m.size, 0))}) and ${r.oldFiles.length} files (${mb(r.oldFiles.reduce((a, f) => a + Number(f.size || 0), 0))}) older than ${new Date(r.cutoff).toLocaleDateString()} would be removed.`;
+    };
+    box.querySelector("#d-delete").onclick = async () => {
+      const r = await matching();
+      if (!r.msgs.length && !r.oldFiles.length) { out.textContent = "Nothing that old."; return; }
+      if (prompt(`Remove ${r.msgs.length.toLocaleString()} messages and ${r.oldFiles.length} files from "${label}" (older than ${new Date(r.cutoff).toLocaleDateString()})?\nType DELETE to confirm:`) !== "DELETE") return;
+      out.textContent = "Removing...";
+      const prior = Number(await db("GET", `rooms/${room}/expiredBefore`)) || 0;
+      await db("PUT", `rooms/${room}/expiredBefore`, Math.max(prior, r.cutoff)); // first, so devices keep their copy
+      for (const kind of ["incoming", "sent"]) {
+        const keys = r.msgs.filter((m) => m.kind === kind).map((m) => m.key);
+        for (let i = 0; i < keys.length; i += 400) {
+          const patch = {}; for (const k of keys.slice(i, i + 400)) patch[k] = null;
+          await db("PATCH", `rooms/${room}/messages/${kind}`, patch);
+        }
+      }
+      for (const f of r.oldFiles) await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(f.name)}`, { method: "DELETE" });
+      out.textContent = "Done.";
+    };
   }
-  for (const f of r.oldFiles) await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(f.name)}`, { method: "DELETE" });
-  $("d-msg").textContent = "Done.";
-  openRoom(currentRoom, currentRoomName);
-};
-$("d-close").onclick = () => { $("detail").classList.add("hidden"); $("rooms").parentElement.classList.remove("hidden"); load(); };
-
-let liveOn = false;
-function showLive() {
-  $("live-state").textContent = liveOn ? "ON — removing old messages and files every day" : "OFF — only reporting, nothing is removed";
-  $("live-state").style.color = liveOn ? "var(--red)" : "var(--ink)";
-  $("live-btn").textContent = liveOn ? "Turn off" : "Turn on";
-  $("live-btn").className = liveOn ? "ghost" : "danger";
+  return root;
 }
-$("live-btn").onclick = async () => {
-  if (!liveOn && !confirm("Turn the daily cleanup ON? From tonight it permanently removes messages and files older than " + $("days").value + " days from Firebase. Tablets on the newest build keep their copy.")) return;
-  liveOn = !liveOn;
-  await db("PUT", "admin/cleanupLive", liveOn);
-  showLive();
-};
 
-// ---------- screens ----------
+// ---------- daily cleanup ----------
+async function screenCleanup() {
+  const days = (await db("GET", "admin/cleanupDays")) || 14;
+  const live = (await db("GET", "admin/cleanupLive")) === true;
+  const root = document.createElement("div");
+  const g = group("Daily cleanup");
+  g.add(item({ icon: "clock", title: live ? "On" : "Off", sub: live ? "Really removing old messages and files every day (about 03:17 UTC)" : "It only reports what it would remove", toggle: async (v) => {
+    if (v && !confirm("Turn the daily cleanup ON? From tonight it permanently removes messages and files older than " + days + " days from Firebase. Tablets on the newest build keep their copy.")) return;
+    await db("PUT", "admin/cleanupLive", v);
+    render();
+  }, on: live }));
+  const box = document.createElement("div");
+  box.className = "pad";
+  box.innerHTML = `<div class="meta" style="margin:0 0 8px">Delete messages and files older than (days)</div><input id="days" type="number" min="1" max="365" value="${days}" /><button id="save-days">Save</button> <span id="days-msg" class="meta"></span>
+    <div class="meta" style="margin-top:12px">Turn it on only after all your tablets have updated, because the web app does not keep expired messages.</div>`;
+  g.add(box);
+  box.querySelector("#save-days").onclick = async () => {
+    const d = Math.max(1, Math.min(365, parseInt(box.querySelector("#days").value, 10) || 14));
+    await db("PUT", "admin/cleanupDays", d);
+    box.querySelector("#days-msg").textContent = "Saved: " + d + " days.";
+  };
+  root.appendChild(g);
+  return root;
+}
+
+// ---------- change PIN ----------
+async function screenPin() {
+  const root = document.createElement("div");
+  const g = group("Change PIN");
+  const box = document.createElement("div");
+  box.className = "pad";
+  box.innerHTML = `<input id="new-pin" type="password" placeholder="New PIN or password" autocomplete="new-password" /><button id="save-pin">Change PIN</button> <span id="pin-msg" class="meta"></span>`;
+  g.add(box);
+  box.querySelector("#save-pin").onclick = async () => {
+    const p = box.querySelector("#new-pin").value;
+    if (p.length < 4) { box.querySelector("#pin-msg").textContent = "At least 4 characters."; return; }
+    await lockUp(cfg, p); pinInUse = p; box.querySelector("#new-pin").value = ""; box.querySelector("#pin-msg").textContent = "PIN changed.";
+  };
+  root.appendChild(g);
+  return root;
+}
+
+// keep the "waiting" counts fresh while the home / device screens are open
+setInterval(() => { const cur = stack[stack.length - 1]; if (cfg && !$("app").classList.contains("hidden") && cur && ["home", "phones", "tablets"].includes(cur.name) && !document.hidden) render(); }, 30000);
+
+// ---------- sign-in screens ----------
 function show(which) { for (const id of ["setup", "login", "app"]) $(id).classList.toggle("hidden", id !== which); }
-async function open() { show("app"); try { await load(); } catch (e) { $("rooms").textContent = "Could not load: " + e.message + " — is the secret right?"; } }
+async function open() { show("app"); stack.length = 0; stack.push({ name: "home" }); render(); }
 
 $("s-go").onclick = async () => {
   const url = $("s-url").value.trim(), secret = $("s-secret").value.trim(), pin = $("s-pin").value;
@@ -448,19 +582,6 @@ $("l-forgot").onclick = () => {
   localStorage.removeItem(STORE); cfg = null; $("l-err").textContent = ""; show("setup");
 };
 $("l-pin").addEventListener("keydown", (e) => { if (e.key === "Enter") $("l-go").click(); });
-$("refresh").onclick = load;
-$("save-days").onclick = async () => {
-  const d = Math.max(1, Math.min(365, parseInt($("days").value, 10) || 14));
-  await db("PUT", "admin/cleanupDays", d);
-  $("days-msg").textContent = "Saved: " + d + " days (the daily cleanup reads this).";
-};
-$("save-pin").onclick = async () => {
-  const p = $("new-pin").value;
-  if (p.length < 4) { $("pin-msg").textContent = "At least 4 characters."; return; }
-  await lockUp(cfg, p); pinInUse = p; $("new-pin").value = ""; $("pin-msg").textContent = "PIN changed.";
-};
-$("lock").onclick = () => { cfg = null; show("login"); };
-$("forget").onclick = () => { if (confirm("Remove the saved Firebase secret from this device?")) { localStorage.removeItem(STORE); cfg = null; show("setup"); } };
 
 show(localStorage.getItem(STORE) ? "login" : "setup");
 </script>
