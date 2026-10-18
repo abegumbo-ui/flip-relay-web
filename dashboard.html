@@ -525,7 +525,8 @@ async function screenHome() {
 
 // ---------- phones ----------
 async function screenPhones() {
-  const { reg, names } = await registry();
+  const [{ reg, names }, numbers] = await Promise.all([registry(), dbq("admin/roomNumbers")]);
+  const hand = numbers || {};
   const root = document.createElement("div");
   root.appendChild(note("A new phone does nothing (no sync, no uploads) until you press Approve."));
   const codes = Object.keys(reg).sort();
@@ -536,7 +537,7 @@ async function screenPhones() {
     const waiting = r.approved !== true;
     g.add(item({
       icon: "phone", title: names[code] ? `${names[code]} (${code})` : code,
-      sub: [r.model || "", r.phoneNumber ? "number " + r.phoneNumber : "number unknown", r.app || "", "last seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
+      sub: [r.model || "model not reported", (r.phoneNumber && /\d{7}/.test(r.phoneNumber)) ? "number " + r.phoneNumber : hand[code] ? "number " + hand[code] : "number not reported", r.app || "app version not reported (older build)", "last seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
       pill: waiting ? "waiting for approval" : "approved", warn: waiting,
     }));
     g.add(actions([
@@ -664,12 +665,19 @@ async function storageItems(room) {
 
 async function screenRoom({ room, label }) {
   const root = document.createElement("div");
-  const [reg, members, roomKey, names] = await Promise.all([dbq(`registry/${room}`), dbq(`rooms/${room}/members`), dbq(`roomKeys/${room}`), dbq("admin/roomNames")]);
+  const [reg, members, roomKey, names, handNumber] = await Promise.all([dbq(`registry/${room}`), dbq(`rooms/${room}/members`), dbq(`roomKeys/${room}`), dbq("admin/roomNames"), dbq(`admin/roomNumbers/${room}`)]);
   const r = reg || {};
+  const number = r.phoneNumber && /\d{7}/.test(r.phoneNumber) ? r.phoneNumber : (handNumber || "");
   const memberEntries = Object.entries(members || {});
   const info = group("Phone");
-  info.add(item({ icon: "phone", title: r.model || "Phone", sub: [r.phoneNumber ? "number " + r.phoneNumber : "number unknown", "pairing code " + room, "last seen " + ago(r.lastSeen)].join(" · "), pill: r.approved === true ? "approved" : "waiting", warn: r.approved !== true,
+  info.add(item({ icon: "phone", title: r.model || "Phone (has not reported its model)", sub: [number ? "number " + number : "number not reported", r.app ? r.app : "app version not reported (an older build)", "last seen " + ago(r.lastSeen)].join(" · "), pill: r.approved === true ? "approved" : "waiting", warn: r.approved !== true,
     chips: [[r.lastSeen && r.createdAt && r.lastSeen - r.createdAt > 120000 ? "new app" : "old app (not checked in with the new version yet)", r.lastSeen && r.createdAt && r.lastSeen - r.createdAt > 120000 ? "ok" : "warn"]] }));
+  info.add(item({ icon: "edit", title: "Set the phone number by hand", sub: number ? "Now: " + number : "Type it in if the phone does not report it", onclick: async () => {
+    const n = prompt("This phone's number:", number || "");
+    if (n === null) return;
+    await db("PUT", `admin/roomNumbers/${room}`, n.trim() || null);
+    render();
+  } }));
   root.appendChild(info);
 
   const guests = group("Guest list (" + memberEntries.length + ")");
