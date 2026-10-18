@@ -171,3 +171,5 @@ body.gm .gm-time.gm-only, body.gm .gm-sep.gm-only { display: block; }
 .gm-sender .gm-sender-avatar { width: 20px; height: 20px; font-size: 11px; flex: none; }
 .bubble-row.indent { margin-left: 26px; }
 .gm-time .gm-source { float: right; margin-left: 8px; }
+
+#gm-groups-btn[data-dot="1"]::after { content: ""; position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: #e53935; }

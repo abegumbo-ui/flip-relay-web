@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = "";
-const ENC_CONFIG = "//kXj7NUcVKUZY1qxjKCYQ==.CUdYIVUSiAOojEwo.PMe8Z9eJr50Zw0RPEgxeVu+hP4UaGUCZm3E+9I86Q5JxYqJBW8vf2ZgyWnDGjkIZbqa7lAORi9ejUzMpQCrk830CqZv7VILlk88yRMfUEpUPp1xKkKsdxxoNrsSQQ9uZCAj71AxobUv3ZKhGNMCdASOCVXIU+UIZEbz9Gnc=";
+const ENC_CONFIG = "Ea5OgOjbIWzz9zU5mt7Vng==.iiey9WGuN3h8wrav.LYup8NbRLNveRs5YgKjreonnF+7aDov+BY/88/i7B4vQhfCeGjSB2K+6eWiLg0OSgGpl8f/VYf03XyTRf9X9Lk0oi3cSxppV6zijJdEow6IS9WN2feCZZPRsyGf67GL1N8nUah2t7I4u8j1zZj5ekxf+QdVTqo3jPSqrl2Q=";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -289,6 +289,7 @@ function addGmHeader() {
     b.addEventListener("click", handler);
     return b;
   };
+  bar.appendChild(mk("gm-groups-btn", "Group texts", "M16,11c1.66,0 2.99,-1.34 2.99,-3S17.66,5 16,5c-1.66,0 -3,1.34 -3,3s1.34,3 3,3zM8,11c1.66,0 2.99,-1.34 2.99,-3S9.66,5 8,5C6.34,5 5,6.34 5,8s1.34,3 3,3zM8,13c-2.33,0 -7,1.17 -7,3.5V19h14v-2.5c0,-2.33 -4.67,-3.5 -7,-3.5zM16,13c-0.29,0 -0.62,0.02 -0.97,0.05 1.16,0.84 1.97,1.97 1.97,3.45V19h6v-2.5c0,-2.33 -4.67,-3.5 -7,-3.5z", () => el("groups-btn").click()));
   bar.appendChild(mk("gm-calls-btn", "Calls", "M6.62,10.79c1.44,2.83 3.76,5.14 6.59,6.59l2.2,-2.2c0.27,-0.27 0.67,-0.36 1.02,-0.24 1.12,0.37 2.33,0.57 3.57,0.57 0.55,0 1,0.45 1,1V20c0,0.55 -0.45,1 -1,1 -9.39,0 -17,-7.61 -17,-17 0,-0.55 0.45,-1 1,-1h3.5c0.55,0 1,0.45 1,1 0,1.25 0.2,2.45 0.57,3.57 0.11,0.35 0.03,0.74 -0.25,1.02l-2.2,2.2z", () => el("calls-btn").click()));
   bar.appendChild(mk("gm-search-btn", "Search", "M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14z", () => el("search-toggle-btn").click()));
   bar.appendChild(mk("gm-settings-btn", "Settings", "M19.14,12.94c0.04,-0.3 0.06,-0.61 0.06,-0.94 0,-0.32 -0.02,-0.64 -0.07,-0.94l2.03,-1.58c0.18,-0.14 0.23,-0.41 0.12,-0.61l-1.92,-3.32c-0.12,-0.22 -0.37,-0.29 -0.59,-0.22l-2.39,0.96c-0.5,-0.38 -1.03,-0.7 -1.62,-0.94L14.4,2.81c-0.04,-0.24 -0.24,-0.41 -0.48,-0.41h-3.84c-0.24,0 -0.43,0.17 -0.47,0.41L9.25,5.35C8.66,5.59 8.12,5.92 7.63,6.29L5.24,5.33c-0.22,-0.08 -0.47,0 -0.59,0.22L2.74,8.87C2.62,9.08 2.66,9.34 2.86,9.48l2.03,1.58C4.84,11.36 4.8,11.69 4.8,12s0.02,0.64 0.07,0.94l-2.03,1.58c-0.18,0.14 -0.23,0.41 -0.12,0.61l1.92,3.32c0.12,0.22 0.37,0.29 0.59,0.22l2.39,-0.96c0.5,0.38 1.03,0.7 1.62,0.94l0.36,2.54c0.05,0.24 0.24,0.41 0.48,0.41h3.84c0.24,0 0.44,-0.17 0.47,-0.41l0.36,-2.54c0.59,-0.24 1.13,-0.56 1.62,-0.94l2.39,0.96c0.22,0.08 0.47,0 0.59,-0.22l1.92,-3.32c0.12,-0.22 0.07,-0.47 -0.12,-0.61L19.14,12.94zM12,15.6c-1.98,0 -3.6,-1.62 -3.6,-3.6s1.62,-3.6 3.6,-3.6 3.6,1.62 3.6,3.6S13.98,15.6 12,15.6z", () => el("settings-btn").click()));
@@ -315,6 +316,7 @@ function init() {
   el("gm-fab").addEventListener("click", () => el("new-message-btn").click());
   applyLayout();
   el("calls-btn").addEventListener("click", onCallsClick);
+  el("groups-btn").addEventListener("click", () => { groupsView = !groupsView; renderConversationList(); });
   el("calls-back-btn").addEventListener("click", () => showScreen("conversations"));
   el("calls-refresh-btn").addEventListener("click", onCallsRefreshClick);
   el("deleted-select-multiple-btn").addEventListener("click", () => enterDeletedGroupsSelectionMode(null));
@@ -2446,8 +2448,24 @@ async function toggleBlocked(number) {
   }
 }
 
+const HIDE_GROUPS_KEY = "flip_relay_web_hide_groups";
+function groupsHidden() { try { return localStorage.getItem(HIDE_GROUPS_KEY) === "1"; } catch (e) { return false; } }
+let groupsView = false; // the Group texts screen: only groups and mass texts
+let groupsSeenAt = 0;
+function updateGroupsButton() {
+  const b = document.getElementById("groups-btn");
+  if (!b) return;
+  b.classList.toggle("hidden", groupsHidden());
+  const unread = conversationsByNumber().some((c) => isMulti(c.number) && c.unread && !archived.has(c.number));
+  b.textContent = groupsView ? "All chats" : (unread ? "Groups \u25CF" : "Groups");
+  b.style.color = unread && !groupsView ? "#e53935" : "";
+  const g = document.getElementById("gm-groups-btn");
+  if (g) { g.classList.toggle("hidden", groupsHidden()); g.style.position = "relative"; g.style.color = groupsView ? "var(--accent, #0b57d0)" : ""; g.dataset.dot = unread && !groupsView ? "1" : "0"; }
+}
 function filteredConversations() {
   let convos = conversationsByNumber().filter((c) => !archived.has(c.number));
+  if (groupsHidden()) convos = convos.filter((c) => !isMulti(c.number));
+  else convos = convos.filter((c) => isMulti(c.number) === groupsView); // groups only on their own screen
   const q = conversationSearchQuery.trim().toLowerCase();
   if (q) {
     convos = convos.filter(({ number }) => {
@@ -2464,6 +2482,7 @@ function renderConversationList() {
   list.innerHTML = "";
   el("empty-state").classList.toggle("hidden", convos.length > 0);
   updateConversationSelectionToolbar();
+  updateGroupsButton();
 
   for (const { number, last, unread, unreadCount, pinned } of convos) {
     const item = document.createElement("div");
@@ -2498,6 +2517,7 @@ function openChat(number) {
   currentChatNumber = number;
   el("chat-title").textContent = displayName(number);
   el("chat-subtitle").textContent = isMulti(number) ? (number.startsWith("m:") ? "Mass text - tap the name to rename" : "Group - tap the name to rename") : number;
+  el("compose-input").placeholder = number.startsWith("m:") ? "Mass text" : number.startsWith("g:") ? "Group text" : "Text message";
   el("chat-title").style.cursor = isMulti(number) ? "pointer" : "";
   el("chat-title").onclick = isMulti(number) ? () => renameGroup(number) : null;
   showScreen("chat");
@@ -2726,6 +2746,8 @@ function addExtraSettings() {
   const mk = (label, fn) => { const b = document.createElement("button"); b.className = "settings-row"; b.textContent = label; b.addEventListener("click", fn); box.appendChild(b); return b; };
   const src = mk("", () => { try { localStorage.setItem(SHOW_SOURCE_KEY, showSourceOn() ? "0" : "1"); } catch (e) { /* blocked */ } src.textContent = "Show where messages were sent from: " + (showSourceOn() ? "On" : "Off"); if (currentChatNumber) renderChat(currentChatNumber); });
   src.textContent = "Show where messages were sent from: " + (showSourceOn() ? "On" : "Off");
+  const hg = mk("", () => { try { localStorage.setItem(HIDE_GROUPS_KEY, groupsHidden() ? "0" : "1"); } catch (e) { /* blocked */ } hg.textContent = "Hide group texts: " + (groupsHidden() ? "On" : "Off"); renderConversationList(); });
+  hg.textContent = "Hide group texts: " + (groupsHidden() ? "On" : "Off");
   mk("Archived conversations", async () => {
     const list = [...archived];
     if (!list.length) { await showActionSheet("Archived", [{ label: "Nothing archived", value: "x" }]); return; }

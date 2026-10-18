@@ -60,8 +60,12 @@
     <div class="card" id="devices-card">
       <h2>Devices <span id="pending-pill"></span></h2>
       <div class="meta" style="margin-bottom:8px">Every phone and tablet that uses one of your pairing codes. A new phone does nothing (no sync, no uploads) until you press Approve. With "Approve new tablets" on, a tablet or web page that joins a code also waits for your Approve.</div>
-      <div id="devices">Loading...</div>
-      <button id="dev-refresh" class="ghost">Refresh</button>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <button id="dev-phones" class="ghost">Phones</button>
+        <button id="dev-tablets" class="ghost">Tablets</button>
+        <button id="dev-refresh" class="ghost">Refresh</button>
+      </div>
+      <div id="devices" class="meta">Tap Phones or Tablets.</div>
     </div>
 
     <div class="card">
@@ -176,6 +180,7 @@ const mb = (n) => (n / 1048576).toFixed(n > 10485760 ? 0 : 1) + " MB";
 const ago = (ms) => { if (!ms) return "never"; const s = (Date.now() - ms) / 1000; return s < 90 ? "just now" : s < 5400 ? Math.round(s / 60) + " min ago" : s < 172800 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago"; };
 
 // ---------- devices: who is paired, and the owner's Approve ----------
+let devView = null; // null = collapsed, "phone" or "tablet"
 async function loadDevices() {
   const box = $("devices");
   let reg, names;
@@ -186,6 +191,13 @@ async function loadDevices() {
   box.innerHTML = "";
   let waiting = 0;
   const codes = Object.keys(reg).sort();
+  // the waiting count always covers everything, whichever list is open
+  for (const c of codes) { const rr = reg[c] || {}; if (rr.approved !== true) waiting++; for (const t of Object.values(rr.tablets || {})) if (t.approved !== true) waiting++; }
+  $("pending-pill").innerHTML = waiting ? `<span class="pill" style="background:var(--red);color:#fff">${waiting} waiting</span>` : "";
+  $("dev-phones").style.fontWeight = devView === "phone" ? "700" : "";
+  $("dev-tablets").style.fontWeight = devView === "tablet" ? "700" : "";
+  if (!devView) { box.textContent = "Tap Phones or Tablets."; return; }
+  waiting = 0;
   if (!codes.length) box.textContent = "No devices have checked in yet.";
   for (const code of codes) {
     const r = reg[code] || {};
@@ -193,7 +205,6 @@ async function loadDevices() {
     const wrap = document.createElement("div");
     wrap.className = "row";
     const phoneWaiting = r.approved !== true;
-    if (phoneWaiting) waiting++;
     const title = (names[code] || code) + (names[code] ? "  (" + code + ")" : "");
     wrap.innerHTML = `<div class="grow"><div class="name"></div><div class="meta"></div></div><button class="ap"></button><button class="ghost req"></button>`;
     wrap.querySelector(".name").innerHTML = "";
@@ -212,15 +223,14 @@ async function loadDevices() {
     const requires = r.requireTabletApproval === true;
     req.textContent = requires ? "Approve new tablets: ON" : "Approve new tablets: OFF";
     req.onclick = async () => { await db("PATCH", `registry/${code}`, { requireTabletApproval: !requires }); loadDevices(); };
-    box.appendChild(wrap);
+    if (devView === "phone") box.appendChild(wrap);
+    if (devView !== "tablet") continue;
     for (const [id, t] of Object.entries(tablets)) {
       const tw = document.createElement("div");
       tw.className = "row";
-      tw.style.marginLeft = "24px";
       const tWaiting = t.approved !== true;
-      if (tWaiting) waiting++;
       tw.innerHTML = `<div class="grow"><div class="name"></div><div class="meta"></div></div><button class="tap"></button><button class="ghost trm">Remove</button>`;
-      tw.querySelector(".name").textContent = (t.name || t.model || "Device") + " ";
+      tw.querySelector(".name").textContent = (t.name || t.model || "Device") + " (phone " + (names[code] || code) + ") ";
       const tp = document.createElement("span");
       tp.className = "pill";
       tp.textContent = tWaiting ? "WAITING FOR APPROVAL" : "approved";
@@ -235,9 +245,10 @@ async function loadDevices() {
       box.appendChild(tw);
     }
   }
-  $("pending-pill").innerHTML = waiting ? `<span class="pill" style="background:var(--red);color:#fff">${waiting} waiting</span>` : "";
 }
 $("dev-refresh").onclick = loadDevices;
+$("dev-phones").onclick = () => { devView = devView === "phone" ? null : "phone"; loadDevices(); };
+$("dev-tablets").onclick = () => { devView = devView === "tablet" ? null : "tablet"; loadDevices(); };
 setInterval(() => { if (!$("app").classList.contains("hidden") && cfg) loadDevices().catch(() => {}); }, 30000);
 
 async function load() {
