@@ -5,20 +5,20 @@
   },
   "tablet": {
     "sha": "f4ea456d9f1e06f134010913b7f231b856ff675a",
-    "publishedAt": "2026-10-21T20:44:29Z",
+    "publishedAt": "2026-10-21T20:45:41Z",
     "build": 480,
-    "notes": "•"
+    "notes": "• A tablet that has been offline for 15 days logs itself out for safety, and says how to connect again\n• Fewer false low-memory warnings in the crash log"
   },
   "tablet-regular": {
     "sha": "f4ea456d9f1e06f134010913b7f231b856ff675a",
-    "publishedAt": "2026-10-21T20:44:29Z",
+    "publishedAt": "2026-10-21T20:45:41Z",
     "build": 480,
-    "notes": "•"
+    "notes": "• A tablet that has been offline for 15 days logs itself out for safety, and says how to connect again\n• Fewer false low-memory warnings in the crash log"
   },
   "tablet-mechi": {
     "sha": "f4ea456d9f1e06f134010913b7f231b856ff675a",
-    "publishedAt": "2026-10-21T20:44:29Z",
+    "publishedAt": "2026-10-21T20:45:41Z",
     "build": 480,
-    "notes": "•"
+    "notes": "• A tablet that has been offline for 15 days logs itself out for safety, and says how to connect again\n• Fewer false low-memory warnings in the crash log"
   }
 }
