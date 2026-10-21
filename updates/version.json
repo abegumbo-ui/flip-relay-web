@@ -4,18 +4,18 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "3a4d8e354be8d8b8b07e71227a70e677f5cfa1b8",
-    "publishedAt": "2026-10-21T16:17:22Z",
-    "build": 473
+    "sha": "62bc51990643557b95954cd3bb33b3bfb3bf2cb8",
+    "publishedAt": "2026-10-21T16:33:07Z",
+    "build": 475
   },
   "tablet-regular": {
-    "sha": "3a4d8e354be8d8b8b07e71227a70e677f5cfa1b8",
-    "publishedAt": "2026-10-21T16:17:22Z",
-    "build": 473
+    "sha": "62bc51990643557b95954cd3bb33b3bfb3bf2cb8",
+    "publishedAt": "2026-10-21T16:33:07Z",
+    "build": 475
   },
   "tablet-mechi": {
-    "sha": "3a4d8e354be8d8b8b07e71227a70e677f5cfa1b8",
-    "publishedAt": "2026-10-21T16:17:22Z",
-    "build": 473
+    "sha": "62bc51990643557b95954cd3bb33b3bfb3bf2cb8",
+    "publishedAt": "2026-10-21T16:33:07Z",
+    "build": 475
   }
 }
