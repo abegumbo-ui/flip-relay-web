@@ -1,21 +1,21 @@
 {
-    "phone":  {
-                  "sha":  "c020075206a23ebc2fda4424ca60bedc773be914",
-                  "publishedAt":  "2026-09-30T14:44:00Z"
-              },
-    "tablet":  {
-                   "sha":  "0457cc64c1042dd1797372f336579c5fad5ad7fa",
-                   "publishedAt":  "2026-10-21T12:56:38Z",
-                   "build":  468
-               },
-    "tablet-regular":  {
-                           "sha":  "0457cc64c1042dd1797372f336579c5fad5ad7fa",
-                           "publishedAt":  "2026-10-21T12:56:38Z",
-                           "build":  468
-                       },
-    "tablet-mechi":  {
-                         "sha":  "0457cc64c1042dd1797372f336579c5fad5ad7fa",
-                         "publishedAt":  "2026-10-21T12:56:38Z",
-                         "build":  468
-                     }
+  "phone": {
+    "sha": "c020075206a23ebc2fda4424ca60bedc773be914",
+    "publishedAt": "2026-09-30T14:44:00Z"
+  },
+  "tablet": {
+    "sha": "3a4d8e354be8d8b8b07e71227a70e677f5cfa1b8",
+    "publishedAt": "2026-10-21T16:17:22Z",
+    "build": 473
+  },
+  "tablet-regular": {
+    "sha": "3a4d8e354be8d8b8b07e71227a70e677f5cfa1b8",
+    "publishedAt": "2026-10-21T16:17:22Z",
+    "build": 473
+  },
+  "tablet-mechi": {
+    "sha": "3a4d8e354be8d8b8b07e71227a70e677f5cfa1b8",
+    "publishedAt": "2026-10-21T16:17:22Z",
+    "build": 473
+  }
 }
