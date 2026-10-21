@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "7860cadaf1c84159d27bde48aa84fa5faab869ec",
-    "publishedAt": "2026-10-21T17:40:34Z",
-    "build": 479,
-    "notes": "• Check for update now has a progress screen with Pause and Cancel\n• The update screen shows what is new in each version\n• Ask where the phone is: Settings > Where is the phone?\n• Nicer crash log and restart dialogs\n• Layouts are now called Messages Plus"
+    "sha": "f4ea456d9f1e06f134010913b7f231b856ff675a",
+    "publishedAt": "2026-10-21T20:42:10Z",
+    "build": 480,
+    "notes": "• A tablet that has been offline for 15 days logs itself out for safety, and says how to connect again\\n• Fewer false low-memory warnings in the crash log"
   },
   "tablet-regular": {
-    "sha": "7860cadaf1c84159d27bde48aa84fa5faab869ec",
-    "publishedAt": "2026-10-21T17:40:34Z",
-    "build": 479,
-    "notes": "• Check for update now has a progress screen with Pause and Cancel\n• The update screen shows what is new in each version\n• Ask where the phone is: Settings > Where is the phone?\n• Nicer crash log and restart dialogs\n• Layouts are now called Messages Plus"
+    "sha": "f4ea456d9f1e06f134010913b7f231b856ff675a",
+    "publishedAt": "2026-10-21T20:42:10Z",
+    "build": 480,
+    "notes": "• A tablet that has been offline for 15 days logs itself out for safety, and says how to connect again\\n• Fewer false low-memory warnings in the crash log"
   },
   "tablet-mechi": {
-    "sha": "7860cadaf1c84159d27bde48aa84fa5faab869ec",
-    "publishedAt": "2026-10-21T17:40:34Z",
-    "build": 479,
-    "notes": "• Check for update now has a progress screen with Pause and Cancel\n• The update screen shows what is new in each version\n• Ask where the phone is: Settings > Where is the phone?\n• Nicer crash log and restart dialogs\n• Layouts are now called Messages Plus"
+    "sha": "f4ea456d9f1e06f134010913b7f231b856ff675a",
+    "publishedAt": "2026-10-21T20:42:10Z",
+    "build": 480,
+    "notes": "• A tablet that has been offline for 15 days logs itself out for safety, and says how to connect again\\n• Fewer false low-memory warnings in the crash log"
   }
 }
