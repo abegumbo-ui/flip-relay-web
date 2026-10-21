@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "f4ea456d9f1e06f134010913b7f231b856ff675a",
-    "publishedAt": "2026-10-21T20:45:41Z",
-    "build": 480,
-    "notes": "• A tablet that has been offline for 15 days logs itself out for safety, and says how to connect again\n• Fewer false low-memory warnings in the crash log"
+    "sha": "73b6d22e820eac4f3136685eb34339c64632fcf4",
+    "publishedAt": "2026-10-21T21:02:39Z",
+    "build": 485,
+    "notes": "• Logging out (or being logged out after 15 days offline) now deletes every saved message and picture from the tablet\n• Fewer false low-memory warnings in the crash log"
   },
   "tablet-regular": {
-    "sha": "f4ea456d9f1e06f134010913b7f231b856ff675a",
-    "publishedAt": "2026-10-21T20:45:41Z",
-    "build": 480,
-    "notes": "• A tablet that has been offline for 15 days logs itself out for safety, and says how to connect again\n• Fewer false low-memory warnings in the crash log"
+    "sha": "73b6d22e820eac4f3136685eb34339c64632fcf4",
+    "publishedAt": "2026-10-21T21:02:39Z",
+    "build": 485,
+    "notes": "• Logging out (or being logged out after 15 days offline) now deletes every saved message and picture from the tablet\n• Fewer false low-memory warnings in the crash log"
   },
   "tablet-mechi": {
-    "sha": "f4ea456d9f1e06f134010913b7f231b856ff675a",
-    "publishedAt": "2026-10-21T20:45:41Z",
-    "build": 480,
-    "notes": "• A tablet that has been offline for 15 days logs itself out for safety, and says how to connect again\n• Fewer false low-memory warnings in the crash log"
+    "sha": "73b6d22e820eac4f3136685eb34339c64632fcf4",
+    "publishedAt": "2026-10-21T21:02:39Z",
+    "build": 485,
+    "notes": "• Logging out (or being logged out after 15 days offline) now deletes every saved message and picture from the tablet\n• Fewer false low-memory warnings in the crash log"
   }
 }
