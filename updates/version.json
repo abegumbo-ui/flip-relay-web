@@ -4,15 +4,18 @@
                   "publishedAt":  "2026-09-30T14:44:00Z"
               },
     "tablet":  {
-                   "sha":  "6ce3b94ee5ebb9c0b34fdfd6e2a30fb3c4b6d2bf",
-                   "publishedAt":  "2026-10-21T10:59:56Z"
+                   "sha":  "0532fcb7120e08203f0b0b6103ac53a9bb783e5f",
+                   "publishedAt":  "2026-10-21T12:22:46Z",
+                   "build":  460
                },
     "tablet-regular":  {
-                           "sha":  "6ce3b94ee5ebb9c0b34fdfd6e2a30fb3c4b6d2bf",
-                           "publishedAt":  "2026-10-21T10:59:56Z"
+                           "sha":  "0532fcb7120e08203f0b0b6103ac53a9bb783e5f",
+                           "publishedAt":  "2026-10-21T12:22:46Z",
+                           "build":  460
                        },
     "tablet-mechi":  {
-                         "sha":  "6ce3b94ee5ebb9c0b34fdfd6e2a30fb3c4b6d2bf",
-                         "publishedAt":  "2026-10-21T10:59:56Z"
+                         "sha":  "0532fcb7120e08203f0b0b6103ac53a9bb783e5f",
+                         "publishedAt":  "2026-10-21T12:22:46Z",
+                         "build":  460
                      }
 }
