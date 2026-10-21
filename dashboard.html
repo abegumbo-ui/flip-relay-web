@@ -1066,12 +1066,12 @@ async function screenPair(arg) {
   }, 1000);
   // used: the tablet removes the code the moment it joins, so a code that is gone from the database has been used
   const watch = setInterval(async () => {
-    if (!alive || !code || making) return;
+    if (!alive || !code || making || document.hidden) return; // not while the page is in the background
     const mine = code;
     let v;
     try { v = await db("GET", `rooms/${room}/pairCodes/${mine}`); } catch (e) { return; }
     if (mine === code && (v === null || !(v > Date.now()))) retire("This QR code was used. Make a new one when you need it.");
-  }, 2500);
+  }, 10000);
   leave.push(() => { alive = false; clearInterval(timer); clearInterval(watch); drop(); });
   make();
   return root;
