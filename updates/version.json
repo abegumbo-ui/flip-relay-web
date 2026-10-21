@@ -4,18 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "3afb46fa3d6f6625b417087018df7a85452181bb",
-    "publishedAt": "2026-10-21T17:09:48Z",
-    "build": 477
+    "sha": "7860cadaf1c84159d27bde48aa84fa5faab869ec",
+    "publishedAt": "2026-10-21T17:40:34Z",
+    "build": 479,
+    "notes": "• Check for update now has a progress screen with Pause and Cancel\n• The update screen shows what is new in each version\n• Ask where the phone is: Settings > Where is the phone?\n• Nicer crash log and restart dialogs\n• Layouts are now called Messages Plus"
   },
   "tablet-regular": {
-    "sha": "3afb46fa3d6f6625b417087018df7a85452181bb",
-    "publishedAt": "2026-10-21T17:09:48Z",
-    "build": 477
+    "sha": "7860cadaf1c84159d27bde48aa84fa5faab869ec",
+    "publishedAt": "2026-10-21T17:40:34Z",
+    "build": 479,
+    "notes": "• Check for update now has a progress screen with Pause and Cancel\n• The update screen shows what is new in each version\n• Ask where the phone is: Settings > Where is the phone?\n• Nicer crash log and restart dialogs\n• Layouts are now called Messages Plus"
   },
   "tablet-mechi": {
-    "sha": "3afb46fa3d6f6625b417087018df7a85452181bb",
-    "publishedAt": "2026-10-21T17:09:48Z",
-    "build": 477
+    "sha": "7860cadaf1c84159d27bde48aa84fa5faab869ec",
+    "publishedAt": "2026-10-21T17:40:34Z",
+    "build": 479,
+    "notes": "• Check for update now has a progress screen with Pause and Cancel\n• The update screen shows what is new in each version\n• Ask where the phone is: Settings > Where is the phone?\n• Nicer crash log and restart dialogs\n• Layouts are now called Messages Plus"
   }
 }
