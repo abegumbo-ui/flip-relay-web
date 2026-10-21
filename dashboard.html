@@ -71,7 +71,7 @@
   <div id="setup" class="card hidden">
     <h2>First time: connect and choose a PIN</h2>
     <p class="meta">Where to find these: console.firebase.google.com → your project → Build → Realtime Database (the address is at the top of the Data tab, like https://something-default-rtdb.firebaseio.com). The secret: gear icon → Project settings → Service accounts → Database secrets → Show.</p>
-    <input id="s-url" type="text" placeholder="Firebase database address" autocomplete="off" />
+    <input id="s-url" type="text" placeholder="Firebase database address" value="https://flip-relay-default-rtdb.firebaseio.com" autocomplete="off" />
     <input id="s-secret" type="password" placeholder="Firebase database secret" autocomplete="off" />
     <input id="s-pin" type="password" placeholder="Choose a PIN or password" autocomplete="new-password" />
     <button id="s-go">Save and open</button>
@@ -462,8 +462,9 @@ function roomFacts(room, reg, names, members) {
 
 // ---------- home ----------
 async function screenHome() {
-  const [{ reg, names }, roomList, live, days, migration, rulesNow] = await Promise.all([
+  const [{ reg, names }, roomList, live, days, migration, rulesNow, healthErr] = await Promise.all([
     registry(), dbq("rooms", "&shallow=true"), dbq("admin/cleanupLive"), dbq("admin/cleanupDays"), dbq("admin/migrationOpen"), readRules(),
+    db("GET", "registry", undefined, "&shallow=true").then((x) => (x && Object.keys(x).length ? null : "Nothing came back: no rooms at this address")).catch((e) => e.message),
   ]);
   const rooms = Object.keys(roomList || {});
   const locked = await roomsLocked(rooms[0]);
@@ -476,6 +477,13 @@ async function screenHome() {
   const head = document.createElement("h1");
   head.textContent = "Message+ dashboard";
   root.appendChild(head);
+  if (healthErr) {
+    // everything below would just say "unknown" or "0": say why instead
+    const bad = group("Cannot read your data");
+    let host = ""; try { host = new URL(cfg.url).host; } catch (e) { host = cfg.url; }
+    bad.add(item({ icon: "info", title: "This dashboard is not connected to your database", sub: healthErr + ". Address in use: " + host + ". The address should be flip-relay-default-rtdb.firebaseio.com. A \"401\" or \"403\" means the secret is wrong or was replaced in the Firebase console; use \"Forget the Firebase secret\" at the bottom and enter the current one.", chips: [["not connected", "bad"]] }));
+    root.appendChild(bad);
+  }
 
   // ---- security at a glance
   const sec = group("Security at a glance");
@@ -1147,7 +1155,10 @@ $("s-go").onclick = async () => {
   const url = $("s-url").value.trim(), secret = $("s-secret").value.trim(), pin = $("s-pin").value;
   if (!url || !secret || pin.length < 4) { $("s-err").textContent = "Fill in all three; the PIN needs at least 4 characters."; return; }
   cfg = { url, secret };
-  try { await db("GET", "admin/cleanupDays"); } catch (e) { $("s-err").textContent = "Firebase refused that address / secret."; return; }
+  try {
+    const found = await db("GET", "registry", undefined, "&shallow=true");
+    if (!found || !Object.keys(found).length) { $("s-err").textContent = "That address answered, but it has no Message+ rooms in it. Check the address: it should be https://flip-relay-default-rtdb.firebaseio.com"; return; }
+  } catch (e) { $("s-err").textContent = "Firebase refused that address or secret (" + e.message + "). Check both."; return; }
   pinInUse = pin;
   await lockUp(cfg, pin);
   $("s-secret").value = "";
