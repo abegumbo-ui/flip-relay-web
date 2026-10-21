@@ -386,7 +386,7 @@ function empty(text) { return Object.assign(document.createElement("div"), { cla
 // ---------- navigation ----------
 const stack = [];
 let leave = []; // cleanups of the screen being left (timers, codes shown)
-const TITLES = { phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", cleanup: "Daily cleanup", pin: "Change PIN", pair: "Pair a new device", rules: "Database rules", retire: "Retire the old secret", storage: "Picture and video files" };
+const TITLES = { phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", cleanup: "Daily cleanup", pin: "Change PIN", pair: "Pair a new device", notice: "Send a message", rules: "Database rules", retire: "Retire the old secret", storage: "Picture and video files" };
 function go(name, arg) { stack.push({ name, arg }); render(); }
 function back() { if (stack.length > 1) stack.pop(); render(); }
 $("back").onclick = back;
@@ -401,7 +401,7 @@ async function render() {
   $("title").textContent = cur.name === "room" ? cur.arg.label : (TITLES[cur.name] || "");
   const view = $("view");
   const cached = cur.name === "home" ? cget("home") : null;
-  const fn = { home: screenHome, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, cleanup: screenCleanup, pin: screenPin, pair: screenPair, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
+  const fn = { home: screenHome, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, cleanup: screenCleanup, pin: screenPin, pair: screenPair, notice: screenNotice, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
   if (cached && cached.html) { view.innerHTML = cached.html; view.classList.add("skeleton"); } else view.innerHTML = '<div class="pad meta">Loading...</div>';
   try {
     const out = await fn(cur.arg, () => mine === busy);
@@ -492,7 +492,7 @@ async function screenHome() {
   root.appendChild(dev);
 
   const pairG = group("Pairing");
-  pairG.add(item({ icon: "qr", title: "Pair a new device", sub: "Makes a QR code and a 12-character code that work once, for 10 minutes", onclick: () => go("pair") }));
+  pairG.add(item({ icon: "qr", title: "Pair a new device", sub: "Makes a QR code and a 16-character code that work once, for 10 minutes", onclick: () => go("pair") }));
   pairG.add(item({
     icon: "shield", title: "Let old devices join with the 6-character code",
     sub: migration === true ? "On: a tablet or phone paired before the 16-character code can still join. Turn it off once everyone has updated." : "Off: new devices need a code from the phone or from here.",
@@ -692,10 +692,10 @@ async function screenRoom({ room, label }) {
   for (const [k, v] of Object.entries(pc || {})) if (v && v.text) crashes.push({ key: "phoneCrashes/" + k, who: "Phone", at: v.at || Number(k) || 0, text: v.text });
   for (const [k, v] of Object.entries(tc || {})) if (v && v.text) crashes.push({ key: "tabletCrashes/" + k, who: "Tablet" + (v.device ? " (" + v.device + ")" : ""), at: v.at || 0, text: v.text });
   crashes.sort((a, b) => b.at - a.at);
-  const cg = group("Crashes (" + crashes.length + ")");
-  if (!crashes.length) cg.add(item({ icon: "info", title: "No crashes reported", sub: "Phone and tablet apps send a crash here the next time they start after one." }));
+  const cg = group("Crashes and freezes (" + crashes.length + ")");
+  if (!crashes.length) cg.add(item({ icon: "info", title: "No crashes or freezes reported", sub: "Phone and tablet apps send a crash here the next time they start after one." }));
   for (const c of crashes.slice(0, 30)) {
-    const first = (c.text.split("\n").find((l) => /Exception|Error/.test(l)) || c.text.split("\n")[0] || "").trim();
+    const first = (c.text.split("\n").find((l) => /Exception|Error|FROZE|FROZEN|EXIT|LOW MEMORY|CLOSED/.test(l)) || c.text.split("\n")[0] || "").trim();
     cg.add(item({ icon: "info", title: c.who + " · " + new Date(c.at).toLocaleString(), sub: first.slice(0, 140), onclick: () => {
       const m = document.createElement("div");
       m.style.cssText = "position:fixed;inset:0;background:var(--bg,#111);z-index:50;overflow:auto;padding:16px";
@@ -731,19 +731,60 @@ async function screenRoom({ room, label }) {
 
   const tabs = Object.entries(r.tablets || {});
   const tg = group("Tablets and web pages (" + tabs.length + ")");
+  const [sess, notices, seenAll, latestBuild] = await Promise.all([dbq(`rooms/${room}/tabletSessions`), dbq(`rooms/${room}/notices`), dbq(`rooms/${room}/noticeSeen`), latestTabletBuild()]);
+  const parseBuild = (a) => { const m = /build (\d+)/.exec(a || ""); return m ? Number(m[1]) : null; };
   for (const [id, t] of tabs) {
     const waiting = t.approved !== true;
-    tg.add(item({ icon: "tablet", title: t.name || t.model || "Device", sub: [t.app || "", "first seen " + ago(t.firstSeen), "last seen " + ago(t.lastSeen)].filter(Boolean).join(" · "), pill: waiting ? "blocked or waiting" : "approved", warn: waiting }));
-    tg.add(actions([
+    const isApp = /^Tablet app/.test(t.app || "");
+    const upd = Object.entries(notices || {}).find(([k, n]) => n && n.kind === "update" && (n.to === "all" || n.to === id));
+    const tb = parseBuild(t.app);
+    tg.add(item({ icon: "tablet", title: t.name || t.model || "Device", sub: [t.app || "", "first seen " + ago(t.firstSeen), "last seen " + ago(t.lastSeen)].filter(Boolean).join(" · "), pill: waiting ? "blocked or waiting" : "approved", warn: waiting,
+      chips: isApp ? [[upd ? "must update to build " + upd[1].minBuild + " or newer" : "no update required", upd ? "warn" : "ok"]].concat(tb && latestBuild && tb < latestBuild ? [["a newer build (" + latestBuild + ") is published", "warn"]] : []) : [] }));
+    tg.add(actions((isApp ? [
+      { label: "Send a message", cls: "ghost", onclick: () => go("notice", { room, id, name: t.name || t.model || "this tablet" }) },
+      upd ? { label: "Lift the update requirement", cls: "ghost", onclick: async () => { await db("DELETE", `rooms/${room}/notices/${upd[0]}`); render(); } }
+          : { label: "Require the newest update", cls: "danger", onclick: async () => { await requireUpdate(room, id, latestBuild); render(); } },
+    ] : []).concat([
       { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${room}/tablets/${id}`, { approved: waiting }); render(); } },
       { label: "Remove from the list", cls: "ghost", onclick: async () => { if (confirm("Remove this device from the list? It shows up again the next time it connects.")) { await db("DELETE", `registry/${room}/tablets/${id}`); render(); } } },
-    ]));
+    ])));
   }
   if (!tabs.length) tg.add(item({ icon: "info", title: "None listed", sub: "Tablets and web pages appear here when they check in" }));
   root.appendChild(tg);
 
+  // when each tablet was in use
+  const week = Date.now() - 7 * 86400000;
+  const sessions = Object.values(sess || {}).filter((v) => v && v.start > week).sort((a, b) => b.start - a.start);
+  const ag = group("Tablet activity, last 7 days (" + sessions.length + ")");
+  const fmtT = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const fmtD = (ms) => { const d = new Date(ms); const t = new Date(); return d.toDateString() === t.toDateString() ? "Today" : d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }); };
+  const dur = (a, b) => { const m = Math.max(0, Math.round((b - a) / 60000)); return m < 1 ? "under a minute" : m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60) + " min"; };
+  for (const v of sessions.slice(0, 40)) {
+    const live = Date.now() - v.end < 6 * 60000;
+    ag.add(item({ icon: "clock", title: (v.name || "Tablet") + " · " + fmtD(v.start), sub: fmtT(v.start) + " to " + (live ? "now" : fmtT(v.end)) + " (" + dur(v.start, v.end) + ")", pill: live ? "in use now" : "" }));
+  }
+  if (!sessions.length) ag.add(item({ icon: "info", title: "No activity recorded yet", sub: "Tablets on the newest build note when the app is opened and when it is left alone" }));
+  if (sessions.length) ag.add(actions([{ label: "Clear the activity list", cls: "ghost", onclick: async () => { if (!confirm("Delete the activity list for this room?")) return; await db("DELETE", `rooms/${room}/tabletSessions`); render(); } }]));
+  root.appendChild(ag);
+
+  // messages sent to tablets
+  const nl = Object.entries(notices || {}).filter(([k, n]) => n).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+  const mg = group("Messages and update requirements (" + nl.length + ")");
+  for (const [k, n] of nl.slice(0, 20)) {
+    const who = n.to === "all" ? "All tablets" : ((r.tablets || {})[n.to] || {}).name || "One tablet";
+    const sn = Object.values((seenAll || {})[k] || {}).map((x) => x.name || "a tablet");
+    mg.add(item({ icon: "info", title: (n.kind === "update" ? "Update required (build " + n.minBuild + " or newer)" : (n.title || n.text || "Message").slice(0, 60)) + " · " + who,
+      sub: new Date(n.createdAt || 0).toLocaleString() + (n.kind === "update" ? "" : sn.length ? " · seen by " + sn.join(", ") : " · not seen yet"), onclick: async () => {
+        if (!confirm("Remove this from the list? A message that was not seen yet will not be shown anymore.")) return;
+        await db("DELETE", `rooms/${room}/notices/${k}`); await db("DELETE", `rooms/${room}/noticeImages/${k}`); await db("DELETE", `rooms/${room}/noticeSeen/${k}`); render();
+      } }));
+  }
+  if (!nl.length) mg.add(item({ icon: "info", title: "Nothing sent", sub: "Use Send a message on a tablet above" }));
+  root.appendChild(mg);
+
   const manage = group("Manage");
-  manage.add(item({ icon: "qr", title: "Pair a new device to this room", sub: "A QR code and a 12-character code for 10 minutes", onclick: () => go("pair", { room }) }));
+  manage.add(item({ icon: "qr", title: "Pair a new device to this room", sub: "A QR code and a 16-character code for 10 minutes", onclick: () => go("pair", { room }) }));
+  manage.add(item({ icon: "tablet", title: "Require the newest update on every tablet here", sub: "Every tablet app shows an update screen on whatever screen is open until it is updated", onclick: async () => { await requireUpdate(room, "all", latestBuild); render(); } }));
   manage.add(item({ icon: "edit", title: "Name this room", sub: label === room ? "A name to recognise it by" : label, onclick: async () => {
     const n = prompt("A name to recognise this room by:", label === room ? "" : label);
     if (n === null) return;
@@ -835,6 +876,70 @@ async function screenRoom({ room, label }) {
   return root;
 }
 
+// ---------- messages and update requirements for tablets ----------
+async function latestTabletBuild() {
+  try { const j = await (await fetch("https://abegumbo-ui.github.io/flip-relay-web/updates/version.json?x=" + Date.now())).json(); return Number((j.tablet || {}).build) || null; } catch (e) { return null; }
+}
+async function requireUpdate(room, to, latest) {
+  let min = latest;
+  if (!min) { const a = prompt("The newest published build number could not be read. Which build number must the tablet reach?", ""); if (!a) return; min = Number(a); }
+  if (!min || !confirm((to === "all" ? "Every tablet in this room" : "This tablet") + " will show an update screen, on whatever screen is open, until it is on build " + min + " or newer. Continue?")) return;
+  await db("PUT", `rooms/${room}/notices/upd-${to}`, { kind: "update", to, minBuild: min, title: "Please update the app", text: "This version is out of date. Tap Update now, then install it. You can also go to Settings > Check for update.", createdAt: Date.now() });
+}
+async function shrinkImage(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+  let side = 1100, q = 0.82, out = "";
+  for (let i = 0; i < 6; i++) {
+    const sc = Math.min(1, side / Math.max(img.width, img.height));
+    const c = document.createElement("canvas"); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    out = c.toDataURL("image/jpeg", q);
+    if (out.length < 420000) break;
+    side = Math.round(side * 0.8); q = Math.max(0.6, q - 0.06);
+  }
+  URL.revokeObjectURL(url);
+  return out;
+}
+async function screenNotice(arg) {
+  const room = arg.room;
+  const root = document.createElement("div");
+  const c = card("");
+  c.innerHTML = `<div class="meta">Shown once on the tablet, on whatever screen is open. You can add a picture, for example one made with an AI image tool.</div>`;
+  const to = document.createElement("select");
+  const o1 = document.createElement("option"); o1.value = arg.id || "all"; o1.textContent = arg.id ? "Only " + (arg.name || "this tablet") : "Every tablet in this room"; to.appendChild(o1);
+  if (arg.id) { const o2 = document.createElement("option"); o2.value = "all"; o2.textContent = "Every tablet in this room"; to.appendChild(o2); }
+  const title = document.createElement("input"); title.type = "text"; title.placeholder = "Title (optional)"; title.style.marginBottom = "10px";
+  const text = document.createElement("textarea"); text.placeholder = "Your message"; text.style.minHeight = "110px"; text.style.fontFamily = "inherit";
+  const file = document.createElement("input"); file.type = "file"; file.accept = "image/*"; file.style.margin = "10px 0";
+  const prev = document.createElement("img"); prev.style.cssText = "max-width:100%;max-height:260px;border-radius:12px;display:none;margin-bottom:10px";
+  const status = document.createElement("div"); status.className = "meta";
+  const send = document.createElement("button"); send.textContent = "Send";
+  let data = null;
+  file.onchange = async () => {
+    data = null; prev.style.display = "none";
+    if (!file.files[0]) return;
+    status.textContent = "Preparing the picture...";
+    try { data = await shrinkImage(file.files[0]); prev.src = data; prev.style.display = "block"; status.textContent = "Picture ready (" + Math.round(data.length / 1024) + " KB after shrinking)."; } catch (e) { status.textContent = "That picture could not be read."; }
+  };
+  send.onclick = async () => {
+    if (!title.value.trim() && !text.value.trim() && !data) { status.textContent = "Write something or add a picture first."; return; }
+    send.disabled = true; status.textContent = "Sending...";
+    try {
+      const id = "m" + Date.now().toString(36);
+      if (data) await db("PUT", `rooms/${room}/noticeImages/${id}`, data);
+      await db("PUT", `rooms/${room}/notices/${id}`, { kind: "message", to: to.value, title: title.value.trim(), text: text.value.trim(), hasImage: !!data, createdAt: Date.now() });
+      status.textContent = "Sent. It shows up on the tablet the next time the app is open (within a minute if it is open now). The room page shows when it was seen.";
+      title.value = text.value = ""; file.value = ""; data = null; prev.style.display = "none";
+    } catch (e) { status.textContent = "Could not send: " + e.message; }
+    send.disabled = false;
+  };
+  c.append(to, title, text, file, prev, send, status);
+  root.appendChild(c);
+  return root;
+}
+
 // ---------- pair a new device: a code that works once, for 10 minutes ----------
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function randomCode(n) { const b = crypto.getRandomValues(new Uint8Array(n)); return Array.from(b).map((x) => CODE_ALPHABET[x % 32]).join(""); }
@@ -864,7 +969,7 @@ async function screenPair(arg) {
   const timerEl = document.createElement("div"); timerEl.className = "meta"; timerEl.style.textAlign = "center"; c.appendChild(timerEl);
   const statusEl = document.createElement("div"); statusEl.className = "meta"; statusEl.style.textAlign = "center"; statusEl.style.marginTop = "8px"; c.appendChild(statusEl);
   root.appendChild(c);
-  root.appendChild(note("Scan the QR code with the tablet's pairing screen, or type the 12 characters. Each code works for 10 minutes and for one device; a new one appears by itself."));
+  root.appendChild(note("Scan the QR code with the tablet's pairing screen, or type the 16 characters. Each code works for 10 minutes and for one device; a new one appears by itself."));
 
   let code = null, expires = 0, room = sel.value, base = -1, alive = true, making = false;
   async function drop() { if (code) { const old = code; code = null; try { await db("DELETE", `rooms/${room}/pairCodes/${old}`); } catch (e) { /* gone already */ } } }
@@ -873,13 +978,13 @@ async function screenPair(arg) {
     making = true;
     try {
       await drop();
-      const fresh = randomCode(12);
+      const fresh = randomCode(16);
       expires = Date.now() + 600000;
       await db("PUT", `rooms/${room}/pairCodes/${fresh}`, expires);
       try { await db("PUT", `keyIndex/${await fp16(fresh)}`, room); } catch (e) { /* the lookup already exists */ }
       code = fresh;
       drawQr(canvas, `FR1:${room}:${fresh}`);
-      codeEl.textContent = fresh.slice(0, 4) + "-" + fresh.slice(4, 8) + "-" + fresh.slice(8);
+      codeEl.textContent = fresh.slice(0, 4) + "-" + fresh.slice(4, 8) + "-" + fresh.slice(8, 12) + "-" + fresh.slice(12);
       base = Object.keys((await dbq(`rooms/${room}/members`, "&shallow=true")) || {}).length;
     } catch (e) { statusEl.textContent = "Could not make a code: " + e.message; }
     making = false;
