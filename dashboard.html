@@ -976,11 +976,13 @@ async function screenPair(arg) {
   const codeEl = document.createElement("div"); codeEl.className = "codebig mono"; c.appendChild(codeEl);
   const timerEl = document.createElement("div"); timerEl.className = "meta"; timerEl.style.textAlign = "center"; c.appendChild(timerEl);
   const statusEl = document.createElement("div"); statusEl.className = "meta"; statusEl.style.textAlign = "center"; statusEl.style.marginTop = "8px"; c.appendChild(statusEl);
+  const newBtn = document.createElement("button"); newBtn.textContent = "Make a new code"; newBtn.style.display = "none"; newBtn.style.margin = "10px auto 0"; c.appendChild(newBtn);
   root.appendChild(c);
-  root.appendChild(note("Scan the QR code with the tablet's pairing screen, or type the 16 characters. Each code works for 10 minutes and for one device; a new one appears by itself."));
+  root.appendChild(note("Scan the QR code with the tablet's pairing screen, or type the 16 characters. Each code works once, for one device, for 10 minutes. When it has been used or has run out, it disappears and a new one is made only when you ask."));
 
-  let code = null, expires = 0, room = sel.value, base = -1, alive = true, making = false;
+  let code = null, expires = 0, room = sel.value, alive = true, making = false;
   async function drop() { if (code) { const old = code; code = null; try { await db("DELETE", `rooms/${room}/pairCodes/${old}`); } catch (e) { /* gone already */ } } }
+  function retire(msg) { code = null; qrbox.style.display = "none"; codeEl.textContent = ""; timerEl.textContent = ""; statusEl.textContent = msg; newBtn.style.display = ""; }
   async function make() {
     if (making || !alive) return;
     making = true;
@@ -992,23 +994,29 @@ async function screenPair(arg) {
       try { await db("PUT", `keyIndex/${await fp16(fresh)}`, room); } catch (e) { /* the lookup already exists */ }
       code = fresh;
       drawQr(canvas, `FR1:${room}:${fresh}`);
+      qrbox.style.display = "";
+      newBtn.style.display = "none";
+      statusEl.textContent = "";
       codeEl.textContent = fresh.slice(0, 4) + "-" + fresh.slice(4, 8) + "-" + fresh.slice(8, 12) + "-" + fresh.slice(12);
-      base = Object.keys((await dbq(`rooms/${room}/members`, "&shallow=true")) || {}).length;
-    } catch (e) { statusEl.textContent = "Could not make a code: " + e.message; }
+    } catch (e) { statusEl.textContent = "Could not make a code: " + e.message; newBtn.style.display = ""; }
     making = false;
   }
+  newBtn.onclick = () => make();
   sel.onchange = async () => { await drop(); room = sel.value; make(); };
   const timer = setInterval(async () => {
-    if (!alive) return;
+    if (!alive || !code) return;
     const left = Math.round((expires - Date.now()) / 1000);
-    if (!code || left <= 0) { make(); return; }
+    if (left <= 0) { await drop(); retire("This code ran out. Make a new one."); return; }
     timerEl.textContent = `Valid for ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
   }, 1000);
+  // used: the tablet removes the code the moment it joins, so a code that is gone from the database has been used
   const watch = setInterval(async () => {
-    if (!alive || !code || base < 0) return;
-    const n = Object.keys((await dbq(`rooms/${room}/members`, "&shallow=true")) || {}).length;
-    if (n > base) { statusEl.textContent = "A device joined with that code. Here is a new one for the next device."; await make(); }
-  }, 3000);
+    if (!alive || !code || making) return;
+    const mine = code;
+    let v;
+    try { v = await db("GET", `rooms/${room}/pairCodes/${mine}`); } catch (e) { return; }
+    if (mine === code && (v === null || !(v > Date.now()))) retire("This QR code was used. Make a new one when you need it.");
+  }, 2500);
   leave.push(() => { alive = false; clearInterval(timer); clearInterval(watch); drop(); });
   make();
   return root;
