@@ -62,7 +62,8 @@
   .qrbox { display:flex; justify-content:center; padding:12px; }
   .qrbox canvas { background:#fff; padding:10px; border-radius:12px; image-rendering:pixelated; width:260px; height:260px; }
   textarea { width:100%; min-height:140px; border:none; border-radius:16px; background:var(--high); color:var(--ink); padding:12px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size:12px; }
-  .skeleton { opacity:.55; }
+  .updated { color:var(--soft); font-size:12px; margin:0 16px 10px; display:flex; gap:10px; align-items:center; }
+  .updated button { padding:4px 12px; font-size:12px; }
   .row2 { display:flex; gap:8px; flex-wrap:wrap; padding:12px 20px 16px; }
 </style>
 </head>
@@ -94,6 +95,7 @@
     <div id="topbar" class="top hidden">
       <button id="back" class="back ghost" title="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
       <h1 id="title"></h1>
+      <button id="refresh" class="back ghost" title="Refresh" style="margin-left:auto"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
     </div>
     <div id="view"></div>
   </div>
@@ -386,12 +388,14 @@ function empty(text) { return Object.assign(document.createElement("div"), { cla
 // ---------- navigation ----------
 const stack = [];
 let leave = []; // cleanups of the screen being left (timers, codes shown)
-const TITLES = { phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", cleanup: "Daily cleanup", pin: "Change PIN", pair: "Pair a new device", notice: "Send a message", rules: "Database rules", retire: "Retire the old secret", storage: "Picture and video files" };
+const TITLES = { devices: "Rooms and devices", security: "Security", datamenu: "Storage and cleanup", mine: "This dashboard", phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", cleanup: "Daily cleanup", pin: "Change PIN", pair: "Pair a new device", notice: "Send a message", rules: "Database rules", retire: "Retire the old secret", storage: "Picture and video files" };
 function go(name, arg) { stack.push({ name, arg }); render(); }
 function back() { if (stack.length > 1) stack.pop(); render(); }
 $("back").onclick = back;
 
-let busy = 0;
+let busy = 0, lastShown = "", lastUpdated = 0;
+// Draws the current screen. A redraw of the screen that is already showing (a toggle, a button, Refresh) keeps what is on screen until the new
+// version is ready, then swaps it in and keeps the scroll position: no "Loading", no flash, no jump to the top.
 async function render() {
   for (const f of leave) { try { f(); } catch (e) { /* ignore */ } }
   leave = [];
@@ -400,19 +404,38 @@ async function render() {
   $("topbar").classList.toggle("hidden", cur.name === "home");
   $("title").textContent = cur.name === "room" ? cur.arg.label : (TITLES[cur.name] || "");
   const view = $("view");
-  const cached = cur.name === "home" ? cget("home") : null;
-  const fn = { home: screenHome, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, cleanup: screenCleanup, pin: screenPin, pair: screenPair, notice: screenNotice, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
-  if (cached && cached.html) { view.innerHTML = cached.html; view.classList.add("skeleton"); } else view.innerHTML = '<div class="pad meta">Loading...</div>';
+  const key = cur.name + ":" + JSON.stringify(cur.arg || {});
+  const same = key === lastShown && view.firstChild;
+  const fn = { home: screenHome, devices: screenDevices, security: screenSecurity, datamenu: screenData, mine: screenMine, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, cleanup: screenCleanup, pin: screenPin, pair: screenPair, notice: screenNotice, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
+  if (!same) {
+    const cached = cur.name === "home" ? cget("home") : null;
+    view.innerHTML = cached && cached.html ? cached.html : '<div class="pad meta">Loading...</div>';
+    window.scrollTo(0, 0);
+  }
+  const keep = window.scrollY;
   try {
     const out = await fn(cur.arg, () => mine === busy);
     if (mine !== busy || !out) return;
-    view.classList.remove("skeleton");
     view.innerHTML = "";
     view.appendChild(out);
+    lastShown = key;
+    lastUpdated = Date.now();
+    if (same) window.scrollTo(0, keep);
     if (cur.name === "home") cset("home", { html: view.innerHTML });
   } catch (e) {
-    if (mine === busy) { view.classList.remove("skeleton"); view.innerHTML = `<div class="pad err">Could not load: ${esc(e.message)} — is the secret right?</div>`; }
+    if (mine === busy && !same) { view.innerHTML = `<div class="pad err">Could not load: ${esc(e.message)} — is the secret right?</div>`; }
   }
+}
+$("refresh").onclick = () => render();
+const timeStr = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+// the line under the home heading: when it was last read, and a Refresh button (nothing refreshes by itself while you read)
+function updatedLine() {
+  const d = document.createElement("div");
+  d.className = "updated";
+  d.innerHTML = `<span>Updated ${timeStr(Date.now())}</span>`;
+  const b = document.createElement("button"); b.className = "ghost"; b.textContent = "Refresh"; b.onclick = () => render();
+  d.appendChild(b);
+  return d;
 }
 
 // ---------- preferences + shared reads ----------
@@ -461,62 +484,90 @@ function roomFacts(room, reg, names, members) {
 }
 
 // ---------- home ----------
-async function screenHome() {
+async function dashData() {
   const [{ reg, names }, roomList, live, days, migration, rulesNow, healthErr] = await Promise.all([
     registry(), dbq("rooms", "&shallow=true"), dbq("admin/cleanupLive"), dbq("admin/cleanupDays"), dbq("admin/migrationOpen"), readRules(),
     db("GET", "registry", undefined, "&shallow=true").then((x) => (x && Object.keys(x).length ? null : "Nothing came back: no rooms at this address")).catch((e) => e.message),
   ]);
   const rooms = Object.keys(roomList || {});
   const locked = await roomsLocked(rooms[0]);
-  const approveOn = tabletApprovalOn(reg);
-  const w = countWaiting(reg);
-  const phoneN = Object.keys(reg).length;
-  const tabletN = Object.values(reg).reduce((a, r) => a + Object.keys((r && r.tablets) || {}).length, 0);
-  const rs = rulesNow ? detectRules(rulesNow.json) : null;
+  return {
+    reg, names, rooms, live, days, migration, healthErr, locked,
+    approveOn: tabletApprovalOn(reg), w: countWaiting(reg), phoneN: Object.keys(reg).length,
+    tabletN: Object.values(reg).reduce((a, r) => a + Object.keys((r && r.tablets) || {}).length, 0),
+    rs: rulesNow ? detectRules(rulesNow.json) : null,
+  };
+}
+const securityIssues = (d) => (d.locked === true ? 0 : 1) + (d.rs === "current" ? 0 : 1) + (d.migration === true ? 1 : 0);
+
+async function screenHome() {
+  const d = await dashData();
   const root = document.createElement("div");
   const head = document.createElement("h1");
   head.textContent = "Message+ dashboard";
   root.appendChild(head);
-  if (healthErr) {
+  root.appendChild(updatedLine());
+  if (d.healthErr) {
     // everything below would just say "unknown" or "0": say why instead
     const bad = group("Cannot read your data");
     let host = ""; try { host = new URL(cfg.url).host; } catch (e) { host = cfg.url; }
-    bad.add(item({ icon: "info", title: "This dashboard is not connected to your database", sub: healthErr + ". Address in use: " + host + ". The address should be flip-relay-default-rtdb.firebaseio.com. A \"401\" or \"403\" means the secret is wrong or was replaced in the Firebase console; use \"Forget the Firebase secret\" at the bottom and enter the current one.", chips: [["not connected", "bad"]] }));
+    bad.add(item({ icon: "info", title: "This dashboard is not connected to your database", sub: d.healthErr + ". Address in use: " + host + ". The address should be flip-relay-default-rtdb.firebaseio.com. A \"401\" or \"403\" means the secret is wrong or was replaced in the Firebase console; use \"This dashboard\" > \"Forget the Firebase secret\" and enter the current one.", chips: [["not connected", "bad"]] }));
     root.appendChild(bad);
   }
+  const waiting = d.w.phones + d.w.tablets;
+  const issues = securityIssues(d);
+  const g = group("");
+  g.add(item({ icon: "folder", title: "Rooms and devices", sub: `${d.rooms.length} room${d.rooms.length === 1 ? "" : "s"} · ${d.phoneN} phone${d.phoneN === 1 ? "" : "s"} · ${d.tabletN} tablet${d.tabletN === 1 ? "" : "s"}`, pill: waiting ? waiting + " waiting" : "", warn: true, onclick: () => go("devices") }));
+  g.add(item({ icon: "qr", title: "Pair a new device", sub: "A QR code and a 16-character code, good once for 10 minutes", onclick: () => go("pair") }));
+  g.add(item({ icon: "shield", title: "Security", sub: d.healthErr ? "Not checked: no connection" : issues ? issues + " thing" + (issues === 1 ? "" : "s") + " to look at" : "Everything looks good",
+    chips: [[d.healthErr ? "unknown" : issues ? "check" : "all good", d.healthErr ? "grey" : issues ? "warn" : "ok"]], onclick: () => go("security") }));
+  g.add(item({ icon: "trash", title: "Storage and cleanup", sub: "Deleting " + (allowDelete() ? "on" : "off") + " · daily cleanup " + (d.live === true ? "on" : "off"), onclick: () => go("datamenu") }));
+  g.add(item({ icon: "lock", title: "This dashboard", sub: "PIN, lock, forget the secret", onclick: () => go("mine") }));
+  root.appendChild(g);
+  return root;
+}
 
-  // ---- security at a glance
-  const sec = group("Security at a glance");
-  sec.add(item({ icon: "lock", title: "Rooms are locked to strangers", sub: locked === null ? "Could not check from this browser" : locked ? "Someone with only a pairing code gets nothing" : "A room opens without any sign-in: anyone with a pairing code can read it. Open Database rules to fix this.",
-    chips: [[locked === null ? "unknown" : locked ? "locked" : "OPEN", locked === null ? "grey" : locked ? "ok" : "bad"]], onclick: () => go("rules") }));
-  sec.add(item({ icon: "list", title: "Database rules", sub: rs === "current" ? "Current rules are in place (with 10-minute pairing codes)" : rs === "previous" ? "Older protective rules are in place; the newest adds 10-minute codes" : rs === "open" ? "The old open rules are still in place" : rs === null ? "Could not read the rules from here" : "Custom rules",
-    chips: [[rs === "current" ? "up to date" : rs === "previous" ? "update available" : rs === "open" ? "not protected" : "custom", rs === "current" ? "ok" : rs === "previous" ? "warn" : rs === "open" ? "bad" : "grey"]], onclick: () => go("rules") }));
-  sec.add(item({ icon: "key", title: "Retire the old secret", sub: "A checklist that shows whether his phone and tablet have moved over", onclick: () => go("retire") }));
-  root.appendChild(sec);
+async function screenDevices() {
+  const d = await dashData();
+  const root = document.createElement("div");
+  root.appendChild(updatedLine());
+  root.appendChild(group("").add(item({ icon: "folder", title: "Rooms", sub: `${d.rooms.length} room${d.rooms.length === 1 ? "" : "s"}: guest list, devices, crashes, activity, storage`, onclick: () => go("rooms") }))
+    .add(item({ icon: "phone", title: "Phones", sub: `${d.phoneN} paired`, pill: d.w.phones ? d.w.phones + " waiting" : "", warn: true, onclick: () => go("phones") }))
+    .add(item({ icon: "tablet", title: "Tablets", sub: `${d.tabletN} listed`, pill: d.w.tablets ? d.w.tablets + " waiting" : "", warn: true, onclick: () => go("tablets") })));
+  return root;
+}
 
-  const dev = group("Devices");
-  dev.add(item({ icon: "phone", title: "Phones", sub: `${phoneN} paired`, pill: w.phones ? w.phones + " waiting" : "", warn: true, onclick: () => go("phones") }));
-  dev.add(item({ icon: "tablet", title: "Tablets", sub: `${tabletN} listed`, pill: w.tablets ? w.tablets + " waiting" : "", warn: true, onclick: () => go("tablets") }));
-  root.appendChild(dev);
-
-  const pairG = group("Pairing");
-  pairG.add(item({ icon: "qr", title: "Pair a new device", sub: "Makes a QR code and a 16-character code that work once, for 10 minutes", onclick: () => go("pair") }));
-  pairG.add(item({
+async function screenSecurity() {
+  const d = await dashData();
+  const root = document.createElement("div");
+  root.appendChild(updatedLine());
+  const g = group("");
+  g.add(item({ icon: "lock", title: "Rooms are locked to strangers", sub: d.locked === null ? "Could not check from this browser" : d.locked ? "Someone with only a pairing code gets nothing" : "A room opens without any sign-in: anyone with a pairing code can read it. Open Database rules to fix this.",
+    chips: [[d.locked === null ? "unknown" : d.locked ? "locked" : "OPEN", d.locked === null ? "grey" : d.locked ? "ok" : "bad"]], onclick: () => go("rules") }));
+  g.add(item({ icon: "list", title: "Database rules", sub: d.rs === "current" ? "Current rules are in place (with 10-minute pairing codes)" : d.rs === "previous" ? "Older protective rules are in place; the newest adds 10-minute codes" : d.rs === "open" ? "The old open rules are still in place" : d.rs === null ? "Could not read the rules from here" : "Custom rules",
+    chips: [[d.rs === "current" ? "up to date" : d.rs === "previous" ? "update available" : d.rs === "open" ? "not protected" : "custom", d.rs === "current" ? "ok" : d.rs === "previous" ? "warn" : d.rs === "open" ? "bad" : "grey"]], onclick: () => go("rules") }));
+  g.add(item({ icon: "key", title: "Retire the old secret", sub: "A checklist that shows whether his phone and tablet have moved over", onclick: () => go("retire") }));
+  g.add(item({ icon: "cloud", title: "Picture and video files", sub: "Who can list the files, and the rules to lock that", onclick: () => go("storage") }));
+  root.appendChild(g);
+  const p = group("Who can join");
+  p.add(item({
     icon: "shield", title: "Let old devices join with the 6-character code",
-    sub: migration === true ? "On: a tablet or phone paired before the 16-character code can still join. Turn it off once everyone has updated." : "Off: new devices need a code from the phone or from here.",
-    toggle: async (v) => { await db("PUT", "admin/migrationOpen", v); render(); }, on: migration === true,
+    sub: d.migration === true ? "On: a tablet or phone paired before the 16-character code can still join. Turn it off once everyone has updated." : "Off: new devices need a code from the phone or from here.",
+    toggle: async (v) => { await db("PUT", "admin/migrationOpen", v); render(); }, on: d.migration === true,
   }));
-  pairG.add(item({
+  p.add(item({
     icon: "shield", title: "Approve new tablets",
-    sub: approveOn ? "On: a tablet or web page that joins waits for your Approve" : "Off: tablets join on their own and are not listed",
-    toggle: async (v) => { for (const c of Object.keys(reg)) await db("PATCH", `registry/${c}`, { requireTabletApproval: v }); await db("PUT", "admin/approveTablets", v); render(); }, on: approveOn,
+    sub: d.approveOn ? "On: a tablet or web page that joins waits for your Approve" : "Off: tablets join on their own and are not listed",
+    toggle: async (v) => { for (const c of Object.keys(d.reg)) await db("PATCH", `registry/${c}`, { requireTabletApproval: v }); await db("PUT", "admin/approveTablets", v); render(); }, on: d.approveOn,
   }));
-  root.appendChild(pairG);
+  root.appendChild(p);
+  return root;
+}
 
-  root.appendChild(group("Rooms").add(item({ icon: "folder", title: "Rooms", sub: `${rooms.length} room${rooms.length === 1 ? "" : "s"} — guest list, devices, storage`, onclick: () => go("rooms") }))
-    .add(item({ icon: "cloud", title: "Picture and video files", sub: "Who can list the files, and the rules to lock that", onclick: () => go("storage") })));
-
-  const del = group("Deleting");
+async function screenData() {
+  const [live, days] = await Promise.all([dbq("admin/cleanupLive"), dbq("admin/cleanupDays")]);
+  const root = document.createElement("div");
+  const del = group("");
   del.add(item({
     icon: "trash", title: "Allow deleting",
     sub: allowDelete() ? "On: you can delete old messages and rooms" : "Off: nothing can be deleted from here, and the automatic daily cleanup is stopped",
@@ -529,11 +580,15 @@ async function screenHome() {
   }));
   if (allowDelete()) del.add(item({ icon: "clock", title: "Daily cleanup", sub: (live === true ? "On" : "Off") + " · removes things older than " + (days || 14) + " days", onclick: () => go("cleanup") }));
   root.appendChild(del);
+  return root;
+}
 
-  root.appendChild(group("Security")
+async function screenMine() {
+  const root = document.createElement("div");
+  root.appendChild(group("")
     .add(item({ icon: "lock", title: "Change PIN", onclick: () => go("pin") }))
-    .add(item({ icon: "out", title: "Lock", onclick: () => { cfg = null; stack.length = 0; show("login"); } }))
-    .add(item({ icon: "trash", title: "Forget the Firebase secret on this device", danger: true, onclick: () => { if (confirm("Remove the saved Firebase secret from this device?")) { localStorage.removeItem(STORE); localStorage.removeItem(CACHE_KEY); try { if (bio) bio.forget(); } catch (e) { } cfg = null; stack.length = 0; show("setup"); } } })));
+    .add(item({ icon: "out", title: "Lock", sub: "Back to the PIN screen", onclick: () => { cfg = null; stack.length = 0; show("login"); } }))
+    .add(item({ icon: "trash", title: "Forget the Firebase secret on this device", sub: "You will enter the address and secret again", danger: true, onclick: () => { if (confirm("Remove the saved Firebase secret from this device?")) { localStorage.removeItem(STORE); localStorage.removeItem(CACHE_KEY); try { if (bio) bio.forget(); } catch (e) { } cfg = null; stack.length = 0; show("setup"); } } })));
   return root;
 }
 
@@ -1153,7 +1208,11 @@ async function screenPin() {
 }
 
 // keep the "waiting" counts fresh while the home / device screens are open
-setInterval(() => { const cur = stack[stack.length - 1]; if (cfg && !$("app").classList.contains("hidden") && cur && ["home", "phones", "tablets"].includes(cur.name) && !document.hidden) render(); }, 45000);
+let hiddenAt = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { hiddenAt = Date.now(); return; }
+  if (cfg && !$("app").classList.contains("hidden") && hiddenAt && Date.now() - hiddenAt > 120000) render(); // away for 2+ minutes: bring it up to date
+});
 
 // ---------- sign-in screens ----------
 function show(which) { for (const id of ["setup", "login", "app"]) $(id).classList.toggle("hidden", id !== which); }
