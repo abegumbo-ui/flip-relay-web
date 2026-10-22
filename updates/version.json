@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "85324682f1d78165fcf21c0e69dbeef7e109edb4",
-    "publishedAt": "2026-10-22T16:35:51Z",
-    "build": 494,
-    "notes": "Voicemail: Saved voicemails section (every voicemail that ever came in, kept after you delete it)`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats now show the contact name and number"
+    "sha": "f0e4814b64735c3556a6866f21381dbba571f53d",
+    "publishedAt": "2026-10-22T16:56:21Z",
+    "build": 495,
+    "notes": "Voicemail: the Saved voicemails section is always shown, with a note when nothing is saved yet`nSaved voicemails: every voicemail that comes in is kept, even after you delete it`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats show the contact name and number"
   },
   "tablet-regular": {
-    "sha": "85324682f1d78165fcf21c0e69dbeef7e109edb4",
-    "publishedAt": "2026-10-22T16:35:51Z",
-    "build": 494,
-    "notes": "Voicemail: Saved voicemails section (every voicemail that ever came in, kept after you delete it)`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats now show the contact name and number"
+    "sha": "f0e4814b64735c3556a6866f21381dbba571f53d",
+    "publishedAt": "2026-10-22T16:56:21Z",
+    "build": 495,
+    "notes": "Voicemail: the Saved voicemails section is always shown, with a note when nothing is saved yet`nSaved voicemails: every voicemail that comes in is kept, even after you delete it`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats show the contact name and number"
   },
   "tablet-mechi": {
-    "sha": "85324682f1d78165fcf21c0e69dbeef7e109edb4",
-    "publishedAt": "2026-10-22T16:35:51Z",
-    "build": 494,
-    "notes": "Voicemail: Saved voicemails section (every voicemail that ever came in, kept after you delete it)`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats now show the contact name and number"
+    "sha": "f0e4814b64735c3556a6866f21381dbba571f53d",
+    "publishedAt": "2026-10-22T16:56:21Z",
+    "build": 495,
+    "notes": "Voicemail: the Saved voicemails section is always shown, with a note when nothing is saved yet`nSaved voicemails: every voicemail that comes in is kept, even after you delete it`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats show the contact name and number"
   }
 }
