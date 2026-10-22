@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "73b6d22e820eac4f3136685eb34339c64632fcf4",
-    "publishedAt": "2026-10-21T21:02:39Z",
-    "build": 485,
-    "notes": "• Logging out (or being logged out after 15 days offline) now deletes every saved message and picture from the tablet\n• Fewer false low-memory warnings in the crash log"
+    "sha": "e437330c8d41273e49cce1fa012c3284b136d0a4",
+    "publishedAt": "2026-10-22T11:55:23Z",
+    "build": 486,
+    "notes": "• New Voicemail screen: Settings > Voicemail lists voicemails the phone copied, with Play and Delete\n• Needs the phone's Voicemail switch on (Flip Relay Settings > Apps and Home Screen)"
   },
   "tablet-regular": {
-    "sha": "73b6d22e820eac4f3136685eb34339c64632fcf4",
-    "publishedAt": "2026-10-21T21:02:39Z",
-    "build": 485,
-    "notes": "• Logging out (or being logged out after 15 days offline) now deletes every saved message and picture from the tablet\n• Fewer false low-memory warnings in the crash log"
+    "sha": "e437330c8d41273e49cce1fa012c3284b136d0a4",
+    "publishedAt": "2026-10-22T11:55:23Z",
+    "build": 486,
+    "notes": "• New Voicemail screen: Settings > Voicemail lists voicemails the phone copied, with Play and Delete\n• Needs the phone's Voicemail switch on (Flip Relay Settings > Apps and Home Screen)"
   },
   "tablet-mechi": {
-    "sha": "73b6d22e820eac4f3136685eb34339c64632fcf4",
-    "publishedAt": "2026-10-21T21:02:39Z",
-    "build": 485,
-    "notes": "• Logging out (or being logged out after 15 days offline) now deletes every saved message and picture from the tablet\n• Fewer false low-memory warnings in the crash log"
+    "sha": "e437330c8d41273e49cce1fa012c3284b136d0a4",
+    "publishedAt": "2026-10-22T11:55:23Z",
+    "build": 486,
+    "notes": "• New Voicemail screen: Settings > Voicemail lists voicemails the phone copied, with Play and Delete\n• Needs the phone's Voicemail switch on (Flip Relay Settings > Apps and Home Screen)"
   }
 }
