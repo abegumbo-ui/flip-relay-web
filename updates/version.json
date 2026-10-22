@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "e437330c8d41273e49cce1fa012c3284b136d0a4",
-    "publishedAt": "2026-10-22T11:55:23Z",
-    "build": 486,
-    "notes": "• New Voicemail screen: Settings > Voicemail lists voicemails the phone copied, with Play and Delete\n• Needs the phone's Voicemail switch on (Flip Relay Settings > Apps and Home Screen)"
+    "sha": "bfd1d632fc794e3c20a19f7f6605b2dda78bf142",
+    "publishedAt": "2026-10-22T12:12:20Z",
+    "build": 487,
+    "notes": "• Voicemail has a new look: cards with a play bar, Share, Save and Delete\n• Refresh now asks the phone to check for new voicemails right away"
   },
   "tablet-regular": {
-    "sha": "e437330c8d41273e49cce1fa012c3284b136d0a4",
-    "publishedAt": "2026-10-22T11:55:23Z",
-    "build": 486,
-    "notes": "• New Voicemail screen: Settings > Voicemail lists voicemails the phone copied, with Play and Delete\n• Needs the phone's Voicemail switch on (Flip Relay Settings > Apps and Home Screen)"
+    "sha": "bfd1d632fc794e3c20a19f7f6605b2dda78bf142",
+    "publishedAt": "2026-10-22T12:12:20Z",
+    "build": 487,
+    "notes": "• Voicemail has a new look: cards with a play bar, Share, Save and Delete\n• Refresh now asks the phone to check for new voicemails right away"
   },
   "tablet-mechi": {
-    "sha": "e437330c8d41273e49cce1fa012c3284b136d0a4",
-    "publishedAt": "2026-10-22T11:55:23Z",
-    "build": 486,
-    "notes": "• New Voicemail screen: Settings > Voicemail lists voicemails the phone copied, with Play and Delete\n• Needs the phone's Voicemail switch on (Flip Relay Settings > Apps and Home Screen)"
+    "sha": "bfd1d632fc794e3c20a19f7f6605b2dda78bf142",
+    "publishedAt": "2026-10-22T12:12:20Z",
+    "build": 487,
+    "notes": "• Voicemail has a new look: cards with a play bar, Share, Save and Delete\n• Refresh now asks the phone to check for new voicemails right away"
   }
 }
