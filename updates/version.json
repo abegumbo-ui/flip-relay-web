@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "6cffc80e87948d2f7a0d6bf567349873e5229913",
-    "publishedAt": "2026-10-22T12:38:56Z",
-    "build": 488,
-    "notes": "• Voicemail now sits next to Calls with its own red dot, and you can swipe to it after Calls\n• New Pixel-style screen: play bar, Download (asks where to save), Share, Delete with Undo, Voice call, Send a message\n• Settings > Voicemail switch shows or hides it"
+    "sha": "d251ac1b2a2b4028ecd86c430cddbd136ce0ee6a",
+    "publishedAt": "2026-10-22T13:11:45Z",
+    "build": 489,
+    "notes": "• New Dock layout (Settings > Layout): Chats, Groups, Calls and Voicemail in a bar at the bottom, with the current one highlighted\n• Calls and Voicemail now show the same icons at the top to move between screens\n• Voicemail redone to match Google's Phone app: new icons, play bar, no Refresh button, gear for where to save and Ask before deleting\n• Send a message opens the conversation straight away"
   },
   "tablet-regular": {
-    "sha": "6cffc80e87948d2f7a0d6bf567349873e5229913",
-    "publishedAt": "2026-10-22T12:38:56Z",
-    "build": 488,
-    "notes": "• Voicemail now sits next to Calls with its own red dot, and you can swipe to it after Calls\n• New Pixel-style screen: play bar, Download (asks where to save), Share, Delete with Undo, Voice call, Send a message\n• Settings > Voicemail switch shows or hides it"
+    "sha": "d251ac1b2a2b4028ecd86c430cddbd136ce0ee6a",
+    "publishedAt": "2026-10-22T13:11:45Z",
+    "build": 489,
+    "notes": "• New Dock layout (Settings > Layout): Chats, Groups, Calls and Voicemail in a bar at the bottom, with the current one highlighted\n• Calls and Voicemail now show the same icons at the top to move between screens\n• Voicemail redone to match Google's Phone app: new icons, play bar, no Refresh button, gear for where to save and Ask before deleting\n• Send a message opens the conversation straight away"
   },
   "tablet-mechi": {
-    "sha": "6cffc80e87948d2f7a0d6bf567349873e5229913",
-    "publishedAt": "2026-10-22T12:38:56Z",
-    "build": 488,
-    "notes": "• Voicemail now sits next to Calls with its own red dot, and you can swipe to it after Calls\n• New Pixel-style screen: play bar, Download (asks where to save), Share, Delete with Undo, Voice call, Send a message\n• Settings > Voicemail switch shows or hides it"
+    "sha": "d251ac1b2a2b4028ecd86c430cddbd136ce0ee6a",
+    "publishedAt": "2026-10-22T13:11:45Z",
+    "build": 489,
+    "notes": "• New Dock layout (Settings > Layout): Chats, Groups, Calls and Voicemail in a bar at the bottom, with the current one highlighted\n• Calls and Voicemail now show the same icons at the top to move between screens\n• Voicemail redone to match Google's Phone app: new icons, play bar, no Refresh button, gear for where to save and Ask before deleting\n• Send a message opens the conversation straight away"
   }
 }
