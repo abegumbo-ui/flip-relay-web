@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "bd68b47b5fbf2f6d2c8484942005c2393aa80908",
-    "publishedAt": "2026-10-22T20:00:38Z",
-    "build": 501,
-    "notes": "Direct voicemail: fixes the sign-in error about network permission (it now connects over mobile data)"
+    "sha": "2c8734932723308e8869d70320f2aab75866285d",
+    "publishedAt": "2026-10-22T20:24:23Z",
+    "build": 502,
+    "notes": "The update button now says Update to build N when a newer build exists; Settings shows your current build`nOpening the app clears its notifications`nVoicemail: the same voicemail from the phone and the tablet is counted once; names come from your chats`nDirect voicemail shows in the regular voicemail settings once set up, with a switch; nicer Change PIN screen`nDirect voicemail checks faster while you look at it and slower in the background or on low battery, and supplies the other devices`nVoicemail settings: tapping the title no longer lags"
   },
   "tablet-regular": {
-    "sha": "bd68b47b5fbf2f6d2c8484942005c2393aa80908",
-    "publishedAt": "2026-10-22T20:00:38Z",
-    "build": 501,
-    "notes": "Direct voicemail: fixes the sign-in error about network permission (it now connects over mobile data)"
+    "sha": "2c8734932723308e8869d70320f2aab75866285d",
+    "publishedAt": "2026-10-22T20:24:23Z",
+    "build": 502,
+    "notes": "The update button now says Update to build N when a newer build exists; Settings shows your current build`nOpening the app clears its notifications`nVoicemail: the same voicemail from the phone and the tablet is counted once; names come from your chats`nDirect voicemail shows in the regular voicemail settings once set up, with a switch; nicer Change PIN screen`nDirect voicemail checks faster while you look at it and slower in the background or on low battery, and supplies the other devices`nVoicemail settings: tapping the title no longer lags"
   },
   "tablet-mechi": {
-    "sha": "bd68b47b5fbf2f6d2c8484942005c2393aa80908",
-    "publishedAt": "2026-10-22T20:00:38Z",
-    "build": 501,
-    "notes": "Direct voicemail: fixes the sign-in error about network permission (it now connects over mobile data)"
+    "sha": "2c8734932723308e8869d70320f2aab75866285d",
+    "publishedAt": "2026-10-22T20:24:23Z",
+    "build": 502,
+    "notes": "The update button now says Update to build N when a newer build exists; Settings shows your current build`nOpening the app clears its notifications`nVoicemail: the same voicemail from the phone and the tablet is counted once; names come from your chats`nDirect voicemail shows in the regular voicemail settings once set up, with a switch; nicer Change PIN screen`nDirect voicemail checks faster while you look at it and slower in the background or on low battery, and supplies the other devices`nVoicemail settings: tapping the title no longer lags"
   }
 }
