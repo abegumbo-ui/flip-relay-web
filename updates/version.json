@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "f0e4814b64735c3556a6866f21381dbba571f53d",
-    "publishedAt": "2026-10-22T16:56:21Z",
-    "build": 495,
-    "notes": "Voicemail: the Saved voicemails section is always shown, with a note when nothing is saved yet`nSaved voicemails: every voicemail that comes in is kept, even after you delete it`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats show the contact name and number"
+    "sha": "9d92ea7b000f81688919e8549b4110f6655b193e",
+    "publishedAt": "2026-10-22T17:48:22Z",
+    "build": 500,
+    "notes": "Calls: new Received and Dialed filters, a different symbol for each kind of call, and Call info (tap a call) with who, number, type, date, time and length`nCalls dialed or answered on the flip are no longer shown as missed`nVoicemail: Saved voicemails can be deleted for good, and there is a Keep saved voicemails switch in voicemail settings`nVoicemail settings: tap the title 7 times for Direct voicemail (sign in to Verizon from this tablet)"
   },
   "tablet-regular": {
-    "sha": "f0e4814b64735c3556a6866f21381dbba571f53d",
-    "publishedAt": "2026-10-22T16:56:21Z",
-    "build": 495,
-    "notes": "Voicemail: the Saved voicemails section is always shown, with a note when nothing is saved yet`nSaved voicemails: every voicemail that comes in is kept, even after you delete it`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats show the contact name and number"
+    "sha": "9d92ea7b000f81688919e8549b4110f6655b193e",
+    "publishedAt": "2026-10-22T17:48:22Z",
+    "build": 500,
+    "notes": "Calls: new Received and Dialed filters, a different symbol for each kind of call, and Call info (tap a call) with who, number, type, date, time and length`nCalls dialed or answered on the flip are no longer shown as missed`nVoicemail: Saved voicemails can be deleted for good, and there is a Keep saved voicemails switch in voicemail settings`nVoicemail settings: tap the title 7 times for Direct voicemail (sign in to Verizon from this tablet)"
   },
   "tablet-mechi": {
-    "sha": "f0e4814b64735c3556a6866f21381dbba571f53d",
-    "publishedAt": "2026-10-22T16:56:21Z",
-    "build": 495,
-    "notes": "Voicemail: the Saved voicemails section is always shown, with a note when nothing is saved yet`nSaved voicemails: every voicemail that comes in is kept, even after you delete it`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats show the contact name and number"
+    "sha": "9d92ea7b000f81688919e8549b4110f6655b193e",
+    "publishedAt": "2026-10-22T17:48:22Z",
+    "build": 500,
+    "notes": "Calls: new Received and Dialed filters, a different symbol for each kind of call, and Call info (tap a call) with who, number, type, date, time and length`nCalls dialed or answered on the flip are no longer shown as missed`nVoicemail: Saved voicemails can be deleted for good, and there is a Keep saved voicemails switch in voicemail settings`nVoicemail settings: tap the title 7 times for Direct voicemail (sign in to Verizon from this tablet)"
   }
 }
