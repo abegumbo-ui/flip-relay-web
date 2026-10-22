@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "9d92ea7b000f81688919e8549b4110f6655b193e",
-    "publishedAt": "2026-10-22T17:48:22Z",
-    "build": 500,
-    "notes": "Calls: new Received and Dialed filters, a different symbol for each kind of call, and Call info (tap a call) with who, number, type, date, time and length`nCalls dialed or answered on the flip are no longer shown as missed`nVoicemail: Saved voicemails can be deleted for good, and there is a Keep saved voicemails switch in voicemail settings`nVoicemail settings: tap the title 7 times for Direct voicemail (sign in to Verizon from this tablet)"
+    "sha": "bd68b47b5fbf2f6d2c8484942005c2393aa80908",
+    "publishedAt": "2026-10-22T20:00:38Z",
+    "build": 501,
+    "notes": "Direct voicemail: fixes the sign-in error about network permission (it now connects over mobile data)"
   },
   "tablet-regular": {
-    "sha": "9d92ea7b000f81688919e8549b4110f6655b193e",
-    "publishedAt": "2026-10-22T17:48:22Z",
-    "build": 500,
-    "notes": "Calls: new Received and Dialed filters, a different symbol for each kind of call, and Call info (tap a call) with who, number, type, date, time and length`nCalls dialed or answered on the flip are no longer shown as missed`nVoicemail: Saved voicemails can be deleted for good, and there is a Keep saved voicemails switch in voicemail settings`nVoicemail settings: tap the title 7 times for Direct voicemail (sign in to Verizon from this tablet)"
+    "sha": "bd68b47b5fbf2f6d2c8484942005c2393aa80908",
+    "publishedAt": "2026-10-22T20:00:38Z",
+    "build": 501,
+    "notes": "Direct voicemail: fixes the sign-in error about network permission (it now connects over mobile data)"
   },
   "tablet-mechi": {
-    "sha": "9d92ea7b000f81688919e8549b4110f6655b193e",
-    "publishedAt": "2026-10-22T17:48:22Z",
-    "build": 500,
-    "notes": "Calls: new Received and Dialed filters, a different symbol for each kind of call, and Call info (tap a call) with who, number, type, date, time and length`nCalls dialed or answered on the flip are no longer shown as missed`nVoicemail: Saved voicemails can be deleted for good, and there is a Keep saved voicemails switch in voicemail settings`nVoicemail settings: tap the title 7 times for Direct voicemail (sign in to Verizon from this tablet)"
+    "sha": "bd68b47b5fbf2f6d2c8484942005c2393aa80908",
+    "publishedAt": "2026-10-22T20:00:38Z",
+    "build": 501,
+    "notes": "Direct voicemail: fixes the sign-in error about network permission (it now connects over mobile data)"
   }
 }
