@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "3554b09d3a4caabf5416172cfd719732ea0069e8",
-    "publishedAt": "2026-10-22T20:41:34Z",
-    "build": 503,
-    "notes": "Fixed: the same voicemail showing many times (it was being added again on every check); the extra copies are cleaned up`nRefresh with direct voicemail goes straight to Verizon and never asks the phone`nDirect voicemail settings (on/off, change PIN, sign out) are now inside Voicemail settings, no more seven taps after the first time`nLinks in messages are blue and tappable: WhatsApp links open WhatsApp, other links ask which app to open them with"
+    "sha": "f778448db56ad136bbf5a084dd301c59a3f5bf6b",
+    "publishedAt": "2026-10-22T20:53:12Z",
+    "build": 504,
+    "notes": "Voicemails now always save to Downloads / Voicemail (no folder to choose)`nVoicemail settings scroll`nVoicemails show the contact name from your chats, even when the phone has no name for the number"
   },
   "tablet-regular": {
-    "sha": "3554b09d3a4caabf5416172cfd719732ea0069e8",
-    "publishedAt": "2026-10-22T20:41:34Z",
-    "build": 503,
-    "notes": "Fixed: the same voicemail showing many times (it was being added again on every check); the extra copies are cleaned up`nRefresh with direct voicemail goes straight to Verizon and never asks the phone`nDirect voicemail settings (on/off, change PIN, sign out) are now inside Voicemail settings, no more seven taps after the first time`nLinks in messages are blue and tappable: WhatsApp links open WhatsApp, other links ask which app to open them with"
+    "sha": "f778448db56ad136bbf5a084dd301c59a3f5bf6b",
+    "publishedAt": "2026-10-22T20:53:12Z",
+    "build": 504,
+    "notes": "Voicemails now always save to Downloads / Voicemail (no folder to choose)`nVoicemail settings scroll`nVoicemails show the contact name from your chats, even when the phone has no name for the number"
   },
   "tablet-mechi": {
-    "sha": "3554b09d3a4caabf5416172cfd719732ea0069e8",
-    "publishedAt": "2026-10-22T20:41:34Z",
-    "build": 503,
-    "notes": "Fixed: the same voicemail showing many times (it was being added again on every check); the extra copies are cleaned up`nRefresh with direct voicemail goes straight to Verizon and never asks the phone`nDirect voicemail settings (on/off, change PIN, sign out) are now inside Voicemail settings, no more seven taps after the first time`nLinks in messages are blue and tappable: WhatsApp links open WhatsApp, other links ask which app to open them with"
+    "sha": "f778448db56ad136bbf5a084dd301c59a3f5bf6b",
+    "publishedAt": "2026-10-22T20:53:12Z",
+    "build": 504,
+    "notes": "Voicemails now always save to Downloads / Voicemail (no folder to choose)`nVoicemail settings scroll`nVoicemails show the contact name from your chats, even when the phone has no name for the number"
   }
 }
