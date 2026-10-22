@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "bfd1d632fc794e3c20a19f7f6605b2dda78bf142",
-    "publishedAt": "2026-10-22T12:12:20Z",
-    "build": 487,
-    "notes": "• Voicemail has a new look: cards with a play bar, Share, Save and Delete\n• Refresh now asks the phone to check for new voicemails right away"
+    "sha": "6cffc80e87948d2f7a0d6bf567349873e5229913",
+    "publishedAt": "2026-10-22T12:38:56Z",
+    "build": 488,
+    "notes": "• Voicemail now sits next to Calls with its own red dot, and you can swipe to it after Calls\n• New Pixel-style screen: play bar, Download (asks where to save), Share, Delete with Undo, Voice call, Send a message\n• Settings > Voicemail switch shows or hides it"
   },
   "tablet-regular": {
-    "sha": "bfd1d632fc794e3c20a19f7f6605b2dda78bf142",
-    "publishedAt": "2026-10-22T12:12:20Z",
-    "build": 487,
-    "notes": "• Voicemail has a new look: cards with a play bar, Share, Save and Delete\n• Refresh now asks the phone to check for new voicemails right away"
+    "sha": "6cffc80e87948d2f7a0d6bf567349873e5229913",
+    "publishedAt": "2026-10-22T12:38:56Z",
+    "build": 488,
+    "notes": "• Voicemail now sits next to Calls with its own red dot, and you can swipe to it after Calls\n• New Pixel-style screen: play bar, Download (asks where to save), Share, Delete with Undo, Voice call, Send a message\n• Settings > Voicemail switch shows or hides it"
   },
   "tablet-mechi": {
-    "sha": "bfd1d632fc794e3c20a19f7f6605b2dda78bf142",
-    "publishedAt": "2026-10-22T12:12:20Z",
-    "build": 487,
-    "notes": "• Voicemail has a new look: cards with a play bar, Share, Save and Delete\n• Refresh now asks the phone to check for new voicemails right away"
+    "sha": "6cffc80e87948d2f7a0d6bf567349873e5229913",
+    "publishedAt": "2026-10-22T12:38:56Z",
+    "build": 488,
+    "notes": "• Voicemail now sits next to Calls with its own red dot, and you can swipe to it after Calls\n• New Pixel-style screen: play bar, Download (asks where to save), Share, Delete with Undo, Voice call, Send a message\n• Settings > Voicemail switch shows or hides it"
   }
 }
