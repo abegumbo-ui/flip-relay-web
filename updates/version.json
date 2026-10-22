@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "f6ebbce745d79411ec9cbfee3bd322ceb5a6a5dc",
-    "publishedAt": "2026-10-22T15:22:55Z",
-    "build": 492,
-    "notes": "Voicemail: new voicemails now appear and notify by themselves\nVoicemail opens instantly from saved data and updates quietly\nListening marks it heard on the phone and at Verizon\nPlayback speed button (1x to 3x), and you can pick a spot before pressing play\nSync icon spins; Delete now offers Undo after the question\nNo back arrow on Calls and Voicemail with the Dock; What's New pop-up removed"
+    "sha": "99bdc34258405026bd185331462b95d6660ff398",
+    "publishedAt": "2026-10-22T15:49:42Z",
+    "build": 493,
+    "notes": "Voicemail screen: the Delete button is no longer cut off"
   },
   "tablet-regular": {
-    "sha": "f6ebbce745d79411ec9cbfee3bd322ceb5a6a5dc",
-    "publishedAt": "2026-10-22T15:22:55Z",
-    "build": 492,
-    "notes": "Voicemail: new voicemails now appear and notify by themselves\nVoicemail opens instantly from saved data and updates quietly\nListening marks it heard on the phone and at Verizon\nPlayback speed button (1x to 3x), and you can pick a spot before pressing play\nSync icon spins; Delete now offers Undo after the question\nNo back arrow on Calls and Voicemail with the Dock; What's New pop-up removed"
+    "sha": "99bdc34258405026bd185331462b95d6660ff398",
+    "publishedAt": "2026-10-22T15:49:42Z",
+    "build": 493,
+    "notes": "Voicemail screen: the Delete button is no longer cut off"
   },
   "tablet-mechi": {
-    "sha": "f6ebbce745d79411ec9cbfee3bd322ceb5a6a5dc",
-    "publishedAt": "2026-10-22T15:22:55Z",
-    "build": 492,
-    "notes": "Voicemail: new voicemails now appear and notify by themselves\nVoicemail opens instantly from saved data and updates quietly\nListening marks it heard on the phone and at Verizon\nPlayback speed button (1x to 3x), and you can pick a spot before pressing play\nSync icon spins; Delete now offers Undo after the question\nNo back arrow on Calls and Voicemail with the Dock; What's New pop-up removed"
+    "sha": "99bdc34258405026bd185331462b95d6660ff398",
+    "publishedAt": "2026-10-22T15:49:42Z",
+    "build": 493,
+    "notes": "Voicemail screen: the Delete button is no longer cut off"
   }
 }
