@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "d251ac1b2a2b4028ecd86c430cddbd136ce0ee6a",
-    "publishedAt": "2026-10-22T13:11:45Z",
-    "build": 489,
-    "notes": "• New Dock layout (Settings > Layout): Chats, Groups, Calls and Voicemail in a bar at the bottom, with the current one highlighted\n• Calls and Voicemail now show the same icons at the top to move between screens\n• Voicemail redone to match Google's Phone app: new icons, play bar, no Refresh button, gear for where to save and Ask before deleting\n• Send a message opens the conversation straight away"
+    "sha": "19fd47f75d8818cb70a6fe8772e7dde17af6a6b4",
+    "publishedAt": "2026-10-22T14:05:47Z",
+    "build": 490,
+    "notes": "• Send a message from Calls or Voicemail now opens the real conversation with that person, not a new one (a duplicate started earlier is merged)\n• Calls and Voicemail have the round back-to-the-top arrow like Chats"
   },
   "tablet-regular": {
-    "sha": "d251ac1b2a2b4028ecd86c430cddbd136ce0ee6a",
-    "publishedAt": "2026-10-22T13:11:45Z",
-    "build": 489,
-    "notes": "• New Dock layout (Settings > Layout): Chats, Groups, Calls and Voicemail in a bar at the bottom, with the current one highlighted\n• Calls and Voicemail now show the same icons at the top to move between screens\n• Voicemail redone to match Google's Phone app: new icons, play bar, no Refresh button, gear for where to save and Ask before deleting\n• Send a message opens the conversation straight away"
+    "sha": "19fd47f75d8818cb70a6fe8772e7dde17af6a6b4",
+    "publishedAt": "2026-10-22T14:05:47Z",
+    "build": 490,
+    "notes": "• Send a message from Calls or Voicemail now opens the real conversation with that person, not a new one (a duplicate started earlier is merged)\n• Calls and Voicemail have the round back-to-the-top arrow like Chats"
   },
   "tablet-mechi": {
-    "sha": "d251ac1b2a2b4028ecd86c430cddbd136ce0ee6a",
-    "publishedAt": "2026-10-22T13:11:45Z",
-    "build": 489,
-    "notes": "• New Dock layout (Settings > Layout): Chats, Groups, Calls and Voicemail in a bar at the bottom, with the current one highlighted\n• Calls and Voicemail now show the same icons at the top to move between screens\n• Voicemail redone to match Google's Phone app: new icons, play bar, no Refresh button, gear for where to save and Ask before deleting\n• Send a message opens the conversation straight away"
+    "sha": "19fd47f75d8818cb70a6fe8772e7dde17af6a6b4",
+    "publishedAt": "2026-10-22T14:05:47Z",
+    "build": 490,
+    "notes": "• Send a message from Calls or Voicemail now opens the real conversation with that person, not a new one (a duplicate started earlier is merged)\n• Calls and Voicemail have the round back-to-the-top arrow like Chats"
   }
 }
