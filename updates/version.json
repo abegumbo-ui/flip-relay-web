@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "19fd47f75d8818cb70a6fe8772e7dde17af6a6b4",
-    "publishedAt": "2026-10-22T14:05:47Z",
-    "build": 490,
-    "notes": "• Send a message from Calls or Voicemail now opens the real conversation with that person, not a new one (a duplicate started earlier is merged)\n• Calls and Voicemail have the round back-to-the-top arrow like Chats"
+    "sha": "f6ebbce745d79411ec9cbfee3bd322ceb5a6a5dc",
+    "publishedAt": "2026-10-22T15:22:55Z",
+    "build": 492,
+    "notes": "Voicemail: new voicemails now appear and notify by themselves\nVoicemail opens instantly from saved data and updates quietly\nListening marks it heard on the phone and at Verizon\nPlayback speed button (1x to 3x), and you can pick a spot before pressing play\nSync icon spins; Delete now offers Undo after the question\nNo back arrow on Calls and Voicemail with the Dock; What's New pop-up removed"
   },
   "tablet-regular": {
-    "sha": "19fd47f75d8818cb70a6fe8772e7dde17af6a6b4",
-    "publishedAt": "2026-10-22T14:05:47Z",
-    "build": 490,
-    "notes": "• Send a message from Calls or Voicemail now opens the real conversation with that person, not a new one (a duplicate started earlier is merged)\n• Calls and Voicemail have the round back-to-the-top arrow like Chats"
+    "sha": "f6ebbce745d79411ec9cbfee3bd322ceb5a6a5dc",
+    "publishedAt": "2026-10-22T15:22:55Z",
+    "build": 492,
+    "notes": "Voicemail: new voicemails now appear and notify by themselves\nVoicemail opens instantly from saved data and updates quietly\nListening marks it heard on the phone and at Verizon\nPlayback speed button (1x to 3x), and you can pick a spot before pressing play\nSync icon spins; Delete now offers Undo after the question\nNo back arrow on Calls and Voicemail with the Dock; What's New pop-up removed"
   },
   "tablet-mechi": {
-    "sha": "19fd47f75d8818cb70a6fe8772e7dde17af6a6b4",
-    "publishedAt": "2026-10-22T14:05:47Z",
-    "build": 490,
-    "notes": "• Send a message from Calls or Voicemail now opens the real conversation with that person, not a new one (a duplicate started earlier is merged)\n• Calls and Voicemail have the round back-to-the-top arrow like Chats"
+    "sha": "f6ebbce745d79411ec9cbfee3bd322ceb5a6a5dc",
+    "publishedAt": "2026-10-22T15:22:55Z",
+    "build": 492,
+    "notes": "Voicemail: new voicemails now appear and notify by themselves\nVoicemail opens instantly from saved data and updates quietly\nListening marks it heard on the phone and at Verizon\nPlayback speed button (1x to 3x), and you can pick a spot before pressing play\nSync icon spins; Delete now offers Undo after the question\nNo back arrow on Calls and Voicemail with the Dock; What's New pop-up removed"
   }
 }
