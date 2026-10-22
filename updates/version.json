@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "f778448db56ad136bbf5a084dd301c59a3f5bf6b",
-    "publishedAt": "2026-10-22T20:53:12Z",
-    "build": 504,
-    "notes": "Voicemails now always save to Downloads / Voicemail (no folder to choose)`nVoicemail settings scroll`nVoicemails show the contact name from your chats, even when the phone has no name for the number"
+    "sha": "416075454af9a0ba6990b5e839af2b39b91a5ae8",
+    "publishedAt": "2026-10-22T21:49:24Z",
+    "build": 505,
+    "notes": "Refresh on a tablet without direct voicemail now asks the tablet that checks Verizon itself (the screen says Asking the other tablet), not the phone`nDirect voicemail: that tablet answers other tablets immediately"
   },
   "tablet-regular": {
-    "sha": "f778448db56ad136bbf5a084dd301c59a3f5bf6b",
-    "publishedAt": "2026-10-22T20:53:12Z",
-    "build": 504,
-    "notes": "Voicemails now always save to Downloads / Voicemail (no folder to choose)`nVoicemail settings scroll`nVoicemails show the contact name from your chats, even when the phone has no name for the number"
+    "sha": "416075454af9a0ba6990b5e839af2b39b91a5ae8",
+    "publishedAt": "2026-10-22T21:49:24Z",
+    "build": 505,
+    "notes": "Refresh on a tablet without direct voicemail now asks the tablet that checks Verizon itself (the screen says Asking the other tablet), not the phone`nDirect voicemail: that tablet answers other tablets immediately"
   },
   "tablet-mechi": {
-    "sha": "f778448db56ad136bbf5a084dd301c59a3f5bf6b",
-    "publishedAt": "2026-10-22T20:53:12Z",
-    "build": 504,
-    "notes": "Voicemails now always save to Downloads / Voicemail (no folder to choose)`nVoicemail settings scroll`nVoicemails show the contact name from your chats, even when the phone has no name for the number"
+    "sha": "416075454af9a0ba6990b5e839af2b39b91a5ae8",
+    "publishedAt": "2026-10-22T21:49:24Z",
+    "build": 505,
+    "notes": "Refresh on a tablet without direct voicemail now asks the tablet that checks Verizon itself (the screen says Asking the other tablet), not the phone`nDirect voicemail: that tablet answers other tablets immediately"
   }
 }
