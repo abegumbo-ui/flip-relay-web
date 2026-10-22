@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "99bdc34258405026bd185331462b95d6660ff398",
-    "publishedAt": "2026-10-22T15:49:42Z",
-    "build": 493,
-    "notes": "Voicemail screen: the Delete button is no longer cut off"
+    "sha": "85324682f1d78165fcf21c0e69dbeef7e109edb4",
+    "publishedAt": "2026-10-22T16:35:51Z",
+    "build": 494,
+    "notes": "Voicemail: Saved voicemails section (every voicemail that ever came in, kept after you delete it)`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats now show the contact name and number"
   },
   "tablet-regular": {
-    "sha": "99bdc34258405026bd185331462b95d6660ff398",
-    "publishedAt": "2026-10-22T15:49:42Z",
-    "build": 493,
-    "notes": "Voicemail screen: the Delete button is no longer cut off"
+    "sha": "85324682f1d78165fcf21c0e69dbeef7e109edb4",
+    "publishedAt": "2026-10-22T16:35:51Z",
+    "build": 494,
+    "notes": "Voicemail: Saved voicemails section (every voicemail that ever came in, kept after you delete it)`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats now show the contact name and number"
   },
   "tablet-mechi": {
-    "sha": "99bdc34258405026bd185331462b95d6660ff398",
-    "publishedAt": "2026-10-22T15:49:42Z",
-    "build": 493,
-    "notes": "Voicemail screen: the Delete button is no longer cut off"
+    "sha": "85324682f1d78165fcf21c0e69dbeef7e109edb4",
+    "publishedAt": "2026-10-22T16:35:51Z",
+    "build": 494,
+    "notes": "Voicemail: Saved voicemails section (every voicemail that ever came in, kept after you delete it)`nRefresh tells you when the flip phone is not sending voicemails`nContact cards in chats now show the contact name and number"
   }
 }
