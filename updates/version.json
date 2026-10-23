@@ -7,18 +7,18 @@
     "sha": "8b5d354ca44ae4922ff8aa99863841ceb0efc075",
     "publishedAt": "2026-10-23T16:28:51Z",
     "build": 532,
-    "notes": "Disconnecting"
+    "notes": "Disconnecting a tablet, or it logging itself out after 15 days away, now shows on the dashboard as signed out and no longer in use. Nothing else changes for the tablet."
   },
   "tablet-regular": {
     "sha": "8b5d354ca44ae4922ff8aa99863841ceb0efc075",
     "publishedAt": "2026-10-23T16:28:51Z",
     "build": 532,
-    "notes": "Disconnecting"
+    "notes": "Disconnecting a tablet, or it logging itself out after 15 days away, now shows on the dashboard as signed out and no longer in use. Nothing else changes for the tablet."
   },
   "tablet-mechi": {
     "sha": "8b5d354ca44ae4922ff8aa99863841ceb0efc075",
     "publishedAt": "2026-10-23T16:28:51Z",
     "build": 532,
-    "notes": "Disconnecting"
+    "notes": "Disconnecting a tablet, or it logging itself out after 15 days away, now shows on the dashboard as signed out and no longer in use. Nothing else changes for the tablet."
   }
 }
