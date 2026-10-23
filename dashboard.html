@@ -267,7 +267,7 @@ const QR = (() => {
 })();
 if (typeof module !== "undefined") module.exports = QR;
 
-const RULES_CURRENT = {"rules": {".read": false, ".write": false, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (root.child('admin/migrationOpen').val() === true && newData.val() === $roomId) || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}}};
+const RULES_CURRENT = {"rules": {".read": false, ".write": false, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (root.child('admin/migrationOpen').val() === true && newData.val() === $roomId) || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
 const STORAGE_RULES = "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /attachments/{room}/{allPaths=**} {\n      allow get: if true;\n      allow list: if false;\n      allow create: if request.resource.size < 64 * 1024 * 1024;\n      allow delete: if true;\n    }\n  }\n}\n";
 
 const $ = (id) => document.getElementById(id);
@@ -1028,37 +1028,66 @@ async function screenPair(arg) {
   const sel = document.createElement("select");
   for (const r of roomList) { const o = document.createElement("option"); o.value = r; o.textContent = (names[r] ? names[r] + " (" + r + ")" : r); if (arg && arg.room === r) o.selected = true; sel.appendChild(o); }
   c.appendChild(sel);
+  // what the code is for, and how it is written: a number is easier to type on a flip phone
+  const kindSel = document.createElement("select"); kindSel.style.marginTop = "8px";
+  [["tablet", "For a tablet or the web page"], ["phone", "For a phone (Message+): the phone takes over this room"]].forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; kindSel.appendChild(o); });
+  c.appendChild(kindSel);
+  const typeSel = document.createElement("select"); typeSel.style.marginTop = "8px";
+  [["chars", "A 16-character code"], ["digits", "A 10-digit number (easy to type on a flip phone)"]].forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; typeSel.appendChild(o); });
+  c.appendChild(typeSel);
   const qrbox = document.createElement("div"); qrbox.className = "qrbox"; const canvas = document.createElement("canvas"); qrbox.appendChild(canvas); c.appendChild(qrbox);
   const codeEl = document.createElement("div"); codeEl.className = "codebig mono"; c.appendChild(codeEl);
   const timerEl = document.createElement("div"); timerEl.className = "meta"; timerEl.style.textAlign = "center"; c.appendChild(timerEl);
   const statusEl = document.createElement("div"); statusEl.className = "meta"; statusEl.style.textAlign = "center"; statusEl.style.marginTop = "8px"; c.appendChild(statusEl);
   const newBtn = document.createElement("button"); newBtn.textContent = "Make a new code"; newBtn.style.display = "none"; newBtn.style.margin = "10px auto 0"; c.appendChild(newBtn);
   root.appendChild(c);
-  root.appendChild(note("Scan the QR code with the tablet's pairing screen, or type the 16 characters. Each code works once, for one device, for 10 minutes. When it has been used or has run out, it disappears and a new one is made only when you ask."));
+  root.appendChild(note("Scan the QR code with the tablet's pairing screen, type the 16 characters, or give the 10-digit number to the Setup app. Each code works once, for one device, for this one room, for 10 minutes. When it has been used or has run out, it disappears and a new one is made only when you ask."));
 
-  let code = null, expires = 0, room = sel.value, alive = true, making = false;
-  async function drop() { if (code) { const old = code; code = null; try { await db("DELETE", `rooms/${room}/pairCodes/${old}`); } catch (e) { /* gone already */ } } }
-  function retire(msg) { code = null; qrbox.style.display = "none"; codeEl.textContent = ""; timerEl.textContent = ""; statusEl.textContent = msg; newBtn.style.display = ""; }
+  let code = null, expires = 0, room = sel.value, alive = true, making = false, aliasId = null;
+  const randomDigits = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n))).map((x) => x % 10).join("");
+  async function drop() {
+    if (aliasId) { const a = aliasId; aliasId = null; try { await db("DELETE", `pairAlias/${a}`); } catch (e) { /* gone already */ } }
+    if (code) { const old = code; code = null; try { await db("DELETE", `rooms/${room}/pairCodes/${old}`); } catch (e) { /* gone already */ } }
+  }
+  function retire(msg) { code = null; aliasId = null; qrbox.style.display = "none"; codeEl.textContent = ""; timerEl.textContent = ""; statusEl.textContent = msg; newBtn.style.display = ""; }
   async function make() {
     if (making || !alive) return;
     making = true;
     try {
       await drop();
+      const kind = kindSel.value, digits = typeSel.value === "digits";
+      if (kind === "phone") {
+        // a phone takes over the room: warn when the room's phone checked in recently (two phones in one room would both relay)
+        const reg = (await dbq(`registry/${room}`)) || {};
+        const mins = reg.lastSeen ? Math.round((Date.now() - reg.lastSeen) / 60000) : null;
+        if (mins !== null && mins < 30 && !confirm(`The phone in this room checked in ${mins} minute${mins === 1 ? "" : "s"} ago, so it looks like it is still working. If a second phone takes over, both will run in this room. Make the code anyway?`)) {
+          making = false; retire("No code made: the room's phone is still online."); return;
+        }
+      }
       const fresh = randomCode(16);
       expires = Date.now() + 600000;
       await db("PUT", `rooms/${room}/pairCodes/${fresh}`, expires);
       try { await db("PUT", `keyIndex/${await fp16(fresh)}`, room); } catch (e) { /* the lookup already exists */ }
+      // the Setup app finds the room, and what the code is for, from this short-lived record (it works once and ends with the code)
+      const id = digits ? randomDigits(10) : await fp16(fresh);
+      try {
+        await db("PUT", `pairAlias/${id}`, { room, code: fresh, kind, exp: expires });
+        aliasId = id;
+      } catch (e) {
+        if (digits) { try { await db("DELETE", `rooms/${room}/pairCodes/${fresh}`); } catch (e2) { /* gone */ } throw new Error("the database rules are older than this page. Open Security > Database rules and press Apply the current rules, then try again"); }
+      }
       code = fresh;
       drawQr(canvas, `FR1:${room}:${fresh}`);
-      qrbox.style.display = "";
+      qrbox.style.display = digits ? "none" : "";
       newBtn.style.display = "none";
       statusEl.textContent = "";
-      codeEl.textContent = fresh.slice(0, 4) + "-" + fresh.slice(4, 8) + "-" + fresh.slice(8, 12) + "-" + fresh.slice(12);
+      codeEl.textContent = digits ? (id.slice(0, 3) + " " + id.slice(3, 6) + " " + id.slice(6)) : (fresh.slice(0, 4) + "-" + fresh.slice(4, 8) + "-" + fresh.slice(8, 12) + "-" + fresh.slice(12));
     } catch (e) { statusEl.textContent = "Could not make a code: " + e.message; newBtn.style.display = ""; }
     making = false;
   }
   newBtn.onclick = () => make();
   sel.onchange = async () => { await drop(); room = sel.value; make(); };
+  kindSel.onchange = typeSel.onchange = async () => { await drop(); make(); };
   const timer = setInterval(async () => {
     if (!alive || !code) return;
     const left = Math.round((expires - Date.now()) / 1000);
