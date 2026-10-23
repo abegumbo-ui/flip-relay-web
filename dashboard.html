@@ -784,6 +784,35 @@ async function screenRoom({ room, label }) {
   if (crashes.length) cg.add(actions([{ label: "Clear all crash reports", onclick: async () => { if (!confirm("Delete all crash reports for this room?")) return; await db("DELETE", `rooms/${room}/phoneCrashes`); await db("DELETE", `rooms/${room}/tabletCrashes`); render(); } }]));
   root.appendChild(cg);
 
+  // the daily copy of how the phone's Message+ is set up (permissions and plain settings); the restore app puts it back after a reinstall
+  const bk = await dbq(`rooms/${room}/appBackup`), bkOff = (await dbq(`rooms/${room}/appBackupOff`)) === true;
+  const bg = group("Phone settings copy");
+  if (bk && bk.text) {
+    bg.add(item({ icon: "info", title: "Last copy " + new Date(bk.at || 0).toLocaleString(), sub: (bk.granted || []).length + " permissions allowed, " + (bk.entries || []).length + " settings. Never logins, passwords, codes, keys or numbers.", onclick: () => {
+      const m = document.createElement("div");
+      m.style.cssText = "position:fixed;inset:0;background:var(--bg,#111);z-index:50;overflow:auto;padding:16px";
+      const pre = document.createElement("pre");
+      pre.style.cssText = "white-space:pre-wrap;word-break:break-word;font-size:12px";
+      pre.textContent = bk.text;
+      const close = document.createElement("button");
+      close.textContent = "Close";
+      close.onclick = () => m.remove();
+      const copy = document.createElement("button");
+      copy.textContent = "Copy";
+      copy.className = "ghost";
+      copy.onclick = () => { try { navigator.clipboard.writeText(bk.text); copy.textContent = "Copied"; } catch (e) { } };
+      m.append(close, copy, pre);
+      document.body.appendChild(m);
+    } }));
+  } else {
+    bg.add(item({ icon: "info", title: bkOff ? "Switched off" : "No copy yet", sub: bkOff ? "The phone does not upload it." : "Message+ build 101 or newer uploads it once a day." }));
+  }
+  bg.add(actions([
+    { label: bkOff ? "Switch the daily copy on" : "Switch the daily copy off", cls: "ghost", onclick: async () => { await db("PUT", `rooms/${room}/appBackupOff`, bkOff ? null : true); render(); } },
+    ...(bk ? [{ label: "Delete the copy", cls: "ghost", onclick: async () => { if (confirm("Delete the copy held for this room?")) { await db("DELETE", `rooms/${room}/appBackup`); render(); } } }] : []),
+  ]));
+  root.appendChild(bg);
+
   const guests = group("Guest list (" + memberEntries.length + ")");
   for (const [uid, v] of memberEntries) {
     const kind = v === roomKey ? "joined with the permanent code" : v === room ? "joined with the old room code (migration)" : "joined with a one-time code";
