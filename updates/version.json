@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "416075454af9a0ba6990b5e839af2b39b91a5ae8",
-    "publishedAt": "2026-10-22T21:49:24Z",
-    "build": 505,
-    "notes": "Refresh on a tablet without direct voicemail now asks the tablet that checks Verizon itself (the screen says Asking the other tablet), not the phone`nDirect voicemail: that tablet answers other tablets immediately"
+    "sha": "23869166ac2c8b79ff18b4d6c8fbe44a3edb9408",
+    "publishedAt": "2026-10-23T01:29:22Z",
+    "build": 507,
+    "notes": "Direct voicemail now supports AT&T as well as Verizon, and several voicemail accounts at once, each with a name you choose (Voicemail settings: tap an account to rename it, change its PIN or sign it out; Add a voicemail account)`nVoicemails show which account they came from`nGet the login from the flip phone with a 6-digit PIN instead of typing a code`nWhen this tablet cannot reach a voicemail server (Verizon needs Verizon mobile data), the flip phone keeps sending voicemails to it"
   },
   "tablet-regular": {
-    "sha": "416075454af9a0ba6990b5e839af2b39b91a5ae8",
-    "publishedAt": "2026-10-22T21:49:24Z",
-    "build": 505,
-    "notes": "Refresh on a tablet without direct voicemail now asks the tablet that checks Verizon itself (the screen says Asking the other tablet), not the phone`nDirect voicemail: that tablet answers other tablets immediately"
+    "sha": "23869166ac2c8b79ff18b4d6c8fbe44a3edb9408",
+    "publishedAt": "2026-10-23T01:29:22Z",
+    "build": 507,
+    "notes": "Direct voicemail now supports AT&T as well as Verizon, and several voicemail accounts at once, each with a name you choose (Voicemail settings: tap an account to rename it, change its PIN or sign it out; Add a voicemail account)`nVoicemails show which account they came from`nGet the login from the flip phone with a 6-digit PIN instead of typing a code`nWhen this tablet cannot reach a voicemail server (Verizon needs Verizon mobile data), the flip phone keeps sending voicemails to it"
   },
   "tablet-mechi": {
-    "sha": "416075454af9a0ba6990b5e839af2b39b91a5ae8",
-    "publishedAt": "2026-10-22T21:49:24Z",
-    "build": 505,
-    "notes": "Refresh on a tablet without direct voicemail now asks the tablet that checks Verizon itself (the screen says Asking the other tablet), not the phone`nDirect voicemail: that tablet answers other tablets immediately"
+    "sha": "23869166ac2c8b79ff18b4d6c8fbe44a3edb9408",
+    "publishedAt": "2026-10-23T01:29:22Z",
+    "build": 507,
+    "notes": "Direct voicemail now supports AT&T as well as Verizon, and several voicemail accounts at once, each with a name you choose (Voicemail settings: tap an account to rename it, change its PIN or sign it out; Add a voicemail account)`nVoicemails show which account they came from`nGet the login from the flip phone with a 6-digit PIN instead of typing a code`nWhen this tablet cannot reach a voicemail server (Verizon needs Verizon mobile data), the flip phone keeps sending voicemails to it"
   }
 }
