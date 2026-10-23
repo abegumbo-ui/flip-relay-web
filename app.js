@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = ""; // holds THIS page's own sign-in token (renewed every 40 minutes), never a master key
-const ENC_CONFIG = "vd32Rm/TgRjIv1xmafu8Fg==.Rgk0u3Jtb1AspONg.zMz0KCqAr3y/6tIVXGh3VKunki5NoJKiB/5wLdnQjDq9pMrm3KUVhSDt+OzTVoQV+bO7jXJMjuKmAh/SpQctB+13Q9xqIms+Dg==";
+const ENC_CONFIG = "Mey6ue3XMWdrYAZEAe9R4Q==.9stFivnshsVL66fw./ha4PYg5MD3hpxf0NNL7cjC0VBk6V7ZfoeWy18ULQVtvQYNwoAtdfG+z5Mk7sGVSJpnUsCmA75kj15GGuf1MFXO3ElqhdN8oJA==";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -1513,16 +1513,23 @@ function upsertSent(key, data) {
   if (number.startsWith("m:")) massRecent.push({ key: number, body, at: Date.now() });
 
   // A sent picture / voice message / video is matched to its "Sending..." copy by what it carries (same kind, close in time), not by
-  // its caption: the phone writes its own caption text for media. The closest in time wins.
+  // its caption: the phone writes its own caption text for media. When several pictures / videos go out together, the one that finishes
+  // first belongs to the copy added first, not the one closest in time: the same uploaded file URL is the exact match, otherwise the oldest wins.
   const recKind = data.imageUrl ? "picture" : (data.attachmentType || null);
-  let localIdx = -1, bestGap = Infinity;
+  const recUrl = data.imageUrl || data.attachmentUrl || null;
+  let localIdx = -1, bestGap = Infinity, bestOldest = Infinity, bestExact = false;
   messages.forEach((m, i) => {
     if (m.direction !== "out" || !m.id.startsWith("local-") || m.number !== number) return;
     const gap = Math.abs(m.timestamp - timestamp);
-    if (gap >= 120000) return;
+    const exact = !!(recUrl && m.uploadUrl && m.uploadUrl === recUrl);
+    if (gap >= 120000 && !exact) return;
     const echoKind = m.attachmentKind || (m.imageUrl ? "picture" : null);
-    const same = m.body === body || (recKind && recKind === (echoKind === "photo" ? "picture" : echoKind));
-    if (same && gap < bestGap) { bestGap = gap; localIdx = i; }
+    const mediaSame = !!(recKind && recKind === (echoKind === "photo" ? "picture" : echoKind));
+    const same = exact || m.body === body || mediaSame;
+    if (!same || bestExact) return;
+    if (exact) { bestExact = true; localIdx = i; }
+    else if (mediaSame) { if (m.timestamp < bestOldest) { bestOldest = m.timestamp; localIdx = i; } }
+    else if (bestOldest === Infinity && gap < bestGap) { bestGap = gap; localIdx = i; }
   });
   const matchedEcho = localIdx !== -1;
   if (matchedEcho) messages.splice(localIdx, 1);
@@ -1560,6 +1567,36 @@ function upsertScheduled(key, data) {
 }
 
 // ---------- sending ----------
+
+// Pictures are shrunk before they go out, like the tablet app and the phone do: at most 1280 px on the long side, saved as a JPEG at 80%
+// and stepped down until it is about 300 KB or less (a flip phone's picture message has to stay small). Falls back to the original.
+async function compressImage(file) {
+  try {
+    if (!file || !/^image\//.test(file.type || "image/jpeg")) return file;
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const MAX = 1280;
+    const scale = Math.min(1, MAX / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * scale)), h = Math.max(1, Math.round(bmp.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff"; // transparent PNG / GIF areas become white in a JPEG
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bmp, 0, 0, w, h);
+    if (bmp.close) bmp.close();
+    let best = null;
+    for (const q of [0.8, 0.7, 0.6, 0.5]) {
+      best = await new Promise((res) => canvas.toBlob(res, "image/jpeg", q));
+      if (best && best.size <= 300000) break;
+    }
+    if (!best) return file;
+    if (scale === 1 && /jpeg/.test(file.type || "") && file.size <= best.size) return file; // already small: keep it as it is
+    return best;
+  } catch (e) {
+    return file;
+  }
+}
 
 // Uploads straight from the browser to Firebase Storage, same REST API the
 // phone's FirebaseStorageClient uses -- no server-side code needed.
@@ -1637,13 +1674,15 @@ async function sendOne(rawBody, file, kind, attachmentName) {
     let attachmentUrl = null;
     if (kind === "photo") {
       imagePath = `attachments/${roomId}/${timestamp}-${randHex16()}.jpg`;
-      imageUrl = await uploadToStorage(file, imagePath);
+      imageUrl = await uploadToStorage(await compressImage(file), imagePath);
+      msg.uploadUrl = imageUrl;
     } else if (kind === "video" || kind === "contact") {
       if (file.size > 60 * 1024 * 1024) throw new Error("Attachment too large");
       attachmentType = kind === "video" ? "video" : "vcard";
       const ext = kind === "video" ? (file.name.split(".").pop() || "mp4") : "vcf";
       const path = `attachments/${roomId}/${timestamp}-${randHex16()}.${ext}`;
       attachmentUrl = await uploadToStorage(file, path);
+      msg.uploadUrl = attachmentUrl;
     }
     await fetch(roomUrl("messages/outgoing"), {
       method: "POST",
@@ -1761,6 +1800,7 @@ async function onMessageLongPress(m) {
     { label: "ℹ️ Message info", value: "info" },
     { label: "☑️ Select", value: "select" },
   ];
+  if (m.imageUrl || m.attachmentUrl) options.splice(2, 0, { label: "💾 Save", value: "save" });
   const isPending = m.direction === "out" && m.id.startsWith("local-");
   if (isPending) options.push({ label: "🗑️ Delete", value: "delete" });
 
@@ -1777,8 +1817,36 @@ async function onMessageLongPress(m) {
     showMessageInfo(m);
   } else if (choice === "select") {
     enterSelectionMode(m.id);
+  } else if (choice === "save") {
+    saveMessageMedia(m);
   } else if (choice === "delete") {
     if (confirm("Delete this message? It hasn't gone through yet.")) deletePending(m.id);
+  }
+}
+
+// Saves a picture / video / voice message to the browser's Downloads. A web page cannot pick a folder, so the file name starts with "Messages".
+async function saveMessageMedia(m) {
+  const url = m.imageUrl || m.attachmentUrl;
+  if (!url) return;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const blob = await res.blob();
+    const kind = m.imageUrl ? "Picture" : m.attachmentKind === "video" ? "Video" : m.attachmentKind === "audio" ? "Voice message" : "Attachment";
+    const t = blob.type || "";
+    const ext = t.includes("jpeg") ? "jpg" : t.includes("png") ? "png" : t.includes("gif") ? "gif" : t.includes("mp4") ? "mp4" : t.includes("mpeg") ? "mp3" : t.includes("amr") ? "amr" : t.includes("vcard") ? "vcf" : (m.imageUrl ? "jpg" : "bin");
+    const d = new Date(m.timestamp || Date.now());
+    const pad = (n) => String(n).padStart(2, "0");
+    const stamp = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + pad(d.getMinutes());
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "Messages - " + kind + " " + stamp + "." + ext;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  } catch (e) {
+    alert("Could not save it: the file is no longer available.");
   }
 }
 
