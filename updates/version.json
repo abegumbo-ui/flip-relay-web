@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "c6b3156f178269728d885bb7f48f4f8cec119bda",
-    "publishedAt": "2026-10-23T03:03:58Z",
-    "build": 516,
-    "notes": "Voicemails"
+    "sha": "5dfdefcc40781ce5bdd638306f0b2173718bfe6b",
+    "publishedAt": "2026-10-23T13:06:39Z",
+    "build": 518,
+    "notes": "Fixed:"
   },
   "tablet-regular": {
-    "sha": "c6b3156f178269728d885bb7f48f4f8cec119bda",
-    "publishedAt": "2026-10-23T03:03:58Z",
-    "build": 516,
-    "notes": "Voicemails"
+    "sha": "5dfdefcc40781ce5bdd638306f0b2173718bfe6b",
+    "publishedAt": "2026-10-23T13:06:39Z",
+    "build": 518,
+    "notes": "Fixed:"
   },
   "tablet-mechi": {
-    "sha": "c6b3156f178269728d885bb7f48f4f8cec119bda",
-    "publishedAt": "2026-10-23T03:03:58Z",
-    "build": 516,
-    "notes": "Voicemails"
+    "sha": "5dfdefcc40781ce5bdd638306f0b2173718bfe6b",
+    "publishedAt": "2026-10-23T13:06:39Z",
+    "build": 518,
+    "notes": "Fixed:"
   }
 }
