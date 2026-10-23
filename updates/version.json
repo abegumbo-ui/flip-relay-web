@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "4906e6111c9e7dfd8eb1918dba286e830f319c1d",
-    "publishedAt": "2026-10-23T01:47:57Z",
-    "build": 508,
-    "notes": "Voicemail: with more than one voicemail account, a row of chips at the top (All and each account name) picks which account's voicemails you see, like the Pixel"
+    "sha": "49c3f3990d0e76f6a9d2818b42ca44cfed26ecbb",
+    "publishedAt": "2026-10-23T02:19:06Z",
+    "build": 510,
+    "notes": "The"
   },
   "tablet-regular": {
-    "sha": "4906e6111c9e7dfd8eb1918dba286e830f319c1d",
-    "publishedAt": "2026-10-23T01:47:57Z",
-    "build": 508,
-    "notes": "Voicemail: with more than one voicemail account, a row of chips at the top (All and each account name) picks which account's voicemails you see, like the Pixel"
+    "sha": "49c3f3990d0e76f6a9d2818b42ca44cfed26ecbb",
+    "publishedAt": "2026-10-23T02:19:06Z",
+    "build": 510,
+    "notes": "The"
   },
   "tablet-mechi": {
-    "sha": "4906e6111c9e7dfd8eb1918dba286e830f319c1d",
-    "publishedAt": "2026-10-23T01:47:57Z",
-    "build": 508,
-    "notes": "Voicemail: with more than one voicemail account, a row of chips at the top (All and each account name) picks which account's voicemails you see, like the Pixel"
+    "sha": "49c3f3990d0e76f6a9d2818b42ca44cfed26ecbb",
+    "publishedAt": "2026-10-23T02:19:06Z",
+    "build": 510,
+    "notes": "The"
   }
 }
