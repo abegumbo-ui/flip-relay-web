@@ -631,10 +631,11 @@ async function screenTablets() {
     for (const [id, t] of Object.entries(reg[code].tablets || {})) {
       any = true;
       const waiting = t.approved !== true;
+      const signedOut = t.app === "Signed out"; // the tablet was disconnected (or logged itself out after 15 days away)
       g.add(item({
         icon: "tablet", title: t.name || t.model || "Device",
         sub: [`phone ${names[code] || code}`, t.app || "", "first seen " + ago(t.firstSeen), "last seen " + ago(t.lastSeen)].filter(Boolean).join(" · "),
-        pill: waiting ? "waiting for approval" : "approved", warn: waiting,
+        pill: signedOut ? "signed out - no longer in use" : waiting ? "waiting for approval" : "approved", warn: waiting || signedOut,
       }));
       g.add(actions([
         { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}/tablets/${id}`, { approved: waiting }); render(); } },
