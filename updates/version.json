@@ -7,18 +7,18 @@
     "sha": "b005fa9705f9093976105f0bd8b8ee02ed22be53",
     "publishedAt": "2026-10-23T17:01:52Z",
     "build": 534,
-    "notes": "This"
+    "notes": "This tablet can now join a room through the small Message+ Setup app with a one-time code from the dashboard. Only the Setup app can do this. Nothing else changes."
   },
   "tablet-regular": {
     "sha": "b005fa9705f9093976105f0bd8b8ee02ed22be53",
     "publishedAt": "2026-10-23T17:01:52Z",
     "build": 534,
-    "notes": "This"
+    "notes": "This tablet can now join a room through the small Message+ Setup app with a one-time code from the dashboard. Only the Setup app can do this. Nothing else changes."
   },
   "tablet-mechi": {
     "sha": "b005fa9705f9093976105f0bd8b8ee02ed22be53",
     "publishedAt": "2026-10-23T17:01:52Z",
     "build": 534,
-    "notes": "This"
+    "notes": "This tablet can now join a room through the small Message+ Setup app with a one-time code from the dashboard. Only the Setup app can do this. Nothing else changes."
   }
 }
