@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "f333b8f5de358d29e1577c49410f97c0d4c88d1a",
-    "publishedAt": "2026-10-27T15:04:16Z",
-    "build": 544,
-    "notes": "Calls split screen: the history is split by day like Samsung's Phone app, the two sides are closer to the middle, and a new switch in the Calls gear takes Call and Message off the left list. Voicemail: with this tablet's own voicemail working it shows only that; when it cannot reach Verizon it shows only the flip phone's."
+    "sha": "fc65a68fa366bd8c034d04dab87d1d5a10031ec3",
+    "publishedAt": "2026-10-27T15:14:54Z",
+    "build": 546,
+    "notes": "Calls: dragging along the tab row (All, Missed, Received...) only scrolls the row, it no longer swipes to another screen. The same number written with or without +1 is one person in the call history, Message and Quick replies. Voicemail: Refresh can ask the flip phone or the other tablet (Voicemail settings, or hold the Refresh icon)."
   },
   "tablet-regular": {
-    "sha": "f333b8f5de358d29e1577c49410f97c0d4c88d1a",
-    "publishedAt": "2026-10-27T15:04:16Z",
-    "build": 544,
-    "notes": "Calls split screen: the history is split by day like Samsung's Phone app, the two sides are closer to the middle, and a new switch in the Calls gear takes Call and Message off the left list. Voicemail: with this tablet's own voicemail working it shows only that; when it cannot reach Verizon it shows only the flip phone's."
+    "sha": "fc65a68fa366bd8c034d04dab87d1d5a10031ec3",
+    "publishedAt": "2026-10-27T15:14:54Z",
+    "build": 546,
+    "notes": "Calls: dragging along the tab row (All, Missed, Received...) only scrolls the row, it no longer swipes to another screen. The same number written with or without +1 is one person in the call history, Message and Quick replies. Voicemail: Refresh can ask the flip phone or the other tablet (Voicemail settings, or hold the Refresh icon)."
   },
   "tablet-mechi": {
-    "sha": "f333b8f5de358d29e1577c49410f97c0d4c88d1a",
-    "publishedAt": "2026-10-27T15:04:16Z",
-    "build": 544,
-    "notes": "Calls split screen: the history is split by day like Samsung's Phone app, the two sides are closer to the middle, and a new switch in the Calls gear takes Call and Message off the left list. Voicemail: with this tablet's own voicemail working it shows only that; when it cannot reach Verizon it shows only the flip phone's."
+    "sha": "fc65a68fa366bd8c034d04dab87d1d5a10031ec3",
+    "publishedAt": "2026-10-27T15:14:54Z",
+    "build": 546,
+    "notes": "Calls: dragging along the tab row (All, Missed, Received...) only scrolls the row, it no longer swipes to another screen. The same number written with or without +1 is one person in the call history, Message and Quick replies. Voicemail: Refresh can ask the flip phone or the other tablet (Voicemail settings, or hold the Refresh icon)."
   }
 }
