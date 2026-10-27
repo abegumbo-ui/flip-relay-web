@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "0aa340ef74d249d1c66eab1f02b38666cdee5c7f",
-    "publishedAt": "2026-10-27T16:10:30Z",
-    "build": 547,
-    "notes": "Tablet dock layout: swiping between Chats, Groups, Calls and Voicemail now works from the list side of Chats and Groups too. A swipe back goes to the screen it shows (Calls, Groups or Chats), not to whatever happens to be underneath."
+    "sha": "026d6c42499bad9166f37c45761cb3538556fac1",
+    "publishedAt": "2026-10-27T16:46:43Z",
+    "build": 548,
+    "notes": "Tablet dock layout: on Chats and Groups you can now swipe to the next screen from anywhere, including a swipe to the left that starts on the conversation side."
   },
   "tablet-regular": {
-    "sha": "0aa340ef74d249d1c66eab1f02b38666cdee5c7f",
-    "publishedAt": "2026-10-27T16:10:30Z",
-    "build": 547,
-    "notes": "Tablet dock layout: swiping between Chats, Groups, Calls and Voicemail now works from the list side of Chats and Groups too. A swipe back goes to the screen it shows (Calls, Groups or Chats), not to whatever happens to be underneath."
+    "sha": "026d6c42499bad9166f37c45761cb3538556fac1",
+    "publishedAt": "2026-10-27T16:46:43Z",
+    "build": 548,
+    "notes": "Tablet dock layout: on Chats and Groups you can now swipe to the next screen from anywhere, including a swipe to the left that starts on the conversation side."
   },
   "tablet-mechi": {
-    "sha": "0aa340ef74d249d1c66eab1f02b38666cdee5c7f",
-    "publishedAt": "2026-10-27T16:10:30Z",
-    "build": 547,
-    "notes": "Tablet dock layout: swiping between Chats, Groups, Calls and Voicemail now works from the list side of Chats and Groups too. A swipe back goes to the screen it shows (Calls, Groups or Chats), not to whatever happens to be underneath."
+    "sha": "026d6c42499bad9166f37c45761cb3538556fac1",
+    "publishedAt": "2026-10-27T16:46:43Z",
+    "build": 548,
+    "notes": "Tablet dock layout: on Chats and Groups you can now swipe to the next screen from anywhere, including a swipe to the left that starts on the conversation side."
   }
 }
