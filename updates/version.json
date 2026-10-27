@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "5b3fb00be8e541a38d8211d76d4fae69b74313ab",
-    "publishedAt": "2026-10-27T13:39:06Z",
-    "build": 540,
-    "notes": "Dock layout: switching Voicemail or Groups off, or the dock side, now applies on every screen. While swiping, the dock stays still and is no longer cut off. Groups search says Search groups. In Calls, tapping a call shows Quick replies first, then Call, Message, Call info and See all call info."
+    "sha": "1f345996d4a2cd5362baa65284c75c4cfa345c96",
+    "publishedAt": "2026-10-27T14:48:54Z",
+    "build": 542,
+    "notes": "Settings changes (Voicemail, Groups, dock side) apply to every screen at once. New layout: Messages Plus - tablet dock. Calls has a settings gear: Save the call log, Call and Message in the tap menu, Split screen. A group named on another tablet shows its name here. Voicemail shows the flip phone only when this tablet cannot reach Verizon itself."
   },
   "tablet-regular": {
-    "sha": "5b3fb00be8e541a38d8211d76d4fae69b74313ab",
-    "publishedAt": "2026-10-27T13:39:06Z",
-    "build": 540,
-    "notes": "Dock layout: switching Voicemail or Groups off, or the dock side, now applies on every screen. While swiping, the dock stays still and is no longer cut off. Groups search says Search groups. In Calls, tapping a call shows Quick replies first, then Call, Message, Call info and See all call info."
+    "sha": "1f345996d4a2cd5362baa65284c75c4cfa345c96",
+    "publishedAt": "2026-10-27T14:48:54Z",
+    "build": 542,
+    "notes": "Settings changes (Voicemail, Groups, dock side) apply to every screen at once. New layout: Messages Plus - tablet dock. Calls has a settings gear: Save the call log, Call and Message in the tap menu, Split screen. A group named on another tablet shows its name here. Voicemail shows the flip phone only when this tablet cannot reach Verizon itself."
   },
   "tablet-mechi": {
-    "sha": "5b3fb00be8e541a38d8211d76d4fae69b74313ab",
-    "publishedAt": "2026-10-27T13:39:06Z",
-    "build": 540,
-    "notes": "Dock layout: switching Voicemail or Groups off, or the dock side, now applies on every screen. While swiping, the dock stays still and is no longer cut off. Groups search says Search groups. In Calls, tapping a call shows Quick replies first, then Call, Message, Call info and See all call info."
+    "sha": "1f345996d4a2cd5362baa65284c75c4cfa345c96",
+    "publishedAt": "2026-10-27T14:48:54Z",
+    "build": 542,
+    "notes": "Settings changes (Voicemail, Groups, dock side) apply to every screen at once. New layout: Messages Plus - tablet dock. Calls has a settings gear: Save the call log, Call and Message in the tap menu, Split screen. A group named on another tablet shows its name here. Voicemail shows the flip phone only when this tablet cannot reach Verizon itself."
   }
 }
