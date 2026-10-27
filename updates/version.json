@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "026d6c42499bad9166f37c45761cb3538556fac1",
-    "publishedAt": "2026-10-27T16:46:43Z",
-    "build": 548,
-    "notes": "Tablet dock layout: on Chats and Groups you can now swipe to the next screen from anywhere, including a swipe to the left that starts on the conversation side."
+    "sha": "b48cedb7314a7a65003deeea4227c519c2a10b53",
+    "publishedAt": "2026-10-27T17:22:56Z",
+    "build": 550,
+    "notes": "Fixes a crash in the camera and gallery screen when the photo permission is refused. The crash log (Settings > Crash log) now has Copy and Share at the bottom: Copy copies the whole log, Share sends it as a .txt file. Swiping between screens works from anywhere in the tablet dock layout."
   },
   "tablet-regular": {
-    "sha": "026d6c42499bad9166f37c45761cb3538556fac1",
-    "publishedAt": "2026-10-27T16:46:43Z",
-    "build": 548,
-    "notes": "Tablet dock layout: on Chats and Groups you can now swipe to the next screen from anywhere, including a swipe to the left that starts on the conversation side."
+    "sha": "b48cedb7314a7a65003deeea4227c519c2a10b53",
+    "publishedAt": "2026-10-27T17:22:56Z",
+    "build": 550,
+    "notes": "Fixes a crash in the camera and gallery screen when the photo permission is refused. The crash log (Settings > Crash log) now has Copy and Share at the bottom: Copy copies the whole log, Share sends it as a .txt file. Swiping between screens works from anywhere in the tablet dock layout."
   },
   "tablet-mechi": {
-    "sha": "026d6c42499bad9166f37c45761cb3538556fac1",
-    "publishedAt": "2026-10-27T16:46:43Z",
-    "build": 548,
-    "notes": "Tablet dock layout: on Chats and Groups you can now swipe to the next screen from anywhere, including a swipe to the left that starts on the conversation side."
+    "sha": "b48cedb7314a7a65003deeea4227c519c2a10b53",
+    "publishedAt": "2026-10-27T17:22:56Z",
+    "build": 550,
+    "notes": "Fixes a crash in the camera and gallery screen when the photo permission is refused. The crash log (Settings > Crash log) now has Copy and Share at the bottom: Copy copies the whole log, Share sends it as a .txt file. Swiping between screens works from anywhere in the tablet dock layout."
   }
 }
