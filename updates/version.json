@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "b005fa9705f9093976105f0bd8b8ee02ed22be53",
-    "publishedAt": "2026-10-23T17:01:52Z",
-    "build": 534,
-    "notes": "This tablet can now join a room through the small Message+ Setup app with a one-time code from the dashboard. Only the Setup app can do this. Nothing else changes."
+    "sha": "5b3fb00be8e541a38d8211d76d4fae69b74313ab",
+    "publishedAt": "2026-10-27T13:39:06Z",
+    "build": 540,
+    "notes": "Dock layout: switching Voicemail or Groups off, or the dock side, now applies on every screen. While swiping, the dock stays still and is no longer cut off. Groups search says Search groups. In Calls, tapping a call shows Quick replies first, then Call, Message, Call info and See all call info."
   },
   "tablet-regular": {
-    "sha": "b005fa9705f9093976105f0bd8b8ee02ed22be53",
-    "publishedAt": "2026-10-23T17:01:52Z",
-    "build": 534,
-    "notes": "This tablet can now join a room through the small Message+ Setup app with a one-time code from the dashboard. Only the Setup app can do this. Nothing else changes."
+    "sha": "5b3fb00be8e541a38d8211d76d4fae69b74313ab",
+    "publishedAt": "2026-10-27T13:39:06Z",
+    "build": 540,
+    "notes": "Dock layout: switching Voicemail or Groups off, or the dock side, now applies on every screen. While swiping, the dock stays still and is no longer cut off. Groups search says Search groups. In Calls, tapping a call shows Quick replies first, then Call, Message, Call info and See all call info."
   },
   "tablet-mechi": {
-    "sha": "b005fa9705f9093976105f0bd8b8ee02ed22be53",
-    "publishedAt": "2026-10-23T17:01:52Z",
-    "build": 534,
-    "notes": "This tablet can now join a room through the small Message+ Setup app with a one-time code from the dashboard. Only the Setup app can do this. Nothing else changes."
+    "sha": "5b3fb00be8e541a38d8211d76d4fae69b74313ab",
+    "publishedAt": "2026-10-27T13:39:06Z",
+    "build": 540,
+    "notes": "Dock layout: switching Voicemail or Groups off, or the dock side, now applies on every screen. While swiping, the dock stays still and is no longer cut off. Groups search says Search groups. In Calls, tapping a call shows Quick replies first, then Call, Message, Call info and See all call info."
   }
 }
