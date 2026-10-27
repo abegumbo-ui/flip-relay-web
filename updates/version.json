@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "fc65a68fa366bd8c034d04dab87d1d5a10031ec3",
-    "publishedAt": "2026-10-27T15:14:54Z",
-    "build": 546,
-    "notes": "Calls: dragging along the tab row (All, Missed, Received...) only scrolls the row, it no longer swipes to another screen. The same number written with or without +1 is one person in the call history, Message and Quick replies. Voicemail: Refresh can ask the flip phone or the other tablet (Voicemail settings, or hold the Refresh icon)."
+    "sha": "0aa340ef74d249d1c66eab1f02b38666cdee5c7f",
+    "publishedAt": "2026-10-27T16:10:30Z",
+    "build": 547,
+    "notes": "Tablet dock layout: swiping between Chats, Groups, Calls and Voicemail now works from the list side of Chats and Groups too. A swipe back goes to the screen it shows (Calls, Groups or Chats), not to whatever happens to be underneath."
   },
   "tablet-regular": {
-    "sha": "fc65a68fa366bd8c034d04dab87d1d5a10031ec3",
-    "publishedAt": "2026-10-27T15:14:54Z",
-    "build": 546,
-    "notes": "Calls: dragging along the tab row (All, Missed, Received...) only scrolls the row, it no longer swipes to another screen. The same number written with or without +1 is one person in the call history, Message and Quick replies. Voicemail: Refresh can ask the flip phone or the other tablet (Voicemail settings, or hold the Refresh icon)."
+    "sha": "0aa340ef74d249d1c66eab1f02b38666cdee5c7f",
+    "publishedAt": "2026-10-27T16:10:30Z",
+    "build": 547,
+    "notes": "Tablet dock layout: swiping between Chats, Groups, Calls and Voicemail now works from the list side of Chats and Groups too. A swipe back goes to the screen it shows (Calls, Groups or Chats), not to whatever happens to be underneath."
   },
   "tablet-mechi": {
-    "sha": "fc65a68fa366bd8c034d04dab87d1d5a10031ec3",
-    "publishedAt": "2026-10-27T15:14:54Z",
-    "build": 546,
-    "notes": "Calls: dragging along the tab row (All, Missed, Received...) only scrolls the row, it no longer swipes to another screen. The same number written with or without +1 is one person in the call history, Message and Quick replies. Voicemail: Refresh can ask the flip phone or the other tablet (Voicemail settings, or hold the Refresh icon)."
+    "sha": "0aa340ef74d249d1c66eab1f02b38666cdee5c7f",
+    "publishedAt": "2026-10-27T16:10:30Z",
+    "build": 547,
+    "notes": "Tablet dock layout: swiping between Chats, Groups, Calls and Voicemail now works from the list side of Chats and Groups too. A swipe back goes to the screen it shows (Calls, Groups or Chats), not to whatever happens to be underneath."
   }
 }
