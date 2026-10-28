@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "55be21ccf333eed59182e66a2c01895ab74ded24",
-    "publishedAt": "2026-10-28T15:13:39Z",
-    "build": 555,
-    "notes": "Search conversation: type a word and press search to see its matches highlighted in the conversation, with previous and next at the top.\nThe filters Images, Videos, Links and Phone numbers slide sideways now.\nSince the last update: phone numbers in messages are blue and ask before calling; voice messages and videos download when they arrive."
+    "sha": "3ec4eac3f4de00efc153f6a2ddb27595a2529e44",
+    "publishedAt": "2026-10-28T15:18:10Z",
+    "build": 556,
+    "notes": "Group chats now show their unread state like other chats, from the flip phone (needs the newest Message+ on the phone).\nSince the last update: word search in the conversation with highlighted matches, sliding search filters, phone numbers you can tap to call."
   },
   "tablet-regular": {
-    "sha": "55be21ccf333eed59182e66a2c01895ab74ded24",
-    "publishedAt": "2026-10-28T15:13:39Z",
-    "build": 555,
-    "notes": "Search conversation: type a word and press search to see its matches highlighted in the conversation, with previous and next at the top.\nThe filters Images, Videos, Links and Phone numbers slide sideways now.\nSince the last update: phone numbers in messages are blue and ask before calling; voice messages and videos download when they arrive."
+    "sha": "3ec4eac3f4de00efc153f6a2ddb27595a2529e44",
+    "publishedAt": "2026-10-28T15:18:10Z",
+    "build": 556,
+    "notes": "Group chats now show their unread state like other chats, from the flip phone (needs the newest Message+ on the phone).\nSince the last update: word search in the conversation with highlighted matches, sliding search filters, phone numbers you can tap to call."
   },
   "tablet-mechi": {
-    "sha": "55be21ccf333eed59182e66a2c01895ab74ded24",
-    "publishedAt": "2026-10-28T15:13:39Z",
-    "build": 555,
-    "notes": "Search conversation: type a word and press search to see its matches highlighted in the conversation, with previous and next at the top.\nThe filters Images, Videos, Links and Phone numbers slide sideways now.\nSince the last update: phone numbers in messages are blue and ask before calling; voice messages and videos download when they arrive."
+    "sha": "3ec4eac3f4de00efc153f6a2ddb27595a2529e44",
+    "publishedAt": "2026-10-28T15:18:10Z",
+    "build": 556,
+    "notes": "Group chats now show their unread state like other chats, from the flip phone (needs the newest Message+ on the phone).\nSince the last update: word search in the conversation with highlighted matches, sliding search filters, phone numbers you can tap to call."
   }
 }
