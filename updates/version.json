@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "74238af2363bbf2ef6963ca3eb0dbb39a6a60c35",
-    "publishedAt": "2026-10-28T14:15:52Z",
-    "build": 551,
-    "notes": "Settings > Layout is its own screen (Layout, Dock side now with Bottom, Theme); Automatic uses the dock.\nSettings > Resize screens: slide the divider for Chats, Groups or Calls, with Reset to default.\nHold a chat or group > Add to home screen.\nThe Message+ circle is only on the main chat screen; Dedication is gone; split screen options only show in a tablet layout.\nA message read on the flip phone leaves the tablet's notifications."
+    "sha": "14195385a0a82739067d4b1fba98ffbf971106d6",
+    "publishedAt": "2026-10-28T14:36:08Z",
+    "build": 553,
+    "notes": "Voice messages, videos and other attachments are downloaded as soon as they arrive, so they play right away instead of showing Loading.\nSettings > Resize screens now takes effect at once on Chats, Groups and Calls.\nSince the last update: Layout screen (dock side now with Bottom), Add to home screen, notifications leave when read on the flip phone."
   },
   "tablet-regular": {
-    "sha": "74238af2363bbf2ef6963ca3eb0dbb39a6a60c35",
-    "publishedAt": "2026-10-28T14:15:52Z",
-    "build": 551,
-    "notes": "Settings > Layout is its own screen (Layout, Dock side now with Bottom, Theme); Automatic uses the dock.\nSettings > Resize screens: slide the divider for Chats, Groups or Calls, with Reset to default.\nHold a chat or group > Add to home screen.\nThe Message+ circle is only on the main chat screen; Dedication is gone; split screen options only show in a tablet layout.\nA message read on the flip phone leaves the tablet's notifications."
+    "sha": "14195385a0a82739067d4b1fba98ffbf971106d6",
+    "publishedAt": "2026-10-28T14:36:08Z",
+    "build": 553,
+    "notes": "Voice messages, videos and other attachments are downloaded as soon as they arrive, so they play right away instead of showing Loading.\nSettings > Resize screens now takes effect at once on Chats, Groups and Calls.\nSince the last update: Layout screen (dock side now with Bottom), Add to home screen, notifications leave when read on the flip phone."
   },
   "tablet-mechi": {
-    "sha": "74238af2363bbf2ef6963ca3eb0dbb39a6a60c35",
-    "publishedAt": "2026-10-28T14:15:52Z",
-    "build": 551,
-    "notes": "Settings > Layout is its own screen (Layout, Dock side now with Bottom, Theme); Automatic uses the dock.\nSettings > Resize screens: slide the divider for Chats, Groups or Calls, with Reset to default.\nHold a chat or group > Add to home screen.\nThe Message+ circle is only on the main chat screen; Dedication is gone; split screen options only show in a tablet layout.\nA message read on the flip phone leaves the tablet's notifications."
+    "sha": "14195385a0a82739067d4b1fba98ffbf971106d6",
+    "publishedAt": "2026-10-28T14:36:08Z",
+    "build": 553,
+    "notes": "Voice messages, videos and other attachments are downloaded as soon as they arrive, so they play right away instead of showing Loading.\nSettings > Resize screens now takes effect at once on Chats, Groups and Calls.\nSince the last update: Layout screen (dock side now with Bottom), Add to home screen, notifications leave when read on the flip phone."
   }
 }
