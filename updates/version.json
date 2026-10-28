@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "b48cedb7314a7a65003deeea4227c519c2a10b53",
-    "publishedAt": "2026-10-27T17:22:56Z",
-    "build": 550,
-    "notes": "Fixes a crash in the camera and gallery screen when the photo permission is refused. The crash log (Settings > Crash log) now has Copy and Share at the bottom: Copy copies the whole log, Share sends it as a .txt file. Swiping between screens works from anywhere in the tablet dock layout."
+    "sha": "74238af2363bbf2ef6963ca3eb0dbb39a6a60c35",
+    "publishedAt": "2026-10-28T14:15:52Z",
+    "build": 551,
+    "notes": "Settings > Layout is its own screen (Layout, Dock side now with Bottom, Theme); Automatic uses the dock.\nSettings > Resize screens: slide the divider for Chats, Groups or Calls, with Reset to default.\nHold a chat or group > Add to home screen.\nThe Message+ circle is only on the main chat screen; Dedication is gone; split screen options only show in a tablet layout.\nA message read on the flip phone leaves the tablet's notifications."
   },
   "tablet-regular": {
-    "sha": "b48cedb7314a7a65003deeea4227c519c2a10b53",
-    "publishedAt": "2026-10-27T17:22:56Z",
-    "build": 550,
-    "notes": "Fixes a crash in the camera and gallery screen when the photo permission is refused. The crash log (Settings > Crash log) now has Copy and Share at the bottom: Copy copies the whole log, Share sends it as a .txt file. Swiping between screens works from anywhere in the tablet dock layout."
+    "sha": "74238af2363bbf2ef6963ca3eb0dbb39a6a60c35",
+    "publishedAt": "2026-10-28T14:15:52Z",
+    "build": 551,
+    "notes": "Settings > Layout is its own screen (Layout, Dock side now with Bottom, Theme); Automatic uses the dock.\nSettings > Resize screens: slide the divider for Chats, Groups or Calls, with Reset to default.\nHold a chat or group > Add to home screen.\nThe Message+ circle is only on the main chat screen; Dedication is gone; split screen options only show in a tablet layout.\nA message read on the flip phone leaves the tablet's notifications."
   },
   "tablet-mechi": {
-    "sha": "b48cedb7314a7a65003deeea4227c519c2a10b53",
-    "publishedAt": "2026-10-27T17:22:56Z",
-    "build": 550,
-    "notes": "Fixes a crash in the camera and gallery screen when the photo permission is refused. The crash log (Settings > Crash log) now has Copy and Share at the bottom: Copy copies the whole log, Share sends it as a .txt file. Swiping between screens works from anywhere in the tablet dock layout."
+    "sha": "74238af2363bbf2ef6963ca3eb0dbb39a6a60c35",
+    "publishedAt": "2026-10-28T14:15:52Z",
+    "build": 551,
+    "notes": "Settings > Layout is its own screen (Layout, Dock side now with Bottom, Theme); Automatic uses the dock.\nSettings > Resize screens: slide the divider for Chats, Groups or Calls, with Reset to default.\nHold a chat or group > Add to home screen.\nThe Message+ circle is only on the main chat screen; Dedication is gone; split screen options only show in a tablet layout.\nA message read on the flip phone leaves the tablet's notifications."
   }
 }
