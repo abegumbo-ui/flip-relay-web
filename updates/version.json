@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "4e7f53ba3814231b0027ee68efcc62a8a3eb4f13",
-    "publishedAt": "2026-10-28T15:49:58Z",
-    "build": 557,
-    "notes": "Searching on the conversation list: the searched word is yellow in each result, and opening one shows the conversation with every match highlighted.\nIn a word search the header shows the words, the arrows are chevrons, the bar slides in and the results slide into view one after another.\nSince the last update: group chats show their unread state (with Message+ build 124 on the phone)."
+    "sha": "229254c8266bc4a3891933fb8723db5405f2ffbd",
+    "publishedAt": "2026-10-28T15:56:00Z",
+    "build": 558,
+    "notes": "Conversations look like Google Messages: messages in a row from the same person are stacked closely with squared inner corners, so each run reads as one sender, with more room between different senders.\nSince the last update: searching on the conversation list highlights the word and opens the chat with its matches; group chats show their unread state."
   },
   "tablet-regular": {
-    "sha": "4e7f53ba3814231b0027ee68efcc62a8a3eb4f13",
-    "publishedAt": "2026-10-28T15:49:58Z",
-    "build": 557,
-    "notes": "Searching on the conversation list: the searched word is yellow in each result, and opening one shows the conversation with every match highlighted.\nIn a word search the header shows the words, the arrows are chevrons, the bar slides in and the results slide into view one after another.\nSince the last update: group chats show their unread state (with Message+ build 124 on the phone)."
+    "sha": "229254c8266bc4a3891933fb8723db5405f2ffbd",
+    "publishedAt": "2026-10-28T15:56:00Z",
+    "build": 558,
+    "notes": "Conversations look like Google Messages: messages in a row from the same person are stacked closely with squared inner corners, so each run reads as one sender, with more room between different senders.\nSince the last update: searching on the conversation list highlights the word and opens the chat with its matches; group chats show their unread state."
   },
   "tablet-mechi": {
-    "sha": "4e7f53ba3814231b0027ee68efcc62a8a3eb4f13",
-    "publishedAt": "2026-10-28T15:49:58Z",
-    "build": 557,
-    "notes": "Searching on the conversation list: the searched word is yellow in each result, and opening one shows the conversation with every match highlighted.\nIn a word search the header shows the words, the arrows are chevrons, the bar slides in and the results slide into view one after another.\nSince the last update: group chats show their unread state (with Message+ build 124 on the phone)."
+    "sha": "229254c8266bc4a3891933fb8723db5405f2ffbd",
+    "publishedAt": "2026-10-28T15:56:00Z",
+    "build": 558,
+    "notes": "Conversations look like Google Messages: messages in a row from the same person are stacked closely with squared inner corners, so each run reads as one sender, with more room between different senders.\nSince the last update: searching on the conversation list highlights the word and opens the chat with its matches; group chats show their unread state."
   }
 }
