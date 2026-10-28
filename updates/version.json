@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "7b1b1d71eec39100be946675870415aa9fc8c26c",
-    "publishedAt": "2026-10-28T14:50:17Z",
-    "build": 554,
-    "notes": "A search icon next to Call in every conversation and group: Images, Videos, Links and Phone numbers, or words in the messages.\nPhone numbers in messages are blue like links; tap one and it asks if you want to call it.\nSince the last update: voice messages and videos download when they arrive; Resize screens takes effect at once."
+    "sha": "55be21ccf333eed59182e66a2c01895ab74ded24",
+    "publishedAt": "2026-10-28T15:13:39Z",
+    "build": 555,
+    "notes": "Search conversation: type a word and press search to see its matches highlighted in the conversation, with previous and next at the top.\nThe filters Images, Videos, Links and Phone numbers slide sideways now.\nSince the last update: phone numbers in messages are blue and ask before calling; voice messages and videos download when they arrive."
   },
   "tablet-regular": {
-    "sha": "7b1b1d71eec39100be946675870415aa9fc8c26c",
-    "publishedAt": "2026-10-28T14:50:17Z",
-    "build": 554,
-    "notes": "A search icon next to Call in every conversation and group: Images, Videos, Links and Phone numbers, or words in the messages.\nPhone numbers in messages are blue like links; tap one and it asks if you want to call it.\nSince the last update: voice messages and videos download when they arrive; Resize screens takes effect at once."
+    "sha": "55be21ccf333eed59182e66a2c01895ab74ded24",
+    "publishedAt": "2026-10-28T15:13:39Z",
+    "build": 555,
+    "notes": "Search conversation: type a word and press search to see its matches highlighted in the conversation, with previous and next at the top.\nThe filters Images, Videos, Links and Phone numbers slide sideways now.\nSince the last update: phone numbers in messages are blue and ask before calling; voice messages and videos download when they arrive."
   },
   "tablet-mechi": {
-    "sha": "7b1b1d71eec39100be946675870415aa9fc8c26c",
-    "publishedAt": "2026-10-28T14:50:17Z",
-    "build": 554,
-    "notes": "A search icon next to Call in every conversation and group: Images, Videos, Links and Phone numbers, or words in the messages.\nPhone numbers in messages are blue like links; tap one and it asks if you want to call it.\nSince the last update: voice messages and videos download when they arrive; Resize screens takes effect at once."
+    "sha": "55be21ccf333eed59182e66a2c01895ab74ded24",
+    "publishedAt": "2026-10-28T15:13:39Z",
+    "build": 555,
+    "notes": "Search conversation: type a word and press search to see its matches highlighted in the conversation, with previous and next at the top.\nThe filters Images, Videos, Links and Phone numbers slide sideways now.\nSince the last update: phone numbers in messages are blue and ask before calling; voice messages and videos download when they arrive."
   }
 }
