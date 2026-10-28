@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "3ec4eac3f4de00efc153f6a2ddb27595a2529e44",
-    "publishedAt": "2026-10-28T15:18:10Z",
-    "build": 556,
-    "notes": "Group chats now show their unread state like other chats, from the flip phone (needs the newest Message+ on the phone).\nSince the last update: word search in the conversation with highlighted matches, sliding search filters, phone numbers you can tap to call."
+    "sha": "4e7f53ba3814231b0027ee68efcc62a8a3eb4f13",
+    "publishedAt": "2026-10-28T15:49:58Z",
+    "build": 557,
+    "notes": "Searching on the conversation list: the searched word is yellow in each result, and opening one shows the conversation with every match highlighted.\nIn a word search the header shows the words, the arrows are chevrons, the bar slides in and the results slide into view one after another.\nSince the last update: group chats show their unread state (with Message+ build 124 on the phone)."
   },
   "tablet-regular": {
-    "sha": "3ec4eac3f4de00efc153f6a2ddb27595a2529e44",
-    "publishedAt": "2026-10-28T15:18:10Z",
-    "build": 556,
-    "notes": "Group chats now show their unread state like other chats, from the flip phone (needs the newest Message+ on the phone).\nSince the last update: word search in the conversation with highlighted matches, sliding search filters, phone numbers you can tap to call."
+    "sha": "4e7f53ba3814231b0027ee68efcc62a8a3eb4f13",
+    "publishedAt": "2026-10-28T15:49:58Z",
+    "build": 557,
+    "notes": "Searching on the conversation list: the searched word is yellow in each result, and opening one shows the conversation with every match highlighted.\nIn a word search the header shows the words, the arrows are chevrons, the bar slides in and the results slide into view one after another.\nSince the last update: group chats show their unread state (with Message+ build 124 on the phone)."
   },
   "tablet-mechi": {
-    "sha": "3ec4eac3f4de00efc153f6a2ddb27595a2529e44",
-    "publishedAt": "2026-10-28T15:18:10Z",
-    "build": 556,
-    "notes": "Group chats now show their unread state like other chats, from the flip phone (needs the newest Message+ on the phone).\nSince the last update: word search in the conversation with highlighted matches, sliding search filters, phone numbers you can tap to call."
+    "sha": "4e7f53ba3814231b0027ee68efcc62a8a3eb4f13",
+    "publishedAt": "2026-10-28T15:49:58Z",
+    "build": 557,
+    "notes": "Searching on the conversation list: the searched word is yellow in each result, and opening one shows the conversation with every match highlighted.\nIn a word search the header shows the words, the arrows are chevrons, the bar slides in and the results slide into view one after another.\nSince the last update: group chats show their unread state (with Message+ build 124 on the phone)."
   }
 }
