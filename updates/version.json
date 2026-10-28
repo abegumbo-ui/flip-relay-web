@@ -4,21 +4,21 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "2224dc079ee6ef1901ac4097173bf45402803ba9",
-    "publishedAt": "2026-10-28T16:05:39Z",
-    "build": 559,
-    "notes": "Message bubbles stop at about three quarters of the width, like Google Messages, instead of running from one side of the screen to the other.\nThe keyboard goes away when you press its Done or Search key (search boxes, name and PIN fields, the pairing code).\nSince the last update: messages from the same person are stacked like Google Messages."
+    "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
+    "publishedAt": "2026-10-28T16:41:45Z",
+    "build": 563,
+    "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "tablet-regular": {
-    "sha": "2224dc079ee6ef1901ac4097173bf45402803ba9",
-    "publishedAt": "2026-10-28T16:05:39Z",
-    "build": 559,
-    "notes": "Message bubbles stop at about three quarters of the width, like Google Messages, instead of running from one side of the screen to the other.\nThe keyboard goes away when you press its Done or Search key (search boxes, name and PIN fields, the pairing code).\nSince the last update: messages from the same person are stacked like Google Messages."
+    "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
+    "publishedAt": "2026-10-28T16:41:45Z",
+    "build": 563,
+    "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "tablet-mechi": {
-    "sha": "2224dc079ee6ef1901ac4097173bf45402803ba9",
-    "publishedAt": "2026-10-28T16:05:39Z",
-    "build": 559,
-    "notes": "Message bubbles stop at about three quarters of the width, like Google Messages, instead of running from one side of the screen to the other.\nThe keyboard goes away when you press its Done or Search key (search boxes, name and PIN fields, the pairing code).\nSince the last update: messages from the same person are stacked like Google Messages."
+    "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
+    "publishedAt": "2026-10-28T16:41:45Z",
+    "build": 563,
+    "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   }
 }
