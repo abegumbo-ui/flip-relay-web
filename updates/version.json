@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
-    "publishedAt": "2026-10-29T02:49:56Z",
-    "build": 607,
-    "notes": "Fixed messages showing twice after the phone's history sync (the same text appeared once from the live message and once from the sync). The extra copy is now left out, and copies already saved are cleaned up when the app opens.\nA group text from a group you hadn't used on the tablet before now starts its own group, instead of showing as one message from one person.\nThis build is signed with a new key. If the install says the app was not installed, uninstall the app once and pair again."
+    "sha": "fc673d3",
+    "publishedAt": "2026-10-29T19:08:25Z",
+    "build": 609,
+    "notes": "Faster screens: saving your message history no longer makes the screens wait, and a history sync no longer floods the screen with refreshes. This should cut the lag between screens.\nForwarding fixes: forwarding a video to several chats no longer freezes the app, a failed upload now shows Not sent instead of Sending forever, and a file that can't be read is no longer silently dropped.\nSince the last update: messages that showed twice after the phone's history sync stay hidden, and new groups start their own group."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -20,6 +20,20 @@
     "publishedAt": "2026-10-28T16:41:45Z",
     "build": 563,
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
+  },
+  "messageplus": {
+    "versionCode": 26122389,
+    "versionName": "6.4.5-FR GOLOMBECK (build 127)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26122389/messageplus-26122389.apk",
+    "at": 1793227576709,
+    "notes": "Voicemail: after you sign in to voicemail again, the tablet no longer keeps saying the flip phone is signed out. The phone now tells the tablet right after you sign in and after every successful check."
+  },
+  "messageplus_previous": {
+    "versionCode": 26122366,
+    "versionName": "6.4.5-FR GOLOMBECK (build 126)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26122366/messageplus-26122366.apk",
+    "at": 1793226279795,
+    "notes": "Audio you attach from the tablet (MP3, M4A, WAV and so on) now arrives as that kind of audio instead of always being treated as a voice recording.\nUpdates now download from GitHub.\nThis build is signed with a new key. If the update says it cannot install, uninstall Message+ once and use the restore app."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
