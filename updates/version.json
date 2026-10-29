@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "fc673d3",
-    "publishedAt": "2026-10-29T19:08:25Z",
-    "build": 609,
-    "notes": "Faster screens: saving your message history no longer makes the screens wait, and a history sync no longer floods the screen with refreshes. This should cut the lag between screens.\nForwarding fixes: forwarding a video to several chats no longer freezes the app, a failed upload now shows Not sent instead of Sending forever, and a file that can't be read is no longer silently dropped.\nSince the last update: messages that showed twice after the phone's history sync stay hidden, and new groups start their own group."
+    "sha": "e6ef736",
+    "publishedAt": "2026-10-29T23:36:32Z",
+    "build": 610,
+    "notes": "Group texts someone else starts now get their own group, and messages no longer show twice (with Message+ build 128 on the phone).\nA text that did not go out now shows Not sent instead of Sent. Texts with tabs or line breaks are no longer lost.\nSettings: Blocked numbers (block a number by hand) and Muted conversations (unmute everyone) - the same lists as the flip phone. Settings: turn off the Connected notification.\nSettings: Sync messages and Sync attachments - the phone sends everything at once, with progress in percent."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
