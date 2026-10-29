@@ -20,5 +20,11 @@
     "publishedAt": "2026-10-28T16:41:45Z",
     "build": 563,
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
+  },
+  "tablet2": {
+    "sha": "240700648d872cffe37890f74aeb695256cd09d0",
+    "publishedAt": "2026-10-29T00:15:19Z",
+    "build": 603,
+    "notes": "A group text from a group you hadn't used on the tablet before now starts its own group here, instead of showing up as a single message from one person.\nThis is a separate copy of the app (Message+ New): it installs next to your current tablet app and does not replace it. Pair it with your room like a new tablet."
   }
 }
