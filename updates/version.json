@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26123856,
+    "versionName": "6.4.5-FR GOLOMBECK (build 128)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123856/messageplus-26123856.apk",
+    "at": 1793316164281,
+    "notes": "Group texts that someone else starts now show up on the tablet as their own group, right away.\nMessages no longer show up twice on the tablet, and reinstalling Message+ no longer re-sends old pictures and group messages.\nA text with a line break or tab is no longer lost, a text from the tablet is never sent twice, and a text the carrier refuses now shows \"Not sent\".\nBlocking and muting now work the same on the phone and the tablet.\nNew fast sync: \"Sync messages\" and \"Sync attachments\" send everything at once, with progress in percent on the phone, the tablet and the dashboard."
+  },
+  "messageplus_previous": {
     "versionCode": 26122389,
     "versionName": "6.4.5-FR GOLOMBECK (build 127)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26122389/messageplus-26122389.apk",
     "at": 1793227576709,
     "notes": "Voicemail: after you sign in to voicemail again, the tablet no longer keeps saying the flip phone is signed out. The phone now tells the tablet right after you sign in and after every successful check."
-  },
-  "messageplus_previous": {
-    "versionCode": 26122366,
-    "versionName": "6.4.5-FR GOLOMBECK (build 126)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26122366/messageplus-26122366.apk",
-    "at": 1793226279795,
-    "notes": "Audio you attach from the tablet (MP3, M4A, WAV and so on) now arrives as that kind of audio instead of always being treated as a voice recording.\nUpdates now download from GitHub.\nThis build is signed with a new key. If the update says it cannot install, uninstall Message+ once and use the restore app."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
