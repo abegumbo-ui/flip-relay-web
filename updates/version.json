@@ -22,9 +22,9 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "tablet2": {
-    "sha": "d403827545d23ddd031b8b1e46a9bfe4c339b40a",
-    "publishedAt": "2026-10-29T00:37:40Z",
-    "build": 604,
-    "notes": "Adds a Performance log (Settings > Performance log) that records why this test copy is slow: when the screen freezes and what it was waiting on, how long loading messages takes, memory and how busy it is. Open it and use Share to send it.\nGroup texts from a group the tablet hasn't seen before start their own group."
+    "sha": "90d6766be09d1a3ab0619a6487e9e7f98e437240",
+    "publishedAt": "2026-10-29T02:16:43Z",
+    "build": 605,
+    "notes": "Fixed messages showing twice after the phone's history sync (the same text appeared once from the live message and once from the sync). The extra copy is now left out, and copies already saved are cleaned up when the app opens.\nAlso in this copy: the Performance log (Settings > Performance log), and group texts from a new group start their own group."
   }
 }
