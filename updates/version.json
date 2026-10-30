@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "c4f6277611905751fbd827425e21dbd0c0a2c518",
-    "publishedAt": "2026-10-30T00:55:29Z",
-    "build": 616,
-    "notes": "Resending a text that was not sent now replaces it (no second copy underneath), and a text shows Sending... until the phone's carrier answers.\nSettings shows whether Message+ is the flip phone's default texting app. Sync messages / Sync attachments each show their own progress, and cannot be asked for again while one is running or within 10 minutes. A brand-new tablet loads a big history without running out of memory.\nAlso since build 610: pictures show on every tablet, new groups get their own group, no doubled messages, Blocked numbers and Muted conversations shared with the flip phone."
+    "sha": "9260952d03c8e530e8ff183d141ab400e37f2a31",
+    "publishedAt": "2026-10-30T01:03:51Z",
+    "build": 617,
+    "notes": "Settings are now in sections, like the flip phone: Layout and screens, Messages, Notifications, Privacy, Flip phone and sync, Help and updates.\nFlip phone and sync shows whether Message+ is the flip's default texting app, and each sync with its own progress.\nAlso since build 616: resending a text that was not sent replaces it, a text shows Sending... until the carrier answers, pictures show on every tablet."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
