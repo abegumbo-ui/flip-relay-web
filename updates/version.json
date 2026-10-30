@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "8da899cf297631402b147d21ed4623a208c0ca88",
-    "publishedAt": "2026-10-30T06:39:01Z",
-    "build": 623,
-    "notes": "Crash log now has three parts: Flip phone, Tablet and Home app.\nDisconnect now also forgets the old phone's saved voicemails, sync status and default-app line, so a new pairing starts clean.\nAlso since 621: Mute instead of Snooze, your own PIN, pattern or password lock, Notification settings button, blocked chats hidden, plain sync status."
+    "sha": "d7774318c91adb8087ad5fd7caf5e9fe15d457bc",
+    "publishedAt": "2026-10-30T07:22:28Z",
+    "build": 626,
+    "notes": "New: Settings > Help and updates > Troubleshooting, with real screenshots (the thing to press circled in red):\n- End keeps asking which screen to use \u2014 the fix, how to turn it off for good, how to remove the Home app, and how to open Message+ from notifications if the menu can't be reached.\n- Message+ acting up \u2014 Restart App, Turn Flip Relay On/Off, Uninstall, in order.\n- This tablet acting up \u2014 restart, crash log, forgot lock code, last resort.\nEvery section ends with: everything is logged including crashes, and where to find those logs.\nAlso since 623: Mute instead of Snooze, your own PIN/pattern/password lock, Notification settings button, blocked chats hidden, Disconnect now also forgets the old phone's saved voicemails and sync status."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
