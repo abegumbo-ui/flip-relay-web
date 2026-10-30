@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "c33909f8b2ba7e884a20ee755c11597d30a538ad",
-    "publishedAt": "2026-10-30T05:04:20Z",
-    "build": 621,
-    "notes": "Mute instead of Snooze: hold a chat, tap Mute (also mutes it on the flip phone), or mute for 1, 8 or 24 hours.\nLock the app with your own PIN, pattern or password (Settings > Privacy). Forgot it? resets this tablet.\nNotification settings button: turn off any of this app's notifications, like Connected.\nBlocked people's chats are hidden like on the flip phone; Groups switch; sync status in plain words."
+    "sha": "8da899cf297631402b147d21ed4623a208c0ca88",
+    "publishedAt": "2026-10-30T06:39:01Z",
+    "build": 623,
+    "notes": "Crash log now has three parts: Flip phone, Tablet and Home app.\nDisconnect now also forgets the old phone's saved voicemails, sync status and default-app line, so a new pairing starts clean.\nAlso since 621: Mute instead of Snooze, your own PIN, pattern or password lock, Notification settings button, blocked chats hidden, plain sync status."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26124276,
+    "versionName": "6.4.5-FR GOLOMBECK (build 136)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26124276/messageplus-26124276.apk",
+    "at": 1793342341513,
+    "notes": "Home app update (Home App (Message+) > Update it): turning Message+ Home launcher off now removes it as a home screen, so End never asks \"Open with\". Turning it on opens the Home app setting. If the phone ever forgets the home screen, it takes you straight to that setting.\nHome app problems now show on the tablet (Crash log > Home app).\nMuting syncs with the tablet for every number, including short codes."
+  },
+  "messageplus_previous": {
     "versionCode": 26124192,
     "versionName": "6.4.5-FR GOLOMBECK (build 134)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26124192/messageplus-26124192.apk",
     "at": 1793336660971,
     "notes": "Muting a conversation now syncs with the tablet for every number, including short codes like 22000 and long numbers (before, those were unmuted again).\nAlso since build 128: deleting a Not sent text, Sending... until the carrier answers, resend replaces the failed text, blocking and muting shared with the tablet."
-  },
-  "messageplus_previous": {
-    "versionCode": 26123999,
-    "versionName": "6.4.5-FR GOLOMBECK (build 133)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123999/messageplus-26123999.apk",
-    "at": 1793324910950,
-    "notes": "A text that did not go out can now be deleted from the tablet: it is deleted on the phone too and stays in the trash (before, it came back).\nAlso since build 128: Sending... until the carrier answers, resend replaces the failed text, calls in batches, the default texting app shown on the tablet, a new sync replaces the old one, pictures for every tablet, new groups get their own group, blocking and muting shared with the tablet."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
