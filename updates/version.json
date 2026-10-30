@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "b741fda305496e5766b4c2551ad49e5dd98802fd",
-    "publishedAt": "2026-10-30T00:25:14Z",
-    "build": 614,
-    "notes": "A new sync from the phone replaces the previous one (no copies, and a sync that was replaced is not waited for).\nAlso since build 610: pictures show on every tablet, new groups get their own group, no doubled messages, Not sent for a text that did not go out, Blocked numbers and Muted conversations shared with the flip phone, a switch for the Connected notification, and Sync messages / Sync attachments with progress."
+    "sha": "c4f6277611905751fbd827425e21dbd0c0a2c518",
+    "publishedAt": "2026-10-30T00:55:29Z",
+    "build": 616,
+    "notes": "Resending a text that was not sent now replaces it (no second copy underneath), and a text shows Sending... until the phone's carrier answers.\nSettings shows whether Message+ is the flip phone's default texting app. Sync messages / Sync attachments each show their own progress, and cannot be asked for again while one is running or within 10 minutes. A brand-new tablet loads a big history without running out of memory.\nAlso since build 610: pictures show on every tablet, new groups get their own group, no doubled messages, Blocked numbers and Muted conversations shared with the flip phone."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26123950,
+    "versionName": "6.4.5-FR GOLOMBECK (build 132)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123950/messageplus-26123950.apk",
+    "at": 1793321729526,
+    "notes": "A text from the tablet shows Sending... until the carrier answers, then Sent or Not sent (no more Sent for a moment before Not sent).\nCalls are sent to the tablet in batches (much lighter on the phone). The tablet and the dashboard now show whether Message+ is the default texting app. A sync is not run again within 10 minutes of the last one.\nAlso since build 128: a new sync replaces the old one, pictures stay available for every tablet, new groups get their own group, no doubled messages, blocking and muting shared with the tablet."
+  },
+  "messageplus_previous": {
     "versionCode": 26123913,
     "versionName": "6.4.5-FR GOLOMBECK (build 130)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123913/messageplus-26123913.apk",
     "at": 1793319914975,
     "notes": "A new Sync messages or Sync attachments now replaces the previous one instead of piling up in storage, and a repeat attachments sync only sends what is new (much faster).\nAlso since build 128: pictures stay available for every tablet, group texts someone else starts get their own group, no doubled messages, texts with line breaks are no longer lost, a text the carrier refuses shows Not sent, and blocking and muting work the same on the phone and the tablet."
-  },
-  "messageplus_previous": {
-    "versionCode": 26123904,
-    "versionName": "6.4.5-FR GOLOMBECK (build 129)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123904/messageplus-26123904.apk",
-    "at": 1793318764303,
-    "notes": "Pictures you send from the tablet now stay available, so every tablet shows them (before, the picture was removed right after it was sent).\nAlso in this update (build 128): group texts someone else starts get their own group, no more doubled messages, texts with line breaks are no longer lost, a text the carrier refuses shows Not sent, blocking and muting work the same on the phone and the tablet, and a fast Sync messages / Sync attachments with progress in percent."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
