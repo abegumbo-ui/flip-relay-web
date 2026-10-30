@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "9260952d03c8e530e8ff183d141ab400e37f2a31",
-    "publishedAt": "2026-10-30T01:03:51Z",
-    "build": 617,
-    "notes": "Settings are now in sections, like the flip phone: Layout and screens, Messages, Notifications, Privacy, Flip phone and sync, Help and updates.\nFlip phone and sync shows whether Message+ is the flip's default texting app, and each sync with its own progress.\nAlso since build 616: resending a text that was not sent replaces it, a text shows Sending... until the carrier answers, pictures show on every tablet."
+    "sha": "3b75ae9a0eaed401413c0584ff1ccb093256d127",
+    "publishedAt": "2026-10-30T01:24:42Z",
+    "build": 618,
+    "notes": "Clear in the crash log now also clears the flip phone's old crashes (before, they came back every time the log was opened).\nAlso since build 617: Settings in sections, the flip's default texting app in Flip phone and sync, resending a failed text replaces it, Sending... until the carrier answers, pictures on every tablet."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
