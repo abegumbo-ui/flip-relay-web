@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "3b75ae9a0eaed401413c0584ff1ccb093256d127",
-    "publishedAt": "2026-10-30T01:24:42Z",
-    "build": 618,
-    "notes": "Clear in the crash log now also clears the flip phone's old crashes (before, they came back every time the log was opened).\nAlso since build 617: Settings in sections, the flip's default texting app in Flip phone and sync, resending a failed text replaces it, Sending... until the carrier answers, pictures on every tablet."
+    "sha": "1710ead04193eb3b4dc69c8cc84652cb728c8d4a",
+    "publishedAt": "2026-10-30T01:48:30Z",
+    "build": 619,
+    "notes": "Delete on a Not sent text now really deletes it (on the phone too), and it stays in the trash instead of coming back.\nAlso since build 617: Settings in sections, Clear in the crash log clears the phone's crashes too, resending a failed text replaces it, Sending... until the carrier answers, pictures on every tablet."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26123999,
+    "versionName": "6.4.5-FR GOLOMBECK (build 133)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123999/messageplus-26123999.apk",
+    "at": 1793324910950,
+    "notes": "A text that did not go out can now be deleted from the tablet: it is deleted on the phone too and stays in the trash (before, it came back).\nAlso since build 128: Sending... until the carrier answers, resend replaces the failed text, calls in batches, the default texting app shown on the tablet, a new sync replaces the old one, pictures for every tablet, new groups get their own group, blocking and muting shared with the tablet."
+  },
+  "messageplus_previous": {
     "versionCode": 26123950,
     "versionName": "6.4.5-FR GOLOMBECK (build 132)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123950/messageplus-26123950.apk",
     "at": 1793321729526,
     "notes": "A text from the tablet shows Sending... until the carrier answers, then Sent or Not sent (no more Sent for a moment before Not sent).\nCalls are sent to the tablet in batches (much lighter on the phone). The tablet and the dashboard now show whether Message+ is the default texting app. A sync is not run again within 10 minutes of the last one.\nAlso since build 128: a new sync replaces the old one, pictures stay available for every tablet, new groups get their own group, no doubled messages, blocking and muting shared with the tablet."
-  },
-  "messageplus_previous": {
-    "versionCode": 26123913,
-    "versionName": "6.4.5-FR GOLOMBECK (build 130)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123913/messageplus-26123913.apk",
-    "at": 1793319914975,
-    "notes": "A new Sync messages or Sync attachments now replaces the previous one instead of piling up in storage, and a repeat attachments sync only sends what is new (much faster).\nAlso since build 128: pictures stay available for every tablet, group texts someone else starts get their own group, no doubled messages, texts with line breaks are no longer lost, a text the carrier refuses shows Not sent, and blocking and muting work the same on the phone and the tablet."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
