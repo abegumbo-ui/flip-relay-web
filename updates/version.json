@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "37a1a0780518bcdf0607ac48c95b926854e39955",
-    "publishedAt": "2026-10-30T18:12:00Z",
-    "build": 627,
-    "notes": "A sync the flip phone sends in five parts is loaded part by part as each part arrives.\nA sync that is paused or stopped on the flip phone now says so in Settings.\nAlso since 626: Settings > Help and updates > Troubleshooting with real screenshots, Mute instead of Snooze, your own PIN/pattern/password lock, Notification settings button, blocked chats hidden."
+    "sha": "55e8178d04901cf43761e0b7d456343c2b18d093",
+    "publishedAt": "2026-10-30T21:09:52Z",
+    "build": 628,
+    "notes": "Part of the lock-down: pictures and files this tablet uploads or deletes now carry its own sign-in, and the old 6-character room code join is gone from the app. Nothing changes in how you use it.\nAlso since 627: a sync the flip phone sends in five parts is loaded part by part, and a paused or stopped sync says so in Settings."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26125170,
+    "versionName": "6.4.5-FR GOLOMBECK (build 138)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26125170/messageplus-26125170.apk",
+    "at": 1793394592852,
+    "notes": "Part of the lock-down: pictures and files this phone uploads or deletes now carry its own sign-in, and the old 6-character room code join is gone from the app. Nothing changes in how you use it.\nAlso since build 137: Settings > Flip Relay > Sync > Sync progress (live progress, Pause / Resume, Stop) and the Split sync in 5 parts option."
+  },
+  "messageplus_previous": {
     "versionCode": 26124978,
     "versionName": "6.4.5-FR GOLOMBECK (build 137)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26124978/messageplus-26124978.apk",
     "at": 1793383920802,
     "notes": "Settings > Flip Relay > Sync > Sync progress: see how far the sync is, live, with Pause / Resume and Stop.\nNew option Sync > Split sync in 5 parts (off by default): the messages are prepared and sent 20% at a time, so a stop or restart keeps what was already sent.\nPicture and group messages are prepared in smaller steps, so the number keeps moving."
-  },
-  "messageplus_previous": {
-    "versionCode": 26124276,
-    "versionName": "6.4.5-FR GOLOMBECK (build 136)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26124276/messageplus-26124276.apk",
-    "at": 1793342341513,
-    "notes": "Home app update (Home App (Message+) > Update it): turning Message+ Home launcher off now removes it as a home screen, so End never asks \"Open with\". Turning it on opens the Home app setting. If the phone ever forgets the home screen, it takes you straight to that setting.\nHome app problems now show on the tablet (Crash log > Home app).\nMuting syncs with the tablet for every number, including short codes."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",

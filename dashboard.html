@@ -267,8 +267,8 @@ const QR = (() => {
 })();
 if (typeof module !== "undefined") module.exports = QR;
 
-const RULES_CURRENT = {"rules": {".read": false, ".write": false, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (root.child('admin/migrationOpen').val() === true && newData.val() === $roomId) || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
-const STORAGE_RULES = "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /attachments/{room}/{allPaths=**} {\n      allow get: if true;\n      allow list: if false;\n      allow create, update: if request.resource.size < 64 * 1024 * 1024;\n      allow delete: if true;\n    }\n  }\n}\n";
+const RULES_CURRENT = {"rules": {".read": false, ".write": false, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
+const STORAGE_RULES = "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /attachments/{room}/{allPaths=**} {\n      allow get: if true;\n      allow list: if false;\n      allow create, update: if request.auth != null && request.resource.size < 64 * 1024 * 1024;\n      allow delete: if request.auth != null;\n    }\n  }\n}\n";
 
 const $ = (id) => document.getElementById(id);
 const STORE = "msgplus_dashboard_v1";
@@ -364,15 +364,17 @@ function group(title) {
   wrap.add = (el) => { if (el) g.appendChild(el); return wrap; };
   return wrap;
 }
-function item({ icon, title, sub, pill, warn, onclick, toggle, on, danger, chips }) {
+function item({ icon, title, sub, pill, warn, onclick, toggle, on, danger, chips, to }) {
   const el = document.createElement("div");
-  el.className = "item" + (onclick || toggle ? "" : " static") + (danger ? " danger-t" : "");
+  el.className = "item" + (onclick || toggle || to ? "" : " static") + (danger ? " danger-t" : "");
   const chipHtml = (chips || []).map((c) => `<span class="chip ${c[1]}">${esc(c[0])}</span>`).join("");
   el.innerHTML = (icon ? svg(ICON[icon]) : "") +
     `<div class="tx"><div class="tt">${esc(title)}${pill ? `<span class="pill${warn ? " warn" : ""}">${esc(pill)}</span>` : ""}</div>${sub ? `<div class="st">${esc(sub)}</div>` : ""}${chipHtml ? `<div>${chipHtml}</div>` : ""}</div>` +
-    (toggle ? `<div class="sw${on ? " on" : ""}"></div>` : onclick ? svg(CHEV, "chev") : "");
+    (toggle ? `<div class="sw${on ? " on" : ""}"></div>` : onclick || to ? svg(CHEV, "chev") : "");
   if (toggle) el.onclick = () => toggle(!on);
   else if (onclick) el.onclick = onclick;
+  else if (to) el.onclick = () => go(to);
+  if (to) el.dataset.to = to;
   return el;
 }
 function actions(buttons) {
@@ -394,6 +396,7 @@ function back() { if (stack.length > 1) stack.pop(); render(); }
 $("back").onclick = back;
 
 let busy = 0, lastShown = "", lastUpdated = 0;
+const CACHED = ["home", "devices", "security"]; // screens whose last picture is shown while the new one is read
 // Draws the current screen. A redraw of the screen that is already showing (a toggle, a button, Refresh) keeps what is on screen until the new
 // version is ready, then swaps it in and keeps the scroll position: no "Loading", no flash, no jump to the top.
 async function render() {
@@ -408,8 +411,8 @@ async function render() {
   const same = key === lastShown && view.firstChild;
   const fn = { home: screenHome, devices: screenDevices, security: screenSecurity, datamenu: screenData, mine: screenMine, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, cleanup: screenCleanup, pin: screenPin, pair: screenPair, notice: screenNotice, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
   if (!same) {
-    const cached = cur.name === "home" ? cget("home") : null;
-    view.innerHTML = cached && cached.html ? cached.html : '<div class="pad meta">Loading...</div>';
+    const cached = CACHED.includes(cur.name) ? cget(cur.name) : null;
+    view.innerHTML = cached && cached.v && cached.v.html ? cached.v.html : '<div class="pad meta">Loading...</div>';
     window.scrollTo(0, 0);
   }
   const keep = window.scrollY;
@@ -421,12 +424,14 @@ async function render() {
     lastShown = key;
     lastUpdated = Date.now();
     if (same) window.scrollTo(0, keep);
-    if (cur.name === "home") cset("home", { html: view.innerHTML });
+    if (CACHED.includes(cur.name)) cset(cur.name, { html: view.innerHTML });
   } catch (e) {
     if (mine === busy && !same) { view.innerHTML = `<div class="pad err">Could not load: ${esc(e.message)} — is the secret right?</div>`; }
   }
 }
 $("refresh").onclick = () => render();
+// a saved copy of a screen has no click handlers yet: its rows that name a screen work at once
+$("view").addEventListener("click", (e) => { const t = e.target.closest && e.target.closest("[data-to]"); if (t && !t.onclick && t.dataset.to) go(t.dataset.to); });
 const timeStr = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 // the line under the home heading: when it was last read, and a Refresh button (nothing refreshes by itself while you read)
 function updatedLine() {
@@ -455,8 +460,8 @@ function detectRules(r) {
     const rooms = r.rules.rooms.$roomId;
     if (rooms[".read"] === true) return "open";
     const w = rooms.members.$uid[".write"];
+    if (w.includes("migrationOpen")) return "previous"; // still has the 6-character door
     if (w.includes("pairCodes")) return "current";
-    if (w.includes("migrationOpen")) return "previous";
     return "custom";
   } catch (e) { return "custom"; }
 }
@@ -484,24 +489,33 @@ function roomFacts(room, reg, names, members) {
 }
 
 // ---------- home ----------
-async function dashData() {
-  const [{ reg, names }, roomList, live, days, migration, rulesNow, healthErr] = await Promise.all([
-    registry(), dbq("rooms", "&shallow=true"), dbq("admin/cleanupLive"), dbq("admin/cleanupDays"), dbq("admin/migrationOpen"), readRules(),
+// The quick facts (rooms, devices): enough to draw the home screen.
+async function dashBase() {
+  const [{ reg, names }, roomList, live, days, healthErr] = await Promise.all([
+    registry(), dbq("rooms", "&shallow=true"), dbq("admin/cleanupLive"), dbq("admin/cleanupDays"),
     db("GET", "registry", undefined, "&shallow=true").then((x) => (x && Object.keys(x).length ? null : "Nothing came back: no rooms at this address")).catch((e) => e.message),
   ]);
   const rooms = Object.keys(roomList || {});
-  const locked = await roomsLocked(rooms[0]);
   return {
-    reg, names, rooms, live, days, migration, healthErr, locked,
+    reg, names, rooms, live, days, healthErr,
     approveOn: tabletApprovalOn(reg), w: countWaiting(reg), phoneN: Object.keys(reg).length,
     tabletN: Object.values(reg).reduce((a, r) => a + Object.keys((r && r.tablets) || {}).length, 0),
-    rs: rulesNow ? detectRules(rulesNow.json) : null,
   };
 }
-const securityIssues = (d) => (d.locked === true ? 0 : 1) + (d.rs === "current" ? 0 : 1) + (d.migration === true ? 1 : 0);
+// The slower checks: the rules in place, and whether a room opens with no sign-in.
+async function securityData(rooms) {
+  const [rulesNow, locked] = await Promise.all([readRules(), roomsLocked(rooms[0])]);
+  return { locked, rs: rulesNow ? detectRules(rulesNow.json) : null };
+}
+async function dashData() {
+  const d = await dashBase();
+  return Object.assign(d, await securityData(d.rooms));
+}
+const securityIssues = (d) => (d.locked === true ? 0 : 1) + (d.rs === "current" ? 0 : 1);
+const securityLine = (d) => { const n = securityIssues(d); return n ? n + " thing" + (n === 1 ? "" : "s") + " to look at" : "Everything looks good"; };
 
 async function screenHome() {
-  const d = await dashData();
+  const d = await dashBase();
   const root = document.createElement("div");
   const head = document.createElement("h1");
   head.textContent = "Message+ dashboard";
@@ -515,25 +529,35 @@ async function screenHome() {
     root.appendChild(bad);
   }
   const waiting = d.w.phones + d.w.tablets;
-  const issues = securityIssues(d);
   const g = group("");
-  g.add(item({ icon: "folder", title: "Rooms and devices", sub: `${d.rooms.length} room${d.rooms.length === 1 ? "" : "s"} · ${d.phoneN} phone${d.phoneN === 1 ? "" : "s"} · ${d.tabletN} tablet${d.tabletN === 1 ? "" : "s"}`, pill: waiting ? waiting + " waiting" : "", warn: true, onclick: () => go("devices") }));
-  g.add(item({ icon: "qr", title: "Pair a new device", sub: "A QR code and a 16-character code, good once for 10 minutes", onclick: () => go("pair") }));
-  g.add(item({ icon: "shield", title: "Security", sub: d.healthErr ? "Not checked: no connection" : issues ? issues + " thing" + (issues === 1 ? "" : "s") + " to look at" : "Everything looks good",
-    chips: [[d.healthErr ? "unknown" : issues ? "check" : "all good", d.healthErr ? "grey" : issues ? "warn" : "ok"]], onclick: () => go("security") }));
-  g.add(item({ icon: "trash", title: "Storage and cleanup", sub: "Deleting " + (allowDelete() ? "on" : "off") + " · daily cleanup " + (d.live === true ? "on" : "off"), onclick: () => go("datamenu") }));
-  g.add(item({ icon: "lock", title: "This dashboard", sub: "PIN, lock, forget the secret", onclick: () => go("mine") }));
+  g.add(item({ icon: "folder", title: "Rooms and devices", sub: `${d.rooms.length} room${d.rooms.length === 1 ? "" : "s"} · ${d.phoneN} phone${d.phoneN === 1 ? "" : "s"} · ${d.tabletN} tablet${d.tabletN === 1 ? "" : "s"}`, pill: waiting ? waiting + " waiting" : "", warn: true, to: "devices" }));
+  g.add(item({ icon: "qr", title: "Pair a new device", sub: "A QR code and a 16-character code, good once for 10 minutes", to: "pair" }));
+  const sec = item({ icon: "shield", title: "Security", sub: d.healthErr ? "Not checked: no connection" : "Checking...",
+    chips: [[d.healthErr ? "unknown" : "checking", "grey"]], to: "security" });
+  g.add(sec);
+  g.add(item({ icon: "trash", title: "Storage and cleanup", sub: "Deleting " + (allowDelete() ? "on" : "off") + " · daily cleanup " + (d.live === true ? "on" : "off"), to: "datamenu" }));
+  g.add(item({ icon: "lock", title: "This dashboard", sub: "PIN, lock, forget the secret", to: "mine" }));
   root.appendChild(g);
+  if (!d.healthErr) {
+    // the security checks take a few more requests: they fill in when they arrive, the rest of the screen is already there
+    securityData(d.rooms).then((x) => {
+      const n = securityIssues(x);
+      const st = sec.querySelector(".st"), ch = sec.querySelector(".chip");
+      if (st) st.textContent = securityLine(x);
+      if (ch) { ch.textContent = n ? "check" : "all good"; ch.className = "chip " + (n ? "warn" : "ok"); }
+      if (root.isConnected && (stack[stack.length - 1] || {}).name === "home") cset("home", { html: $("view").innerHTML });
+    }).catch(() => { const st = sec.querySelector(".st"); if (st) st.textContent = "Could not check from here"; });
+  }
   return root;
 }
 
 async function screenDevices() {
-  const d = await dashData();
+  const d = await dashBase();
   const root = document.createElement("div");
   root.appendChild(updatedLine());
-  root.appendChild(group("").add(item({ icon: "folder", title: "Rooms", sub: `${d.rooms.length} room${d.rooms.length === 1 ? "" : "s"}: guest list, devices, crashes, activity, storage`, onclick: () => go("rooms") }))
-    .add(item({ icon: "phone", title: "Phones", sub: `${d.phoneN} paired`, pill: d.w.phones ? d.w.phones + " waiting" : "", warn: true, onclick: () => go("phones") }))
-    .add(item({ icon: "tablet", title: "Tablets", sub: `${d.tabletN} listed`, pill: d.w.tablets ? d.w.tablets + " waiting" : "", warn: true, onclick: () => go("tablets") })));
+  root.appendChild(group("").add(item({ icon: "folder", title: "Rooms", sub: `${d.rooms.length} room${d.rooms.length === 1 ? "" : "s"}: guest list, devices, crashes, activity, storage`, to: "rooms" }))
+    .add(item({ icon: "phone", title: "Phones", sub: `${d.phoneN} paired`, pill: d.w.phones ? d.w.phones + " waiting" : "", warn: true, to: "phones" }))
+    .add(item({ icon: "tablet", title: "Tablets", sub: `${d.tabletN} listed`, pill: d.w.tablets ? d.w.tablets + " waiting" : "", warn: true, to: "tablets" })));
   return root;
 }
 
@@ -543,18 +567,13 @@ async function screenSecurity() {
   root.appendChild(updatedLine());
   const g = group("");
   g.add(item({ icon: "lock", title: "Rooms are locked to strangers", sub: d.locked === null ? "Could not check from this browser" : d.locked ? "Someone with only a pairing code gets nothing" : "A room opens without any sign-in: anyone with a pairing code can read it. Open Database rules to fix this.",
-    chips: [[d.locked === null ? "unknown" : d.locked ? "locked" : "OPEN", d.locked === null ? "grey" : d.locked ? "ok" : "bad"]], onclick: () => go("rules") }));
-  g.add(item({ icon: "list", title: "Database rules", sub: d.rs === "current" ? "Current rules are in place (with 10-minute pairing codes)" : d.rs === "previous" ? "Older protective rules are in place; the newest adds 10-minute codes" : d.rs === "open" ? "The old open rules are still in place" : d.rs === null ? "Could not read the rules from here" : "Custom rules",
-    chips: [[d.rs === "current" ? "up to date" : d.rs === "previous" ? "update available" : d.rs === "open" ? "not protected" : "custom", d.rs === "current" ? "ok" : d.rs === "previous" ? "warn" : d.rs === "open" ? "bad" : "grey"]], onclick: () => go("rules") }));
-  g.add(item({ icon: "key", title: "Retire the old secret", sub: "A checklist that shows whether his phone and tablet have moved over", onclick: () => go("retire") }));
-  g.add(item({ icon: "cloud", title: "Picture and video files", sub: "Who can list the files, and the rules to lock that", onclick: () => go("storage") }));
+    chips: [[d.locked === null ? "unknown" : d.locked ? "locked" : "OPEN", d.locked === null ? "grey" : d.locked ? "ok" : "bad"]], to: "rules" }));
+  g.add(item({ icon: "list", title: "Database rules", sub: d.rs === "current" ? "Current rules are in place: guest lists, 10-minute pairing codes, and no 6-character door" : d.rs === "previous" ? "These rules still let an old device join with the 6-character code. Open this and press Apply the current rules to close that door" : d.rs === "open" ? "The old open rules are still in place" : d.rs === null ? "Could not read the rules from here" : "Custom rules",
+    chips: [[d.rs === "current" ? "up to date" : d.rs === "previous" ? "close the 6-character door" : d.rs === "open" ? "not protected" : "custom", d.rs === "current" ? "ok" : d.rs === "previous" ? "warn" : d.rs === "open" ? "bad" : "grey"]], to: "rules" }));
+  g.add(item({ icon: "cloud", title: "Lock the picture and video files", sub: "Uploads and deletes need a device's sign-in. Shows which devices are ready and checks the lock", to: "storage" }));
+  g.add(item({ icon: "key", title: "Retire the old secret", sub: "A checklist that shows whether his phone and tablet have moved over", to: "retire" }));
   root.appendChild(g);
   const p = group("Who can join");
-  p.add(item({
-    icon: "shield", title: "Let old devices join with the 6-character code",
-    sub: d.migration === true ? "On: a tablet or phone paired before the 16-character code can still join. Turn it off once everyone has updated." : "Off: new devices need a code from the phone or from here.",
-    toggle: async (v) => { await db("PUT", "admin/migrationOpen", v); render(); }, on: d.migration === true,
-  }));
   p.add(item({
     icon: "shield", title: "Approve new tablets",
     sub: d.approveOn ? "On: a tablet or web page that joins waits for your Approve" : "Off: tablets join on their own and are not listed",
@@ -1175,11 +1194,11 @@ async function screenRules() {
   const rs = now ? detectRules(now.json) : null;
   const root = document.createElement("div");
   const c = card("State");
-  c.innerHTML += `<div class="big">${rs === "current" ? "Up to date" : rs === "previous" ? "Update available" : rs === "open" ? "Not protected" : rs === null ? "Could not read" : "Custom"}</div>
-    <div class="meta">${rs === "current" ? "Rooms are limited to devices on their guest list, and 10-minute pairing codes work." : rs === "previous" ? "Rooms are protected. The new rules add the 10-minute pairing codes." : rs === "open" ? "Any room can be read and written by anyone who knows its pairing code." : rs === null ? "The rules could not be read from this browser." : "These rules are not one of the known sets."}</div>`;
+  c.innerHTML += `<div class="big">${rs === "current" ? "Up to date" : rs === "previous" ? "Close the 6-character door" : rs === "open" ? "Not protected" : rs === null ? "Could not read" : "Custom"}</div>
+    <div class="meta">${rs === "current" ? "Rooms are limited to devices on their guest list, and 10-minute pairing codes work." : rs === "previous" ? "Rooms are protected, but these rules still let a device that never got its 16-character key join with the old 6-character code. The current rules close that door. Devices already on a guest list are not affected." : rs === "open" ? "Any room can be read and written by anyone who knows its pairing code." : rs === null ? "The rules could not be read from this browser." : "These rules are not one of the known sets."}</div>`;
   root.appendChild(c);
   const g = group("Actions");
-  g.add(item({ icon: "shield", title: "Apply the current rules", sub: "Protects rooms with guest lists and turns on 10-minute pairing codes. Your devices keep working (they use their own sign-in).",
+  g.add(item({ icon: "shield", title: "Apply the current rules", sub: "Protects rooms with guest lists, turns on 10-minute pairing codes and closes the 6-character door. Devices already on a guest list keep working (they use their own sign-in).",
     onclick: async () => {
       if (!RULES_CURRENT) { alert("These rules are not built into this copy of the dashboard."); return; }
       if (!confirm("Publish the new database rules now?\n\nThe rules in place now are saved first, so you can put them back with one tap.")) return;
@@ -1231,7 +1250,7 @@ async function screenRetire() {
   root.appendChild(c);
   const steps = card("How (when ready)");
   steps.innerHTML += `<ol class="meta" style="padding-left:20px;line-height:1.6">
-    <li>Turn off "Let old devices join with the 6-character code" on the home screen.</li>
+    <li>Security > Database rules > Apply the current rules (that closes the 6-character door), and Security > Lock the picture and video files.</li>
     <li>Firebase console → Project settings → <b>Service accounts</b> → <b>Database secrets</b>.</li>
     <li>If the console lets you add a second secret, add one first and copy it. Otherwise note that deleting the only secret ends the old one at once.</li>
     <li>Tell Claude the new secret, or enter it here at "Forget the Firebase secret" so this dashboard keeps working; the build system uses it too.</li>
@@ -1240,20 +1259,94 @@ async function screenRetire() {
   return root;
 }
 
-// ---------- picture and video files ----------
+// ---------- picture and video files: the lock ----------
+const FB_API_KEY = "AIzaSyCphMISERkBe6ajJIJDJAwQ0rmyrQzw7aA"; // Firebase's public project identifier, not a secret
+const REQUIRED = { phone: 138, tablet: 628 }; // the first builds whose uploads and deletes carry the device's own sign-in
+let anonTok = null;
+async function anonToken() {
+  if (anonTok && anonTok.exp > Date.now() + 60000) return anonTok.t;
+  const r = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=" + FB_API_KEY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ returnSecureToken: true }) });
+  if (!r.ok) throw new Error("sign-in HTTP " + r.status);
+  const j = await r.json();
+  anonTok = { t: j.idToken, exp: Date.now() + Number(j.expiresIn || 3600) * 1000 };
+  return anonTok.t;
+}
+// Writes one tiny test file (and removes it again). 200 = the storage let the write in.
+async function storageWriteTest(signedIn) {
+  const name = encodeURIComponent("attachments/_lockcheck/t" + Date.now() + (signedIn ? "s" : "n"));
+  const headers = { "Content-Type": "text/plain" };
+  try {
+    if (signedIn) headers.Authorization = "Firebase " + (await anonToken());
+    const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?uploadType=media&name=${name}`, { method: "POST", headers, body: "x" });
+    if (r.status === 200) fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${name}`, { method: "DELETE", headers: signedIn ? { Authorization: headers.Authorization } : {} }).catch(() => {});
+    return r.status;
+  } catch (e) { return null; }
+}
+const buildOf = (s) => { const m = /build (\d+)/.exec(s || ""); return m ? Number(m[1]) : null; };
+// every phone and tablet in the registry: is it on a build that signs its uploads and deletes?
+function readyRows(reg, names) {
+  const rows = [], DAY = 86400000, now = Date.now();
+  for (const [room, r] of Object.entries(reg || {})) {
+    if (!r) continue;
+    const label = names[room] || room;
+    const add = (what, name, app, need, seen) => {
+      const b = buildOf(app);
+      const idle = !seen || now - seen > 30 * DAY;
+      rows.push({ what, label, name, b, need, seen, state: b !== null && b >= need ? "ready" : idle ? "idle" : "behind" });
+    };
+    add("Phone", [r.model, r.phoneNumber].filter(Boolean).join(" · ") || "phone", r.app, REQUIRED.phone, r.lastSeen);
+    for (const t of Object.values(r.tablets || {})) add("Tablet", t.name || t.model || "tablet", t.app, REQUIRED.tablet, t.lastSeen);
+  }
+  return rows;
+}
 async function screenStorage() {
+  const [{ reg, names }] = await Promise.all([registry()]);
+  const rows = readyRows(reg, names);
+  const behind = rows.filter((x) => x.state === "behind"), ready = rows.filter((x) => x.state === "ready"), idle = rows.filter((x) => x.state === "idle");
   const root = document.createElement("div");
-  const c = card("Who can list the files");
-  const open = await (async () => { try { const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?prefix=attachments/&maxResults=1`); return r.status; } catch (e) { return null; } })();
-  c.innerHTML += `<div class="big">${open === 200 ? "Anyone can" : open === null ? "Unknown" : "Locked"}</div><div class="meta">${open === 200 ? "Anyone who knows a room's pairing code can list that room's picture and video names. New files get unguessable names, but listing is still open." : open === null ? "Could not check from this browser." : "File listing is refused."}</div>`;
-  root.appendChild(c);
-  const t = card("Storage rules to publish");
-  t.innerHTML += `<div class="meta">In the Firebase console open <b>Storage</b> → <b>Rules</b>, replace everything with this, and publish. Files stay readable by their link; only listing is switched off. (Then this dashboard can no longer list files, so file sizes and deleting old files here stop working.)</div>`;
+
+  // 1. which devices are ready
+  const c1 = card("1. Is everyone on the new build?");
+  c1.innerHTML += `<div class="meta">Every phone needs <b>Message+ build ${REQUIRED.phone}</b> or newer and every tablet <b>build ${REQUIRED.tablet}</b> or newer. Those builds send the device's own sign-in with every upload and delete. A device on an older build would stop being able to send or remove pictures once the lock is on. (The web app picks it up by itself the next time it reloads.)</div>`;
+  root.appendChild(c1);
+  const g = group("");
+  if (!rows.length) g.add(empty("No phones or tablets are listed yet."));
+  for (const x of [...behind, ...ready, ...idle]) {
+    g.add(item({ icon: x.what === "Phone" ? "phone" : "tablet", title: `${x.what} · ${x.label}`,
+      sub: `${x.name} · ${x.b === null ? "build not reported (an old build)" : "build " + x.b} · seen ${ago(x.seen)}`,
+      chips: [[x.state === "ready" ? "ready" : x.state === "idle" ? "not seen for 30+ days: ignored" : `needs build ${x.need}+`, x.state === "ready" ? "ok" : x.state === "idle" ? "grey" : "warn"]] }));
+  }
+  root.appendChild(g);
+  const sum = card(behind.length ? `${behind.length} device${behind.length === 1 ? "" : "s"} not ready yet` : "Everyone is ready");
+  sum.innerHTML += `<div class="meta">${behind.length ? "Wait: nothing breaks for them while the lock is off." : `${ready.length} device${ready.length === 1 ? " is" : "s are"} on the new build${idle.length ? `, ${idle.length} not seen for a month (ignored)` : ""}. You can lock the files now.`}</div>`;
+  root.appendChild(sum);
+
+  // 2. the lock itself
+  const c2 = card("2. The lock");
+  const state = document.createElement("div");
+  state.innerHTML = '<div class="big">Checking...</div><div class="meta">Writing and removing one tiny test file, once without a sign-in and once with a device-style sign-in.</div>';
+  c2.appendChild(state);
+  root.appendChild(c2);
+  (async () => {
+    const [anon, signed] = await Promise.all([storageWriteTest(false), storageWriteTest(true)]);
+    const locked = anon === 401 || anon === 403;
+    const appsOk = signed === 200;
+    state.innerHTML = `<div class="big">${anon === null ? "Could not check" : locked ? "Locked" : "Not locked"}</div>
+      <div class="meta">${anon === null ? "This browser could not reach file storage." : locked ? "A write with no sign-in is refused." : "Anyone on the internet can still upload to and delete from file storage (HTTP " + anon + " with no sign-in)."}
+      ${signed === null ? "" : appsOk ? "A device-style sign-in can still write, so updated apps keep working." : "A device-style sign-in was refused too (HTTP " + signed + "): do not leave these rules in place, the apps would stop sending pictures. Check that you pasted the rules below exactly."}</div>`;
+  })();
+
+  // 3. how to turn it on
+  const t = card("3. Turn it on");
+  t.innerHTML += `<div class="meta">Google only lets the Firebase console change file-storage rules (this dashboard's database secret cannot), so the last step is a paste: open <a href="https://console.firebase.google.com/project/flip-relay/storage/flip-relay.firebasestorage.app/rules" target="_blank" rel="noopener">Firebase console → Storage → Rules</a>, replace everything with the text below and press <b>Publish</b>. Then come back here: the lock above turns to "Locked". To undo it, paste the same text with <code>if request.auth != null</code> changed to <code>if true</code>.<br><br>Files stay readable by their own unguessable link (video playback and the web app rely on that); only uploading and deleting need a sign-in, and listing stays off. (Because listing is off, file sizes and old-file cleanup in this dashboard cannot see the files.)</div>`;
   const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = STORAGE_RULES;
   t.appendChild(ta);
-  const cp = document.createElement("button"); cp.className = "ghost"; cp.style.marginTop = "8px"; cp.textContent = "Copy";
+  const cp = document.createElement("button"); cp.className = "ghost"; cp.style.marginTop = "8px"; cp.textContent = "Copy the rules";
   cp.onclick = () => { ta.select(); try { navigator.clipboard.writeText(ta.value); } catch (e) { document.execCommand("copy"); } cp.textContent = "Copied"; };
   t.appendChild(cp);
+  const chk = document.createElement("button"); chk.className = "ghost"; chk.style.cssText = "margin:8px 0 0 8px"; chk.textContent = "Check the lock again";
+  chk.onclick = () => render();
+  t.appendChild(chk);
   root.appendChild(t);
   return root;
 }

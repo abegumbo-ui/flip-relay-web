@@ -5,7 +5,7 @@
 // browser decrypts them after the passphrase is typed once (then remembered on that device only).
 let DATABASE_URL = "";
 let DATABASE_SECRET = ""; // holds THIS page's own sign-in token (renewed every 40 minutes), never a master key
-const ENC_CONFIG = "Mey6ue3XMWdrYAZEAe9R4Q==.9stFivnshsVL66fw./ha4PYg5MD3hpxf0NNL7cjC0VBk6V7ZfoeWy18ULQVtvQYNwoAtdfG+z5Mk7sGVSJpnUsCmA75kj15GGuf1MFXO3ElqhdN8oJA==";
+const ENC_CONFIG = "__ENC_CONFIG__";
 // Matches FirebaseStorageClient.java on the phone -- confirmed against the
 // actual project, not the older "<project>.appspot.com" convention.
 const STORAGE_BUCKET = "flip-relay.firebasestorage.app";
@@ -882,14 +882,15 @@ async function fbSignIn() {
   if (!fbTimer) fbTimer = setInterval(() => { fbSignIn().catch((e) => logDebug("token renewal failed: " + e)); }, 40 * 60 * 1000);
   return fbUid;
 }
-// Puts this page on the room's guest list: with the long key if it has one, else with the old room code (works only while the owner's migration door is open).
+// Puts this page on the room's guest list with the room's long key (a page without the key has to scan or type it).
 async function joinRoomWeb(room) {
   if (!fbUid) await fbSignIn();
   const done = "flip_relay_web_joined_" + room;
   try { if (localStorage.getItem(done)) return true; } catch (e) { /* storage blocked */ }
   let key = null;
   try { key = localStorage.getItem(roomKeyStore(room)); } catch (e) { /* storage blocked */ }
-  const r = await fetch(`${DATABASE_URL}/rooms/${room}/members/${fbUid}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(key || room) });
+  if (!key) return false;
+  const r = await fetch(`${DATABASE_URL}/rooms/${room}/members/${fbUid}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(key) });
   if (r.ok) { try { localStorage.setItem(done, "1"); } catch (e) { /* storage blocked */ } return true; }
   return false;
 }
@@ -1604,7 +1605,7 @@ async function uploadToStorage(file, path) {
   const encodedPath = encodeURIComponent(path);
   const res = await fetch(
     `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o?uploadType=media&name=${encodedPath}`,
-    { method: "POST", headers: { "Content-Type": file.type || "image/jpeg" }, body: file }
+    { method: "POST", headers: { "Content-Type": file.type || "image/jpeg", ...(fbUid && DATABASE_SECRET ? { Authorization: "Firebase " + DATABASE_SECRET } : {}) }, body: file }
   );
   if (!res.ok) throw new Error("Storage upload failed: HTTP " + res.status);
   return `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o/${encodedPath}?alt=media`;
