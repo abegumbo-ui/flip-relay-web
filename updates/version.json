@@ -4,7 +4,7 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "b741fda",
+    "sha": "b741fda305496e5766b4c2551ad49e5dd98802fd",
     "publishedAt": "2026-10-30T00:25:14Z",
     "build": 614,
     "notes": "A new sync from the phone replaces the previous one (no copies, and a sync that was replaced is not waited for).\nAlso since build 610: pictures show on every tablet, new groups get their own group, no doubled messages, Not sent for a text that did not go out, Blocked numbers and Muted conversations shared with the flip phone, a switch for the Connected notification, and Sync messages / Sync attachments with progress."
