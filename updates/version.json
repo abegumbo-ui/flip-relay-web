@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "fc47a49",
-    "publishedAt": "2026-10-30T00:06:04Z",
-    "build": 613,
-    "notes": "Pictures now show on every tablet: a tablet no longer removes a picture from the cloud after downloading it (the second tablet used to show an empty bubble). A picture that cannot be loaded shows its words and a mark instead of nothing.\nAlso in this update: new groups get their own group, no doubled messages, Not sent instead of Sent for a text that did not go out, Blocked numbers and Muted conversations shared with the flip phone, a switch for the Connected notification, and Sync messages / Sync attachments with progress."
+    "sha": "b741fda",
+    "publishedAt": "2026-10-30T00:25:14Z",
+    "build": 614,
+    "notes": "A new sync from the phone replaces the previous one (no copies, and a sync that was replaced is not waited for).\nAlso since build 610: pictures show on every tablet, new groups get their own group, no doubled messages, Not sent for a text that did not go out, Blocked numbers and Muted conversations shared with the flip phone, a switch for the Connected notification, and Sync messages / Sync attachments with progress."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26123913,
+    "versionName": "6.4.5-FR GOLOMBECK (build 130)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123913/messageplus-26123913.apk",
+    "at": 1793319914975,
+    "notes": "A new Sync messages or Sync attachments now replaces the previous one instead of piling up in storage, and a repeat attachments sync only sends what is new (much faster).\nAlso since build 128: pictures stay available for every tablet, group texts someone else starts get their own group, no doubled messages, texts with line breaks are no longer lost, a text the carrier refuses shows Not sent, and blocking and muting work the same on the phone and the tablet."
+  },
+  "messageplus_previous": {
     "versionCode": 26123904,
     "versionName": "6.4.5-FR GOLOMBECK (build 129)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123904/messageplus-26123904.apk",
     "at": 1793318764303,
     "notes": "Pictures you send from the tablet now stay available, so every tablet shows them (before, the picture was removed right after it was sent).\nAlso in this update (build 128): group texts someone else starts get their own group, no more doubled messages, texts with line breaks are no longer lost, a text the carrier refuses shows Not sent, blocking and muting work the same on the phone and the tablet, and a fast Sync messages / Sync attachments with progress in percent."
-  },
-  "messageplus_previous": {
-    "versionCode": 26123856,
-    "versionName": "6.4.5-FR GOLOMBECK (build 128)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26123856/messageplus-26123856.apk",
-    "at": 1793316164281,
-    "notes": "Group texts that someone else starts now show up on the tablet as their own group, right away.\nMessages no longer show up twice on the tablet, and reinstalling Message+ no longer re-sends old pictures and group messages.\nA text with a line break or tab is no longer lost, a text from the tablet is never sent twice, and a text the carrier refuses now shows \"Not sent\".\nBlocking and muting now work the same on the phone and the tablet.\nNew fast sync: \"Sync messages\" and \"Sync attachments\" send everything at once, with progress in percent on the phone, the tablet and the dashboard."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
