@@ -268,7 +268,7 @@ const QR = (() => {
 if (typeof module !== "undefined") module.exports = QR;
 
 const RULES_CURRENT = {"rules": {".read": false, ".write": false, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (root.child('admin/migrationOpen').val() === true && newData.val() === $roomId) || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
-const STORAGE_RULES = "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /attachments/{room}/{allPaths=**} {\n      allow get: if true;\n      allow list: if false;\n      allow create: if request.resource.size < 64 * 1024 * 1024;\n      allow delete: if true;\n    }\n  }\n}\n";
+const STORAGE_RULES = "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /attachments/{room}/{allPaths=**} {\n      allow get: if true;\n      allow list: if false;\n      allow create, update: if request.resource.size < 64 * 1024 * 1024;\n      allow delete: if true;\n    }\n  }\n}\n";
 
 const $ = (id) => document.getElementById(id);
 const STORE = "msgplus_dashboard_v1";
@@ -748,7 +748,40 @@ async function screenRoom({ room, label }) {
     await db("PUT", `admin/roomNumbers/${room}`, n.trim() || null);
     render();
   } }));
+  // is Message+ the flip's default texting app (Message+ 131+ reports it)
+  const ps = await dbq(`rooms/${room}/phoneState`);
+  info.add(item({ icon: "phone", title: "Default texting app", sub: ps ? (ps.defaultSms ? "Yes - Message+" : "NO - " + (ps.app || "another app") + " is the default, texts are not relayed properly") + " · checked " + ago(ps.at) : "Not reported yet (Message+ build 131 or newer reports it)", pill: ps ? (ps.defaultSms ? "yes" : "NO") : undefined, warn: !!ps && !ps.defaultSms }));
   root.appendChild(info);
+
+  // the phone's history sync (Message+ 128+): messages and attachments, each with its progress, and which tablets have loaded it
+  const sync = (await dbq(`rooms/${room}/syncStatus`)) || {};
+  const sg = group("History sync");
+  for (const [kind, title] of [["texts", "Messages"], ["media", "Attachments (pictures, videos, voice, contacts)"]]) {
+    const s = sync[kind];
+    const states = { building: "preparing", uploading: "sending", waiting: "paused", done: "done", failed: "stopped" };
+    let sub = "Not run with the new sync yet";
+    let pill = "", warn = false;
+    if (s) {
+      const pct = typeof s.percent === "number" ? s.percent + "%" : "";
+      const stale = (s.state === "building" || s.state === "uploading") && Date.now() - (s.at || 0) > 10 * 60 * 1000;
+      pill = stale ? "no news" : (states[s.state] || s.state) + (pct && s.state !== "done" ? " " + pct : "");
+      warn = s.state === "failed" || s.state === "waiting" || stale;
+      const parts = [];
+      if (s.state === "done" && s.count) parts.push(s.count + " messages");
+      if (s.state === "done" && kind === "media" && typeof s.done === "number") parts.push(s.done + " files" + (s.skipped ? ", " + s.skipped + " skipped" : ""));
+      if (s.note) parts.push(s.note);
+      parts.push("updated " + ago(s.at));
+      const loaded = Object.values(s.loaded || {});
+      parts.push(loaded.length ? "loaded on: " + loaded.map((l) => (l.name || "tablet") + " " + ago(l.at)).join(", ") : "not loaded on a tablet yet");
+      sub = parts.join(" · ");
+    }
+    sg.add(item({ icon: "info", title, sub, pill: pill || undefined, warn }));
+    sg.add(item({ icon: "edit", title: "Start: sync " + title.split(" ")[0].toLowerCase() + " now", sub: "The phone starts within a minute; its progress shows here (Refresh) and on the phone and tablets", onclick: async () => {
+      await db("PUT", `rooms/${room}/syncRequest/${kind}`, { at: Date.now(), by: "dashboard" });
+      render();
+    } }));
+  }
+  root.appendChild(sg);
 
   // crashes reported by this room's phone and tablets (newest first)
   const [pc, tc] = await Promise.all([dbq(`rooms/${room}/phoneCrashes`), dbq(`rooms/${room}/tabletCrashes`)]);
