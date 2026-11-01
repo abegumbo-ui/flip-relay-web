@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "55e8178d04901cf43761e0b7d456343c2b18d093",
-    "publishedAt": "2026-10-30T21:09:52Z",
-    "build": 628,
-    "notes": "Part of the lock-down: pictures and files this tablet uploads or deletes now carry its own sign-in, and the old 6-character room code join is gone from the app. Nothing changes in how you use it.\nAlso since 627: a sync the flip phone sends in five parts is loaded part by part, and a paused or stopped sync says so in Settings."
+    "sha": "4b333ed9bddf61cb53f7f3c70e8663df53c1ab80",
+    "publishedAt": "2026-11-01T21:37:24Z",
+    "build": 635,
+    "notes": "New notifications: the conversation so far, with Reply, Copy code and Mark as read buttons. Swiping one away never marks it read.\nThe round Message+ icon now opens Messages (Mark all as read, Archived, Trash, backup, blocked, muted) and Messages features: Undo send (every chat, group chats only, or chats you pick), I'm busy (texts back after texts or missed calls, people you leave out, and a notification you tap to turn it off) and automatic replies for one person (when they text, when you decline their call, when you miss it).\nPin as many messages as you like (from the fourth a button slides the list down), Remind me, and the Message info pop-up is back.\nCalls: the split screen works on a wide screen in every layout (its switch is in the Calls settings), and Calls can be hidden. Settings are regrouped: Layout holds Resize screens and Swipe between screens, and Groups, Calls and Voicemail have their own folder. The tablet can tell the flip phone to stop a sync."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
