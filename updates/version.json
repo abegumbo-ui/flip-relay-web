@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26128031,
+    "versionName": "6.4.5-FR GOLOMBECK (build 159)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26128031/messageplus-26128031.apk",
+    "at": 1793571493849,
+    "notes": "Stopping a sync from the tablet now reaches the flip phone at once: it listens for the Stop instead of checking every few seconds while a sync runs."
+  },
+  "messageplus_previous": {
     "versionCode": 26127714,
     "versionName": "6.4.5-FR GOLOMBECK (build 158)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26127714/messageplus-26127714.apk",
     "at": 1793558730567,
     "notes": "Tapping the Message+ \"Connected - listening\" notification now opens Message+ (it used to show a pop-up). It no longer opens the \"Change SMS app?\" screen either.\nThe restart notes sent to the tablet (Crash log > Home app) now include the battery level from just before the restart, so a restart after a dead battery can be recognized."
-  },
-  "messageplus_previous": {
-    "versionCode": 26126853,
-    "versionName": "6.4.5-FR GOLOMBECK (build 141)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26126853/messageplus-26126853.apk",
-    "at": 1793500758966,
-    "notes": "Home app update (Home App (Message+) > Update it): it records its own crashes from the very start and notes every restart of the phone.\nMessage+ now tells the tablet (Crash log > Home app), within 2 minutes, which home screen is the default after a restart or whenever it changes, so \"the Home app crashed\" and \"Android forgot the default\" can be told apart.\nThe tablet can tell the phone to stop a sync (the phone checks every few seconds while it syncs)."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
