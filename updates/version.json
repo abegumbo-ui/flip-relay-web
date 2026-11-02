@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "ee01c982fd06d4bede747970a71d92e1493c4c8c",
-    "publishedAt": "2026-11-02T02:28:54Z",
-    "build": 641,
-    "notes": "Chat theme: the photo you choose now shows as soon as you go back to the chat, and it is easier to see (still see-through).\nSearch in a chat works again (fixed in the last update)."
+    "sha": "2a4ca6b7f48384fabd18c01e3edaec76cbb58a14",
+    "publishedAt": "2026-11-02T02:51:09Z",
+    "build": 642,
+    "notes": "Undo send: voice messages, pictures, videos and contacts now wait 5 seconds with an Undo button, the same as texts. Undo takes a voice message or picture back before it is sent."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
