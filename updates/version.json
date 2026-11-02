@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26128544,
+    "versionName": "6.4.5-FR GOLOMBECK (build 164)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26128544/messageplus-26128544.apk",
+    "at": 1793601373795,
+    "notes": "The owner can now send this phone a note: please update, Flip Relay off until updated, or a message. It shows each time Message+ opens, with Update, Hide for now and Don't show again. A phone blocked until an update works again as soon as it is updated."
+  },
+  "messageplus_previous": {
     "versionCode": 26128288,
     "versionName": "6.4.5-FR GOLOMBECK (build 162)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26128288/messageplus-26128288.apk",
     "at": 1793585560888,
     "notes": "The flip phone now tells the tablet which Wi-Fi network it is on."
-  },
-  "messageplus_previous": {
-    "versionCode": 26128031,
-    "versionName": "6.4.5-FR GOLOMBECK (build 159)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26128031/messageplus-26128031.apk",
-    "at": 1793571493849,
-    "notes": "Stopping a sync from the tablet now reaches the flip phone at once: it listens for the Stop instead of checking every few seconds while a sync runs."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
