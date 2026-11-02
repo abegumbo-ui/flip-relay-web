@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "7f0fc70dd20a1379103876dd2bdb8a64e90ebdc5",
-    "publishedAt": "2026-11-02T06:22:48Z",
-    "build": 648,
-    "notes": "Settings > Flip phone and sync now shows the flip phone's Message+ build and its phone number, under the default texting app line."
+    "sha": "d4d26f3f2e99aa6a5c313958546f01364a7dc165",
+    "publishedAt": "2026-11-02T16:07:47Z",
+    "build": 649,
+    "notes": "The tablet now tells the relay which build it is, so the owner can shut out old builds that have not updated."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
