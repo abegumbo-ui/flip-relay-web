@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "2824d498372f4cd83728c3314a30eafc2d68b5d8",
-    "publishedAt": "2026-11-02T02:23:50Z",
-    "build": 640,
-    "notes": "Fixes a crash when you opened Search in a chat (it came with the removal of Links from the search).\nEverything from the last update is still in: Add people, the chat notifications page, chat theme, locking a chat, Show groups in Messages, and the Wi-Fi name on the round card."
+    "sha": "ee01c982fd06d4bede747970a71d92e1493c4c8c",
+    "publishedAt": "2026-11-02T02:28:54Z",
+    "build": 641,
+    "notes": "Chat theme: the photo you choose now shows as soon as you go back to the chat, and it is easier to see (still see-through).\nSearch in a chat works again (fixed in the last update)."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
