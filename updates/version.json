@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "4b333ed9bddf61cb53f7f3c70e8663df53c1ab80",
-    "publishedAt": "2026-11-01T21:37:24Z",
-    "build": 635,
-    "notes": "New notifications: the conversation so far, with Reply, Copy code and Mark as read buttons. Swiping one away never marks it read.\nThe round Message+ icon now opens Messages (Mark all as read, Archived, Trash, backup, blocked, muted) and Messages features: Undo send (every chat, group chats only, or chats you pick), I'm busy (texts back after texts or missed calls, people you leave out, and a notification you tap to turn it off) and automatic replies for one person (when they text, when you decline their call, when you miss it).\nPin as many messages as you like (from the fourth a button slides the list down), Remind me, and the Message info pop-up is back.\nCalls: the split screen works on a wide screen in every layout (its switch is in the Calls settings), and Calls can be hidden. Settings are regrouped: Layout holds Resize screens and Swipe between screens, and Groups, Calls and Voicemail have their own folder. The tablet can tell the flip phone to stop a sync."
+    "sha": "95b9eaddc64be9598e878bcef1e5de63b6fb6682",
+    "publishedAt": "2026-11-02T01:19:28Z",
+    "build": 636,
+    "notes": "Lock a chat: hold a chat, tap More, then Lock chat (or use its Info page). It asks for your face, fingerprint or PIN each time, and its words stay hidden in the list, the widget and notifications.\\nTap a person's picture (at the top of a chat, or beside their messages in a group) for their card: Message, Call, Add to contacts and Info. Info opens a page for the person or the group, with the group's people and its name.\\nNew Messages widget for the home screen: your latest chats, a New message button, and a tap opens the chat.\\nThe round Message+ icon no longer shows signal bars when the flip phone has only Wi-Fi: it says No cell service."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
