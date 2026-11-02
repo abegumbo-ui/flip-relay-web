@@ -38,6 +38,12 @@
   button.danger { background:var(--red); color:#fff; }
   .pad { padding:20px; }
   .card { background:var(--card); border-radius:26px; padding:20px; margin-bottom:16px; }
+  .grid2 { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+  .grid2 > .group { border-radius:20px; }
+  .grid2 .item { padding:12px; gap:10px; align-items:flex-start; }
+  .grid2 .item .st { word-break:break-word; }
+  .grid2 .actions { padding:0 12px 12px; gap:6px; }
+  .grid2 .actions button { padding:8px 10px; font-size:13px; }
   .card h2 { font-size:16px; margin:0 0 12px; color:var(--blue); font-weight:500; }
   .meta { color:var(--soft); font-size:13px; margin-top:3px; }
   .err { color:var(--red); min-height:20px; }
@@ -267,8 +273,23 @@ const QR = (() => {
 })();
 if (typeof module !== "undefined") module.exports = QR;
 
-const RULES_CURRENT = {"rules": {".read": false, ".write": false, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
-const STORAGE_RULES = "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /attachments/{room}/{allPaths=**} {\n      allow get: if true;\n      allow list: if false;\n      allow create, update: if request.auth != null && request.resource.size < 64 * 1024 * 1024;\n      allow delete: if request.auth != null;\n    }\n  }\n}\n";
+const RULES_CURRENT = {"rules": {".read": false, ".write": false, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}, "messages": {"incoming": {".indexOn": ["timestamp"]}, "sent": {".indexOn": ["timestamp"]}}, "deletedMessages": {"incoming": {".indexOn": ["deletedAt"]}, "sent": {".indexOn": ["deletedAt"]}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
+// The file-storage rules: the dashboard's own file sign-in (Security > Lock the picture and video files > Set up file access) may list files,
+// so it can measure rooms and delete a room's files; devices may upload and delete with their sign-in; anyone may open a file by its link.
+function storageRulesFor(uid) {
+  const list = uid ? `request.auth != null && request.auth.uid == '${uid}'` : "false";
+  return "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /attachments/{room}/{allPaths=**} {\n      allow get: if true;\n      allow list: if " + list + ";\n      allow create, update: if request.auth != null && request.resource.size < 64 * 1024 * 1024;\n      allow delete: if request.auth != null;\n    }\n  }\n}\n";
+}
+/** Makes the dashboard's own file sign-in (an account only this dashboard knows) and keeps it in the database's admin area. */
+async function setupFileAccess() {
+  const r = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=" + FB_API_KEY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ returnSecureToken: true }) });
+  if (!r.ok) throw new Error("sign-in HTTP " + r.status);
+  const j = await r.json();
+  await db("PUT", "admin/storageRefresh", j.refreshToken);
+  await db("PUT", "admin/storageUid", j.localId);
+  fileTok = null;
+  return j.localId;
+}
 
 const $ = (id) => document.getElementById(id);
 const STORE = "msgplus_dashboard_v1";
@@ -303,27 +324,53 @@ async function db(method, path, body, extra) {
 }
 const dbq = (path, extra) => db("GET", path, undefined, extra).catch(() => null); // a read that never throws (a missing or refused node is just empty)
 const BUCKET = "flip-relay.firebasestorage.app";
-async function storageBytes(room) {
-  let total = 0, token = null, files = 0;
+// The files can only be listed with the owner's own file sign-in: its refresh token is kept at admin/storageRefresh (readable only with the
+// database secret) and the Storage rules name its account. Without it a room's files can't be found, so they would be left behind.
+let fileTok = null;
+async function fileAuth() {
+  if (fileTok && Date.now() < fileTok.exp) return { Authorization: "Firebase " + fileTok.t };
+  const refresh = await dbq("admin/storageRefresh");
+  if (!refresh) return {};
   try {
+    const r = await fetch("https://securetoken.googleapis.com/v1/token?key=" + FB_API_KEY, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(refresh) });
+    if (!r.ok) return {};
+    const j = await r.json();
+    fileTok = { t: j.id_token, exp: Date.now() + 50 * 60000 };
+    return { Authorization: "Firebase " + fileTok.t };
+  } catch (e) { return {}; }
+}
+async function storageItems(room) {
+  const items = [];
+  try {
+    const headers = await fileAuth();
+    let token = null;
     do {
       const q = new URLSearchParams({ prefix: `attachments/${room}/`, maxResults: "1000" });
       if (token) q.set("pageToken", token);
-      const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?${q}`);
+      const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?${q}`, { headers });
       if (!r.ok) return null;
       const j = await r.json();
-      for (const it of j.items || []) { total += Number(it.size || 0); files++; }
+      items.push(...(j.items || []));
       token = j.nextPageToken;
     } while (token);
   } catch (e) { return null; }
-  return { total, files };
+  return items;
 }
+async function storageBytes(room) {
+  const items = await storageItems(room);
+  if (!items) return null;
+  return { total: items.reduce((a, it) => a + Number(it.size || 0), 0), files: items.length };
+}
+async function fileDelete(name) {
+  try { return (await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(name)}`, { method: "DELETE", headers: await fileAuth() })).ok; } catch (e) { return false; }
+}
+/** Removes every file of a room (all pages). Returns how many were removed and how many there were (null: the list could not be read). */
 async function storageDelete(room) {
-  const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?` + new URLSearchParams({ prefix: `attachments/${room}/`, maxResults: "1000" }));
-  if (!r.ok) return;
-  for (const it of (await r.json()).items || []) {
-    await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(it.name)}`, { method: "DELETE" });
-  }
+  const items = await storageItems(room);
+  if (!items) return { deleted: 0, total: null };
+  let deleted = 0;
+  for (const it of items) if (await fileDelete(it.name)) deleted++;
+  return { deleted, total: items.length };
 }
 
 const mb = (n) => (n / 1048576).toFixed(n > 10485760 ? 0 : 1) + " MB";
@@ -383,6 +430,9 @@ function actions(buttons) {
   for (const b of buttons) { const x = document.createElement("button"); x.textContent = b.label; if (b.cls) x.className = b.cls; x.onclick = b.onclick; el.appendChild(x); }
   return el;
 }
+/** A device card for the two-per-row grid: its line and its buttons in one box. */
+function deviceCard(...parts) { const c = document.createElement("div"); c.className = "group"; for (const p of parts) if (p) c.appendChild(p); return c; }
+function grid2() { const g = document.createElement("div"); g.className = "grid2"; return g; }
 function card(title) { const c = document.createElement("div"); c.className = "card"; c.innerHTML = title ? `<h2>${esc(title)}</h2>` : ""; return c; }
 function note(text) { const d = document.createElement("div"); d.className = "meta"; d.style.padding = "4px 16px 0"; d.textContent = text; return d; }
 function empty(text) { return Object.assign(document.createElement("div"), { className: "pad meta", textContent: text }); }
@@ -390,7 +440,7 @@ function empty(text) { return Object.assign(document.createElement("div"), { cla
 // ---------- navigation ----------
 const stack = [];
 let leave = []; // cleanups of the screen being left (timers, codes shown)
-const TITLES = { devices: "Rooms and devices", security: "Security", datamenu: "Storage and cleanup", mine: "This dashboard", phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", cleanup: "Daily cleanup", pin: "Change PIN", pair: "Pair a new device", notice: "Send a message", rules: "Database rules", retire: "Retire the old secret", storage: "Picture and video files" };
+const TITLES = { devices: "Rooms and devices", security: "Security", datamenu: "Storage and cleanup", mine: "This dashboard", phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", logs: "Logs", cleanup: "Daily cleanup", pin: "Change PIN", pair: "Pair a new device", notice: "Send a message", rules: "Database rules", retire: "Retire the old secret", storage: "Picture and video files" };
 function go(name, arg) { stack.push({ name, arg }); render(); }
 function back() { if (stack.length > 1) stack.pop(); render(); }
 $("back").onclick = back;
@@ -409,7 +459,7 @@ async function render() {
   const view = $("view");
   const key = cur.name + ":" + JSON.stringify(cur.arg || {});
   const same = key === lastShown && view.firstChild;
-  const fn = { home: screenHome, devices: screenDevices, security: screenSecurity, datamenu: screenData, mine: screenMine, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, cleanup: screenCleanup, pin: screenPin, pair: screenPair, notice: screenNotice, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
+  const fn = { home: screenHome, devices: screenDevices, security: screenSecurity, datamenu: screenData, mine: screenMine, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, logs: screenLogs, cleanup: screenCleanup, pin: screenPin, pair: screenPair, notice: screenNotice, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
   if (!same) {
     const cached = CACHED.includes(cur.name) ? cget(cur.name) : null;
     view.innerHTML = cached && cached.v && cached.v.html ? cached.v.html : '<div class="pad meta">Loading...</div>';
@@ -612,6 +662,31 @@ async function screenMine() {
 }
 
 // ---------- phones ----------
+// ---------- notes to a phone (rooms/<room>/phoneNotice): please update / Flip Relay off until updated / a message ----------
+async function latestPhoneBuild() {
+  try { const j = await (await fetch("https://abegumbo-ui.github.io/flip-relay-web/updates/version.json?x=" + Date.now())).json(); return buildOf((j.messageplus || {}).versionName); } catch (e) { return null; }
+}
+async function phoneNote(room, kind) {
+  let n = { kind, id: kind + "-" + Date.now(), createdAt: Date.now() };
+  if (kind === "message") {
+    const title = prompt("Title of the note (optional):", "");
+    if (title === null) return;
+    const text = prompt("The note:", "");
+    if (!text) return;
+    n.title = title.trim(); n.text = text.trim();
+  } else {
+    let min = await latestPhoneBuild();
+    if (!min) { const a = prompt("The newest published phone build could not be read. Which build must the phone reach?", ""); if (!a) return; min = Number(a); }
+    if (!min) return;
+    const what = kind === "off" ? `Flip Relay turns OFF on this phone now, until it is on build ${min} or newer. Its texts stop reaching the tablets.`
+      : `The phone shows "Please update" each time Message+ opens. One hour after it first appears, Flip Relay stops relaying until the phone is on build ${min} or newer.`;
+    if (!confirm(what + "\n\nPhones on builds older than 163 do not show these notes (block them instead). Continue?")) return;
+    n.minBuild = min;
+  }
+  await db("PUT", `rooms/${room}/phoneNotice`, n);
+  alert("Sent. The phone picks it up the next time Message+ opens (or within a minute while it is open).");
+}
+
 async function screenPhones() {
   const [{ reg, names }, numbers] = await Promise.all([registry(), dbq("admin/roomNumbers")]);
   const hand = numbers || {};
@@ -619,22 +694,42 @@ async function screenPhones() {
   root.appendChild(note("A new phone does nothing (no sync, no uploads) until you press Approve."));
   const codes = Object.keys(reg).sort();
   if (!codes.length) { root.appendChild(empty("No phones have checked in yet.")); return root; }
-  const g = group("");
+  root.appendChild(group("Every phone").add(item({ icon: "phone", title: "Make every phone update", sub: "Every phone shows \"Please update\"; one hour later Flip Relay stops on any phone still not updated", onclick: async () => {
+    let min = await latestPhoneBuild();
+    if (!min) { const a = prompt("The newest published phone build could not be read. Which build must every phone reach?", ""); if (!a) return; min = Number(a); }
+    if (!min || !confirm(`All ${codes.length} phones will show "Please update" until they are on build ${min} or newer, and stop relaying one hour after it first shows. Phones older than build 163 do not show it (block them instead). Continue?`)) return;
+    for (const c of codes) await db("PUT", `rooms/${c}/phoneNotice`, { kind: "warn", id: "warn-" + Date.now(), minBuild: min, createdAt: Date.now() });
+    alert(`Done: ${codes.length} phones asked to reach build ${min}.`);
+  } })).add(item({ icon: "phone", title: "Clear the notes on every phone", sub: "Removes every phone's note; Flip Relay comes back on where a note had turned it off", onclick: async () => {
+    if (!confirm(`Clear the notes on all ${codes.length} phones?`)) return;
+    for (const c of codes) await db("DELETE", `rooms/${c}/phoneNotice`);
+    alert("Done.");
+  } })));
+  const g = grid2();
+  g.add = (el) => g.appendChild(el);
   for (const code of codes) {
     const r = reg[code] || {};
     const waiting = r.approved !== true;
-    g.add(item({
+    const parts = [];
+    parts.push(item({
       icon: "phone", title: names[code] ? `${names[code]} (${code})` : code,
       sub: [r.model || "model not reported", (r.phoneNumber && /\d{7}/.test(r.phoneNumber)) ? "number " + r.phoneNumber : hand[code] ? "number " + hand[code] : "number not reported", r.app || "app version not reported (older build)", "last seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
       pill: waiting ? "waiting for approval" : "approved", warn: waiting,
     }));
-    g.add(actions([
+    parts.push(actions([
       { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}`, { approved: waiting }); render(); } },
       { label: "Remove from the list", cls: "ghost", onclick: async () => {
         if (!confirm("Remove this phone from the list? Its messages are not touched. If the phone is still in use it shows up here again the next time it checks in.")) return;
         await db("DELETE", `registry/${code}`); render();
       } },
     ]));
+    parts.push(actions([
+      { label: "Ask to update", cls: "ghost", onclick: () => phoneNote(code, "warn") },
+      { label: "Relay off until updated", cls: "danger", onclick: () => phoneNote(code, "off") },
+      { label: "Send a note", cls: "ghost", onclick: () => phoneNote(code, "message") },
+      { label: "Clear the note", cls: "ghost", onclick: async () => { await db("DELETE", `rooms/${code}/phoneNotice`); alert("Cleared. Flip Relay turns back on at the phone's next check."); } },
+    ]));
+    g.add(deviceCard(...parts));
   }
   root.appendChild(g);
   return root;
@@ -642,24 +737,39 @@ async function screenPhones() {
 
 // ---------- tablets ----------
 async function screenTablets() {
-  const { reg, names } = await registry();
+  const [{ reg, names }, roomList] = await Promise.all([registry(), dbq("rooms", "&shallow=true")]);
+  const rooms = Object.keys(roomList || {});
   const root = document.createElement("div");
-  const g = group("");
+  const all = group("Every room");
+  all.add(item({ icon: "tablet", title: "Make every tablet update", sub: "Every tablet in every room shows the update screen until it is on the newest published build", onclick: async () => {
+    const latest = await latestTabletBuild();
+    let min = latest;
+    if (!min) { const a = prompt("The newest published build number could not be read. Which build must every tablet reach?", ""); if (!a) return; min = Number(a); }
+    if (!min || !confirm(`Every tablet in all ${rooms.length} rooms will show an update screen until it is on build ${min} or newer. Continue?`)) return;
+    for (const r of rooms) await db("PUT", `rooms/${r}/notices/upd-all`, { kind: "update", to: "all", minBuild: min, title: "Please update the app", text: "This version is out of date. Tap Update now, then install it. You can also go to Settings > Check for update.", createdAt: Date.now() });
+    alert(`Done: ${rooms.length} rooms now require build ${min}.`);
+  } }));
+  all.add(item({ icon: "tablet", title: "Lift the update requirement everywhere", sub: "Removes the room-wide update screens from every room", onclick: async () => {
+    if (!confirm(`Remove the update requirement from all ${rooms.length} rooms?`)) return;
+    for (const r of rooms) await db("DELETE", `rooms/${r}/notices/upd-all`);
+    alert("Done.");
+  } }));
+  root.appendChild(all);
+  const g = grid2();
   let any = false;
   for (const code of Object.keys(reg).sort()) {
     for (const [id, t] of Object.entries(reg[code].tablets || {})) {
       any = true;
       const waiting = t.approved !== true;
       const signedOut = t.app === "Signed out"; // the tablet was disconnected (or logged itself out after 15 days away)
-      g.add(item({
+      g.appendChild(deviceCard(item({
         icon: "tablet", title: t.name || t.model || "Device",
         sub: [`phone ${names[code] || code}`, t.app || "", "first seen " + ago(t.firstSeen), "last seen " + ago(t.lastSeen)].filter(Boolean).join(" · "),
         pill: signedOut ? "signed out - no longer in use" : waiting ? "waiting for approval" : "approved", warn: waiting || signedOut,
-      }));
-      g.add(actions([
+      }), actions([
         { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}/tablets/${id}`, { approved: waiting }); render(); } },
         { label: "Remove", cls: "ghost", onclick: async () => { if (confirm("Remove this device from the list? It shows up again the next time it connects.")) { await db("DELETE", `registry/${code}/tablets/${id}`); render(); } } },
-      ]));
+      ])));
     }
   }
   if (!any) root.appendChild(empty("No tablets have connected yet."));
@@ -735,21 +845,67 @@ async function roomMessages(room) {
   return out;
 }
 const extKind = (name) => /\.(jpe?g|png|gif|webp)$/i.test(name) ? "picture" : /\.(mp4|3gp|mov)$/i.test(name) ? "video" : /\.(amr|mp3|m4a|aac|ogg)$/i.test(name) ? "voice" : /\.vcf$/i.test(name) ? "contact" : "other";
-async function storageItems(room) {
-  const items = [];
-  try {
-    let token = null;
-    do {
-      const q = new URLSearchParams({ prefix: `attachments/${room}/`, maxResults: "1000" });
-      if (token) q.set("pageToken", token);
-      const r = await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o?${q}`);
-      if (!r.ok) return null;
-      const j = await r.json();
-      items.push(...(j.items || []));
-      token = j.nextPageToken;
-    } while (token);
-  } catch (e) { return null; }
-  return items;
+/** "Delete this room completely": typing DELETE is the safeguard, so it is there even while "Allow deleting" is off. */
+function deleteRoomItem(room, label) {
+  return item({ icon: "trash", title: "Delete this room completely", sub: "Removes everything it took up: messages, calls, voicemails, pictures, videos and voice files, its phone and tablets in the lists, and its pairing key. Its devices stop working until they pair again", danger: true, onclick: async () => {
+      if (prompt(`This permanently deletes EVERYTHING of "${label}" (${room}) from Firebase: all messages, calls and files, and its phone and tablets.\nType DELETE to confirm:`) !== "DELETE") return;
+      const files = await storageDelete(room); // first, while the room still exists
+      await db("DELETE", `rooms/${room}`);
+      await db("DELETE", `registry/${room}`);
+      await db("DELETE", `roomKeys/${room}`);
+      const ki = (await dbq("keyIndex")) || {};
+      for (const [k, v] of Object.entries(ki)) if (v === room) await db("DELETE", `keyIndex/${k}`);
+      await db("PUT", `admin/roomNames/${room}`, null);
+      await db("PUT", `admin/roomNumbers/${room}`, null);
+      alert(files.total === null ? "The room is deleted. Its files could not be listed (the file sign-in is missing), so they were left: open Security > Lock the picture and video files." : `The room is deleted, with ${files.deleted} of ${files.total} files.`);
+      stack.pop(); render();
+    } });
+}
+
+async function screenLogs({ room, label }) {
+  const root = document.createElement("div");
+  const [pc, tc] = await Promise.all([dbq(`rooms/${room}/phoneCrashes`), dbq(`rooms/${room}/tabletCrashes`)]);
+  const open = (c) => {
+    const m = document.createElement("div");
+    m.style.cssText = "position:fixed;inset:0;background:var(--bg,#111);z-index:50;overflow:auto;padding:16px";
+    const pre = document.createElement("pre");
+    pre.style.cssText = "white-space:pre-wrap;word-break:break-word;font-size:12px";
+    pre.textContent = c.who + " · " + new Date(c.at).toLocaleString() + "\n\n" + c.text;
+    const close = document.createElement("button"); close.textContent = "Close"; close.onclick = () => m.remove();
+    const copy = document.createElement("button"); copy.textContent = "Copy"; copy.className = "ghost";
+    copy.onclick = () => { try { navigator.clipboard.writeText(pre.textContent); copy.textContent = "Copied"; } catch (e) { } };
+    const del = document.createElement("button"); del.textContent = "Delete this report"; del.className = "ghost";
+    del.onclick = async () => { await db("DELETE", `rooms/${room}/${c.key}`); m.remove(); render(); };
+    m.append(close, copy, del, pre);
+    document.body.appendChild(m);
+  };
+  const list = (title, entries, path) => {
+    entries.sort((a, b) => b.at - a.at);
+    const g = group(`${title} (${entries.length})`);
+    if (!entries.length) g.add(item({ icon: "info", title: "Nothing reported" }));
+    for (const c of entries.slice(0, 50)) {
+      const first = (c.text.split("\n").find((l) => /Exception|Error|FROZE|FROZEN|EXIT|LOW MEMORY|CLOSED/.test(l)) || c.text.split("\n")[0] || "").trim();
+      g.add(item({ icon: "info", title: new Date(c.at).toLocaleString(), sub: first.slice(0, 140), onclick: () => open(c) }));
+    }
+    if (entries.length && path) g.add(actions([{ label: "Clear these", cls: "ghost", onclick: async () => {
+      if (!confirm(`Delete these ${entries.length} reports?`)) return;
+      for (const c of entries) await db("DELETE", `rooms/${room}/${c.key}`);
+      render();
+    } }]));
+    root.appendChild(g);
+  };
+  const phone = [];
+  for (const [k, v] of Object.entries(pc || {})) if (v && v.text) phone.push({ key: "phoneCrashes/" + k, who: "Flip phone", at: v.at || Number(k) || 0, text: v.text });
+  list("Flip phone logs", phone, true);
+  const byTablet = {};
+  for (const [k, v] of Object.entries(tc || {})) if (v && v.text) {
+    const dev = v.device || "Tablet";
+    (byTablet[dev] = byTablet[dev] || []).push({ key: "tabletCrashes/" + k, who: "Tablet (" + dev + ")", at: v.at || 0, text: v.text });
+  }
+  const devs = Object.keys(byTablet).sort();
+  if (!devs.length) list("Tablet logs", [], false);
+  for (const d of devs) list("Tablet logs · " + d, byTablet[d], true);
+  return root;
 }
 
 async function screenRoom({ room, label }) {
@@ -802,39 +958,10 @@ async function screenRoom({ room, label }) {
   }
   root.appendChild(sg);
 
-  // crashes reported by this room's phone and tablets (newest first)
-  const [pc, tc] = await Promise.all([dbq(`rooms/${room}/phoneCrashes`), dbq(`rooms/${room}/tabletCrashes`)]);
-  const crashes = [];
-  for (const [k, v] of Object.entries(pc || {})) if (v && v.text) crashes.push({ key: "phoneCrashes/" + k, who: "Phone", at: v.at || Number(k) || 0, text: v.text });
-  for (const [k, v] of Object.entries(tc || {})) if (v && v.text) crashes.push({ key: "tabletCrashes/" + k, who: "Tablet" + (v.device ? " (" + v.device + ")" : ""), at: v.at || 0, text: v.text });
-  crashes.sort((a, b) => b.at - a.at);
-  const cg = group("Crashes and freezes (" + crashes.length + ")");
-  if (!crashes.length) cg.add(item({ icon: "info", title: "No crashes or freezes reported", sub: "Phone and tablet apps send a crash here the next time they start after one." }));
-  for (const c of crashes.slice(0, 30)) {
-    const first = (c.text.split("\n").find((l) => /Exception|Error|FROZE|FROZEN|EXIT|LOW MEMORY|CLOSED/.test(l)) || c.text.split("\n")[0] || "").trim();
-    cg.add(item({ icon: "info", title: c.who + " · " + new Date(c.at).toLocaleString(), sub: first.slice(0, 140), onclick: () => {
-      const m = document.createElement("div");
-      m.style.cssText = "position:fixed;inset:0;background:var(--bg,#111);z-index:50;overflow:auto;padding:16px";
-      const pre = document.createElement("pre");
-      pre.style.cssText = "white-space:pre-wrap;word-break:break-word;font-size:12px";
-      pre.textContent = c.who + " · " + new Date(c.at).toLocaleString() + "\n\n" + c.text;
-      const close = document.createElement("button");
-      close.textContent = "Close";
-      close.onclick = () => m.remove();
-      const copy = document.createElement("button");
-      copy.textContent = "Copy";
-      copy.className = "ghost";
-      copy.onclick = () => { try { navigator.clipboard.writeText(pre.textContent); copy.textContent = "Copied"; } catch (e) { } };
-      const del = document.createElement("button");
-      del.textContent = "Delete this report";
-      del.className = "ghost";
-      del.onclick = async () => { await db("DELETE", `rooms/${room}/${c.key}`); m.remove(); render(); };
-      m.append(close, copy, del, pre);
-      document.body.appendChild(m);
-    } }));
-  }
-  if (crashes.length) cg.add(actions([{ label: "Clear all crash reports", onclick: async () => { if (!confirm("Delete all crash reports for this room?")) return; await db("DELETE", `rooms/${room}/phoneCrashes`); await db("DELETE", `rooms/${room}/tabletCrashes`); render(); } }]));
-  root.appendChild(cg);
+  // crashes and freezes: their own screen (Logs), sorted by device
+  const [pcN, tcN] = await Promise.all([dbq(`rooms/${room}/phoneCrashes`, "&shallow=true"), dbq(`rooms/${room}/tabletCrashes`, "&shallow=true")]);
+  const nLogs = Object.keys(pcN || {}).length + Object.keys(tcN || {}).length;
+  root.appendChild(group("").add(item({ icon: "info", title: "Logs", sub: nLogs ? `${nLogs} crash and freeze report${nLogs === 1 ? "" : "s"}: flip phone and tablet logs` : "No crashes or freezes reported", onclick: () => go("logs", { room, label }) })));
 
   // the daily copy of how the phone's Message+ is set up (permissions and plain settings); the restore app puts it back after a reinstall
   const bk = await dbq(`rooms/${room}/appBackup`), bkOff = (await dbq(`rooms/${room}/appBackupOff`)) === true;
@@ -965,7 +1092,7 @@ async function screenRoom({ room, label }) {
   root.appendChild(stats);
 
   if (!allowDelete()) {
-    root.appendChild(group("Deleting").add(item({ icon: "trash", title: "Deleting is switched off", sub: "Delete options are hidden. Tap here, then turn on \"Allow deleting\" on the home screen.", onclick: () => { stack.length = 0; stack.push({ name: "home" }); render(); } })));
+    root.appendChild(group("Deleting").add(item({ icon: "trash", title: "Deleting old messages is switched off", sub: "Tap here, then turn on \"Allow deleting\" on the home screen.", onclick: () => { stack.length = 0; stack.push({ name: "home" }); render(); } })).add(deleteRoomItem(room, label)));
   }
   if (allowDelete()) {
     const del = group("Deleting");
@@ -981,14 +1108,7 @@ async function screenRoom({ room, label }) {
       <div id="d-msg" class="meta" style="margin-top:8px"></div>
       <div class="meta">Devices keep their own copy of what is removed here (it is marked as expired, not deleted).</div>`;
     del.add(box);
-    del.add(item({ icon: "trash", title: "Delete this room", sub: "Removes all its messages, calls and files from Firebase", danger: true, onclick: async () => {
-      if (prompt(`This permanently deletes ALL messages, calls and files of "${label}" from Firebase.\nType DELETE to confirm:`) !== "DELETE") return;
-      await db("DELETE", `rooms/${room}`);
-      await storageDelete(room);
-      await db("PUT", `admin/roomNames/${room}`, null);
-      await db("DELETE", `roomKeys/${room}`);
-      stack.pop(); render();
-    } }));
+    del.add(deleteRoomItem(room, label));
     root.appendChild(del);
     const chosenCutoff = () => Date.now() - (parseFloat(box.querySelector("#d-n").value) || 1) * parseInt(box.querySelector("#d-unit").value, 10) * 86400000;
     const matching = async () => {
@@ -1014,7 +1134,7 @@ async function screenRoom({ room, label }) {
         const keys = x.msgs.filter((m) => m.kind === kind).map((m) => m.key);
         for (let i = 0; i < keys.length; i += 400) { const patch = {}; for (const k of keys.slice(i, i + 400)) patch[k] = null; await db("PATCH", `rooms/${room}/messages/${kind}`, patch); }
       }
-      for (const f of x.oldFiles) await fetch(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(f.name)}`, { method: "DELETE" });
+      for (const f of x.oldFiles) await fileDelete(f.name);
       msgOut.textContent = "Done.";
     };
   }
@@ -1339,7 +1459,16 @@ async function screenStorage() {
   // 3. how to turn it on
   const t = card("3. Turn it on");
   t.innerHTML += `<div class="meta">Google only lets the Firebase console change file-storage rules (this dashboard's database secret cannot), so the last step is a paste: open <a href="https://console.firebase.google.com/project/flip-relay/storage/flip-relay.firebasestorage.app/rules" target="_blank" rel="noopener">Firebase console → Storage → Rules</a>, replace everything with the text below and press <b>Publish</b>. Then come back here: the lock above turns to "Locked". To undo it, paste the same text with <code>if request.auth != null</code> changed to <code>if true</code>.<br><br>Files stay readable by their own unguessable link (video playback and the web app rely on that); only uploading and deleting need a sign-in, and listing stays off. (Because listing is off, file sizes and old-file cleanup in this dashboard cannot see the files.)</div>`;
-  const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = STORAGE_RULES;
+  const fileUid = await dbq("admin/storageUid");
+  const setup = document.createElement("button"); setup.className = fileUid ? "ghost" : ""; setup.style.margin = "0 0 8px 0";
+  setup.textContent = fileUid ? "File access is set up (make a new one)" : "Set up file access (needed to delete a room's files)";
+  setup.onclick = async () => {
+    if (fileUid && !confirm("Make a new file sign-in? You then paste the rules below again.")) return;
+    setup.disabled = true;
+    try { await setupFileAccess(); render(); } catch (e) { alert("Could not set it up: " + e.message); setup.disabled = false; }
+  };
+  t.appendChild(setup);
+  const ta = document.createElement("textarea"); ta.readOnly = true; ta.value = storageRulesFor(fileUid);
   t.appendChild(ta);
   const cp = document.createElement("button"); cp.className = "ghost"; cp.style.marginTop = "8px"; cp.textContent = "Copy the rules";
   cp.onclick = () => { ta.select(); try { navigator.clipboard.writeText(ta.value); } catch (e) { document.execCommand("copy"); } cp.textContent = "Copied"; };
