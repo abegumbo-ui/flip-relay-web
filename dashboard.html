@@ -42,8 +42,9 @@
   .grid2 > .group { border-radius:20px; }
   .grid2 .item { padding:12px; gap:10px; align-items:flex-start; }
   .grid2 .item .st { word-break:break-word; }
-  .grid2 .actions { padding:0 12px 12px; gap:6px; }
-  .grid2 .actions button { padding:8px 10px; font-size:13px; }
+  .grid2 .actions { padding:0 10px 10px; gap:6px; display:grid; grid-template-columns:1fr 1fr; }
+  .grid2 .actions button { padding:8px 4px; font-size:12px; min-height:0; width:100%; }
+  .grid2 .item .ic { display:none; }
   .card h2 { font-size:16px; margin:0 0 12px; color:var(--blue); font-weight:500; }
   .meta { color:var(--soft); font-size:13px; margin-top:3px; }
   .err { color:var(--red); min-height:20px; }
@@ -726,21 +727,19 @@ async function screenPhones() {
     const parts = [];
     parts.push(item({
       icon: "phone", title: names[code] ? `${names[code]} (${code})` : code,
-      sub: [r.model || "model not reported", (r.phoneNumber && /\d{7}/.test(r.phoneNumber)) ? "number " + r.phoneNumber : hand[code] ? "number " + hand[code] : "number not reported", r.app || "app version not reported (older build)", "last seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
-      pill: waiting ? "waiting for approval" : "approved", warn: waiting,
+      sub: [buildOf(r.app) ? "build " + buildOf(r.app) : "old build", (r.phoneNumber && /\d{7}/.test(r.phoneNumber)) ? r.phoneNumber : hand[code] || "", "seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
+      pill: waiting ? "blocked / waiting" : "approved", warn: waiting,
     }));
     parts.push(actions([
       { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}`, { approved: waiting }); render(); } },
-      { label: "Remove from the list", cls: "ghost", onclick: async () => {
+      { label: "Remove", cls: "ghost", onclick: async () => {
         if (!confirm("Remove this phone from the list? Its messages are not touched. If the phone is still in use it shows up here again the next time it checks in.")) return;
         await db("DELETE", `registry/${code}`); render();
       } },
-    ]));
-    parts.push(actions([
       { label: "Ask to update", cls: "ghost", onclick: () => phoneNote(code, "warn") },
-      { label: "Relay off until updated", cls: "danger", onclick: () => phoneNote(code, "off") },
+      { label: "Relay off", cls: "danger", onclick: () => phoneNote(code, "off") },
       { label: "Send a note", cls: "ghost", onclick: () => phoneNote(code, "message") },
-      { label: "Clear the note", cls: "ghost", onclick: async () => { await db("DELETE", `rooms/${code}/phoneNotice`); alert("Cleared. Flip Relay turns back on at the phone's next check."); } },
+      { label: "Clear note", cls: "ghost", onclick: async () => { await db("DELETE", `rooms/${code}/phoneNotice`); alert("Cleared. Flip Relay turns back on at the phone's next check."); } },
     ]));
     g.add(deviceCard(...parts));
   }
