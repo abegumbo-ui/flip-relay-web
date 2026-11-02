@@ -274,7 +274,8 @@ const QR = (() => {
 })();
 if (typeof module !== "undefined") module.exports = QR;
 
-const RULES_CURRENT = {"rules": {".read": false, ".write": false, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}, "messages": {"incoming": {".indexOn": ["timestamp"]}, "sent": {".indexOn": ["timestamp"]}}, "deletedMessages": {"incoming": {".indexOn": ["deletedAt"]}, "sent": {".indexOn": ["deletedAt"]}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
+const OWNER_RULE = "auth != null && auth.uid === root.child('admin/ownerUid').val()"; // the dashboard's own owner sign-in may read and change everything
+const RULES_CURRENT = {"rules": {".read": OWNER_RULE, ".write": OWNER_RULE, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}, "messages": {"incoming": {".indexOn": ["timestamp"]}, "sent": {".indexOn": ["timestamp"]}}, "deletedMessages": {"incoming": {".indexOn": ["deletedAt"]}, "sent": {".indexOn": ["deletedAt"]}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
 // The file-storage rules: the dashboard's own file sign-in (Security > Lock the picture and video files > Set up file access) may list files,
 // so it can measure rooms and delete a room's files; devices may upload and delete with their sign-in; anyone may open a file by its link.
 function storageRulesFor(uid) {
@@ -317,8 +318,21 @@ async function unlock(pin) {
 }
 
 // ---------- Firebase ----------
+// The dashboard signs in to the database either with the old database secret or, once switched over (Security > Retire the old secret),
+// with its own owner account: a sign-in only this dashboard holds, which the database rules let read and change everything.
+let ownerTok = null;
+async function authToken() {
+  if (cfg.secret) return cfg.secret;
+  if (!cfg.owner || !cfg.owner.refresh) throw new Error("no sign-in saved");
+  if (ownerTok && Date.now() < ownerTok.exp) return ownerTok.t;
+  const r = await fetch("https://securetoken.googleapis.com/v1/token?key=" + FB_API_KEY, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(cfg.owner.refresh) });
+  if (!r.ok) throw new Error("owner sign-in refused (" + r.status + ")");
+  const j = await r.json();
+  ownerTok = { t: j.id_token, exp: Date.now() + 50 * 60000 };
+  return ownerTok.t;
+}
 async function db(method, path, body, extra) {
-  const u = `${cfg.url.replace(/\/$/, "")}/${path}.json?auth=${encodeURIComponent(cfg.secret)}${extra || ""}`;
+  const u = `${cfg.url.replace(/\/$/, "")}/${path}.json?auth=${encodeURIComponent(await authToken())}${extra || ""}`;
   const r = await fetch(u, { method, headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
   if (!r.ok) throw new Error("Firebase said " + r.status);
   return r.json();
@@ -520,6 +534,7 @@ function detectRules(r) {
   } catch (e) { return "custom"; }
 }
 async function readRules() {
+  if (!cfg.secret) return null; // after the switch: rules are changed only in the Firebase console
   try {
     const r = await fetch(`${cfg.url.replace(/\/$/, "")}/.settings/rules.json?auth=${encodeURIComponent(cfg.secret)}`);
     if (!r.ok) return null;
@@ -1406,13 +1421,48 @@ async function screenRetire() {
   const c = card(allReady ? "Ready" : "Not ready yet");
   c.innerHTML += `<div class="meta">${allReady ? "Every room's phone has moved over. You can retire the old secret now." : "At least one room's phone has not updated. Wait: nothing breaks for them while the old secret stays valid."}</div>`;
   root.appendChild(c);
-  const steps = card("How (when ready)");
+  const sw = card(cfg.secret ? "Step 1: switch this dashboard to its own sign-in" : "This dashboard uses its own sign-in");
+  if (cfg.secret) {
+    sw.innerHTML += `<div class="meta">The dashboard stops using the old secret: it makes its own owner account, the database rules are changed so only that account (and nobody else) can see every room, and the secret is removed from this device. Nothing changes for the phones, tablets or web app. Afterwards: database rules can only be changed in the Firebase console, and the daily cleanup job stays off until it gets the new sign-in.</div>`;
+    const b = document.createElement("button"); b.style.marginTop = "10px"; b.textContent = "Switch now";
+    b.onclick = async () => {
+      if (!confirm("Switch this dashboard to its own owner sign-in and change the database rules for it?")) return;
+      b.disabled = true; b.textContent = "Switching...";
+      try {
+        // a. the owner account
+        const r = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=" + FB_API_KEY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ returnSecureToken: true }) });
+        if (!r.ok) throw new Error("could not make the owner account (" + r.status + ")");
+        const acct = await r.json();
+        await db("PUT", "admin/ownerUid", acct.localId);
+        // b. the live rules, with the owner allowed everything (everything else unchanged)
+        const live = await readRules();
+        if (!live || !live.json || !live.json.rules) throw new Error("could not read the current rules");
+        live.json.rules[".read"] = OWNER_RULE; live.json.rules[".write"] = OWNER_RULE;
+        const pr = await fetch(`${cfg.url.replace(/\/$/, "")}/.settings/rules.json?auth=${encodeURIComponent(cfg.secret)}`, { method: "PUT", body: JSON.stringify(live.json) });
+        if (!pr.ok) throw new Error("the rules were not accepted (" + pr.status + ")");
+        // c. the owner sign-in really works before the secret is dropped
+        const t = await (await fetch("https://securetoken.googleapis.com/v1/token?key=" + FB_API_KEY, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(acct.refreshToken) })).json();
+        const test = await fetch(`${cfg.url.replace(/\/$/, "")}/registry.json?shallow=true&auth=${encodeURIComponent(t.id_token)}`);
+        if (!test.ok) throw new Error("the owner sign-in could not read the database (" + test.status + "); the secret was kept");
+        // d. keep the owner sign-in (encrypted with the PIN) and forget the secret on this device
+        cfg = { url: cfg.url, owner: { uid: acct.localId, refresh: acct.refreshToken } };
+        ownerTok = null;
+        await lockUp(cfg, pinInUse);
+        alert("Done. This dashboard now uses its own sign-in. Next: retire the old secret in the Firebase console (Step 2).");
+        render();
+      } catch (e) { alert("Not switched: " + e.message); b.disabled = false; b.textContent = "Switch now"; }
+    };
+    sw.appendChild(b);
+  } else {
+    sw.innerHTML += `<div class="meta">Done: the old secret is not needed by this dashboard. If this app is ever reinstalled, its sign-in is gone with it; to get back in, the Firebase console (your Google login) can make a new database secret, which this dashboard accepts at set-up.</div>`;
+  }
+  root.appendChild(sw);
+  const steps = card("Step 2: retire the old secret");
   steps.innerHTML += `<ol class="meta" style="padding-left:20px;line-height:1.6">
-    <li>Security > Database rules > Apply the current rules (that closes the 6-character door), and Security > Lock the picture and video files.</li>
+    <li>Do Step 1 first, and check that this dashboard still opens.</li>
     <li>Firebase console → Project settings → <b>Service accounts</b> → <b>Database secrets</b>.</li>
-    <li>If the console lets you add a second secret, add one first and copy it. Otherwise note that deleting the only secret ends the old one at once.</li>
-    <li>Tell Claude the new secret, or enter it here at "Forget the Firebase secret" so this dashboard keeps working; the build system uses it too.</li>
-    <li>Delete the old secret in the console.</li></ol>`;
+    <li>Delete the secret. The phones, tablets and web app do not use it.</li>
+    <li>The daily cleanup job (now off) still uses the old secret: leave it off, or ask Claude to move it to the new sign-in.</li></ol>`;
   root.appendChild(steps);
   return root;
 }
