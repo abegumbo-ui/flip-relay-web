@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "2eb27e32a8fb6b414b843f360a9a30d309e8ddbc",
-    "publishedAt": "2026-11-02T02:12:40Z",
-    "build": 639,
-    "notes": "Add people: tap Add people (in a group's top bar or on its info page) to make a new group with more people, and give it a name only you see.\\nNotifications on a chat's info page now open a full page like Google Messages: Show notifications, Priority, Default or Silent, Pop on screen, Sound, Lock screen, dot, Vibration and Not a conversation.\\nChat theme: put a photo, faint and see-through, behind a chat's messages.\\nSnooze chat now has the mute-until-I-turn-it-back-on choice and says what also affects the flip phone. Archive explains what it does.\\nLock chat now asks for your face, fingerprint or PIN before it locks or unlocks.\\nNew setting, Show groups in Messages: lists group texts with your chats and removes the Groups tab.\\nTap the Wi-Fi icon on the round Message+ card to see which network the flip phone is on (shows once the flip phone has its update).\\nThe update-ready notification no longer rings again every time you swipe back to the list.\\nWidgets: each button opens the right screen."
+    "sha": "2824d498372f4cd83728c3314a30eafc2d68b5d8",
+    "publishedAt": "2026-11-02T02:23:50Z",
+    "build": 640,
+    "notes": "Fixes a crash when you opened Search in a chat (it came with the removal of Links from the search).\nEverything from the last update is still in: Add people, the chat notifications page, chat theme, locking a chat, Show groups in Messages, and the Wi-Fi name on the round card."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
