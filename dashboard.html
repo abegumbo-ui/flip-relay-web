@@ -498,7 +498,10 @@ function updatedLine() {
 const allowDelete = () => localStorage.getItem("dash_allow_delete") !== "0";
 async function registry() {
   const [reg, names] = await Promise.all([dbq("registry"), dbq("admin/roomNames")]);
-  return { reg: reg || {}, names: names || {} };
+  const r = reg || {};
+  const beats = await Promise.all(Object.keys(r).map((c) => dbq(`rooms/${c}/phoneHeartbeat/timestamp`)));
+  Object.keys(r).forEach((c, i) => { if (r[c] && Number(beats[i]) > (r[c].lastSeen || 0)) r[c].lastSeen = Number(beats[i]); });
+  return { reg: r, names: names || {} };
 }
 const tabletApprovalOn = (reg) => Object.values(reg).some((r) => r && r.requireTabletApproval === true);
 const countWaiting = (reg) => {
@@ -719,27 +722,48 @@ async function screenPhones() {
     for (const c of codes) await db("DELETE", `rooms/${c}/phoneNotice`);
     alert("Done.");
   } })));
-  const g = grid2();
-  g.add = (el) => g.appendChild(el);
+  const notes = await Promise.all(codes.map((c) => dbq(`rooms/${c}/phoneNotice`)));
+  // a phone blocked until an update, now on that build: approved again
   for (const code of codes) {
     const r = reg[code] || {};
+    if (r.blockUntilBuild && buildOf(r.app) && buildOf(r.app) >= r.blockUntilBuild) {
+      await db("PATCH", `registry/${code}`, { approved: true, blockUntilBuild: null });
+      r.approved = true; delete r.blockUntilBuild;
+    }
+  }
+  const g = grid2();
+  g.add = (el) => g.appendChild(el);
+  for (const [ci, code] of codes.entries()) {
+    const r = reg[code] || {};
     const waiting = r.approved !== true;
+    const pn = notes[ci];
+    const b = buildOf(r.app);
+    const done = pn && pn.minBuild && b && b >= pn.minBuild;
+    const noteLine = !pn ? "" : pn.kind === "message" ? "note sent" : done ? `updated to build ${b}: the note can go` : pn.kind === "off" ? `relay off until build ${pn.minBuild}` : `asked to update to build ${pn.minBuild}`;
     const parts = [];
     parts.push(item({
       icon: "phone", title: names[code] ? `${names[code]} (${code})` : code,
-      sub: [buildOf(r.app) ? "build " + buildOf(r.app) : "old build", (r.phoneNumber && /\d{7}/.test(r.phoneNumber)) ? r.phoneNumber : hand[code] || "", "seen " + ago(r.lastSeen)].filter(Boolean).join(" · "),
-      pill: waiting ? "blocked / waiting" : "approved", warn: waiting,
+      sub: [buildOf(r.app) ? "build " + buildOf(r.app) : "old build", (r.phoneNumber && /\d{7}/.test(r.phoneNumber)) ? r.phoneNumber : hand[code] || "", "seen " + ago(r.lastSeen), r.blockUntilBuild ? `blocked until build ${r.blockUntilBuild}` : "", noteLine].filter(Boolean).join(" · "),
+      pill: waiting ? "blocked / waiting" : "approved", warn: waiting || (!!pn && !done),
     }));
+    if (done) parts.push(actions([{ label: "Updated - remove the note", onclick: async () => { await db("DELETE", `rooms/${code}/phoneNotice`); render(); } }]));
     parts.push(actions([
-      { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}`, { approved: waiting }); render(); } },
+      { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}`, { approved: waiting, blockUntilBuild: null }); render(); } },
       { label: "Remove", cls: "ghost", onclick: async () => {
         if (!confirm("Remove this phone from the list? Its messages are not touched. If the phone is still in use it shows up here again the next time it checks in.")) return;
         await db("DELETE", `registry/${code}`); render();
       } },
+      { label: "Block until update", cls: "danger", onclick: async () => {
+        const latest = await latestPhoneBuild();
+        const a = prompt(`Block this phone until it is on which build? It is approved again by itself once it is. The newest published build is ${latest || "unknown"}.\n\nWhile blocked the phone does not check for updates by itself: it updates with Settings > Flip Relay > Check for Update.`, latest ? String(latest) : "");
+        if (!a || !Number(a)) return;
+        await db("PATCH", `registry/${code}`, { approved: false, blockUntilBuild: Number(a) });
+        render();
+      } },
       { label: "Ask to update", cls: "ghost", onclick: () => phoneNote(code, "warn") },
       { label: "Relay off", cls: "danger", onclick: () => phoneNote(code, "off") },
       { label: "Send a note", cls: "ghost", onclick: () => phoneNote(code, "message") },
-      { label: "Clear note", cls: "ghost", onclick: async () => { await db("DELETE", `rooms/${code}/phoneNotice`); alert("Cleared. Flip Relay turns back on at the phone's next check."); } },
+      { label: "Clear note", cls: "ghost", onclick: async () => { await db("DELETE", `rooms/${code}/phoneNotice`); render(); } },
     ]));
     g.add(deviceCard(...parts));
   }
@@ -923,8 +947,9 @@ async function screenLogs({ room, label }) {
 
 async function screenRoom({ room, label }) {
   const root = document.createElement("div");
-  const [reg, members, roomKey, names, handNumber] = await Promise.all([dbq(`registry/${room}`), dbq(`rooms/${room}/members`), dbq(`roomKeys/${room}`), dbq("admin/roomNames"), dbq(`admin/roomNumbers/${room}`)]);
+  const [reg, members, roomKey, names, handNumber, beat] = await Promise.all([dbq(`registry/${room}`), dbq(`rooms/${room}/members`), dbq(`roomKeys/${room}`), dbq("admin/roomNames"), dbq(`admin/roomNumbers/${room}`), dbq(`rooms/${room}/phoneHeartbeat/timestamp`)]);
   const r = reg || {};
+  if (Number(beat) > (r.lastSeen || 0)) r.lastSeen = Number(beat); // the heartbeat is live; the check-in is only at app start
   const number = r.phoneNumber && /\d{7}/.test(r.phoneNumber) ? r.phoneNumber : (handNumber || "");
   const memberEntries = Object.entries(members || {});
   const info = group("Phone");
