@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "95b9eaddc64be9598e878bcef1e5de63b6fb6682",
-    "publishedAt": "2026-11-02T01:19:28Z",
-    "build": 636,
-    "notes": "Lock a chat: hold a chat, tap More, then Lock chat (or use its Info page). It asks for your face, fingerprint or PIN each time, and its words stay hidden in the list, the widget and notifications.\\nTap a person's picture (at the top of a chat, or beside their messages in a group) for their card: Message, Call, Add to contacts and Info. Info opens a page for the person or the group, with the group's people and its name.\\nNew Messages widget for the home screen: your latest chats, a New message button, and a tap opens the chat.\\nThe round Message+ icon no longer shows signal bars when the flip phone has only Wi-Fi: it says No cell service."
+    "sha": "0556ae259519a7c5ae20ce21b2cb8ca930f7f5fe",
+    "publishedAt": "2026-11-02T01:54:53Z",
+    "build": 637,
+    "notes": "New home-screen widgets: Messages, Group texts, and Messages and groups together, plus four small 1x1 buttons (Messages, Group texts, Calls, Voicemail) that show how many are unread. A widget for a screen you switched off in the app is no longer offered.\\nTap a person's picture in the conversation list for their card. In a group's card, tap one picture to open that person's card.\\nThe info page now has Search, Snooze chat, Notifications and Block.\\nLinks are gone from the chat search."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
