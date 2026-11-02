@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "2a4ca6b7f48384fabd18c01e3edaec76cbb58a14",
-    "publishedAt": "2026-11-02T02:51:09Z",
-    "build": 642,
-    "notes": "Undo send: voice messages, pictures, videos and contacts now wait 5 seconds with an Undo button, the same as texts. Undo takes a voice message or picture back before it is sent."
+    "sha": "aa4db684a6be46d70e7e8b8d8da1f5026d3e022c",
+    "publishedAt": "2026-11-02T03:01:02Z",
+    "build": 643,
+    "notes": "New messages now have a Mute button next to Reply and Mark as read. It opens that chat's mute choices: snooze for 1, 8 or 24 hours on this tablet, or mute until you turn it back on, which also mutes it on the flip phone."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
