@@ -886,13 +886,29 @@ async function fbSignIn() {
 async function joinRoomWeb(room) {
   if (!fbUid) await fbSignIn();
   const done = "flip_relay_web_joined_" + room;
-  try { if (localStorage.getItem(done)) return true; } catch (e) { /* storage blocked */ }
-  let key = null;
-  try { key = localStorage.getItem(roomKeyStore(room)); } catch (e) { /* storage blocked */ }
-  if (!key) return false;
-  const r = await fetch(`${DATABASE_URL}/rooms/${room}/members/${fbUid}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(key) });
-  if (r.ok) { try { localStorage.setItem(done, "1"); } catch (e) { /* storage blocked */ } return true; }
-  return false;
+  let joined = false;
+  try { joined = !!localStorage.getItem(done); } catch (e) { /* storage blocked */ }
+  if (!joined) {
+    let key = null;
+    try { key = localStorage.getItem(roomKeyStore(room)); } catch (e) { /* storage blocked */ }
+    if (!key) return false;
+    const r = await fetch(`${DATABASE_URL}/rooms/${room}/members/${fbUid}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(key) });
+    if (!r.ok) return false;
+    try { localStorage.setItem(done, "1"); } catch (e) { /* storage blocked */ }
+  }
+  await reportBuildWeb(room);
+  return true;
+}
+// Tells the database which app and build this page is (rooms/<room>/builds/<uid>), so the database rules can refuse builds older than
+// the owner's minimum (admin/minBuild). Once per build; raise WEB_BUILD whenever the page must be reloaded by everyone.
+const WEB_BUILD = 1;
+async function reportBuildWeb(room) {
+  const mark = `${room}:${fbUid}:${WEB_BUILD}`;
+  try { if (localStorage.getItem("flip_relay_web_build") === mark) return; } catch (e) { /* storage blocked */ }
+  try {
+    const r = await fetch(`${DATABASE_URL}/rooms/${room}/builds/${fbUid}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ k: "web", b: WEB_BUILD }) });
+    if (r.ok) { try { localStorage.setItem("flip_relay_web_build", mark); } catch (e) { /* storage blocked */ } }
+  } catch (e) { logDebug("build report failed: " + e); }
 }
 
 // ---------- the long pairing key (16 characters): typed instead of the short code; picked up quietly for existing rooms ----------

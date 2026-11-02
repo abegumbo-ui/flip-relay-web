@@ -275,7 +275,7 @@ const QR = (() => {
 if (typeof module !== "undefined") module.exports = QR;
 
 const OWNER_RULE = "auth != null && auth.uid === root.child('admin/ownerUid').val()"; // the dashboard's own owner sign-in may read and change everything
-const RULES_CURRENT = {"rules": {".read": OWNER_RULE, ".write": OWNER_RULE, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}, "messages": {"incoming": {".indexOn": ["timestamp"]}, "sent": {".indexOn": ["timestamp"]}}, "deletedMessages": {"incoming": {".indexOn": ["deletedAt"]}, "sent": {".indexOn": ["deletedAt"]}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
+const RULES_CURRENT = {"rules": {".read": OWNER_RULE, ".write": OWNER_RULE, "rooms": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && (!root.child('admin/minBuild').exists() || data.child('builds/' + auth.uid + '/b').val() >= root.child('admin/minBuild/' + data.child('builds/' + auth.uid + '/k').val()).val())", ".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && (!root.child('admin/minBuild').exists() || data.child('builds/' + auth.uid + '/b').val() >= root.child('admin/minBuild/' + data.child('builds/' + auth.uid + '/k').val()).val())", "builds": {"$uid": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && auth.uid === $uid && newData.child('k').isString() && newData.child('b').isNumber()"}}, "notices": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "noticeImages": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "noticeSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNotice": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "members": {"$uid": {".write": "auth != null && auth.uid === $uid && (newData.val() === root.child('roomKeys/' + $roomId).val() || (newData.isString() && root.child('rooms/' + $roomId + '/pairCodes/' + newData.val()).val() > now))"}}, "messages": {"incoming": {".indexOn": ["timestamp"]}, "sent": {".indexOn": ["timestamp"]}}, "deletedMessages": {"incoming": {".indexOn": ["deletedAt"]}, "sent": {".indexOn": ["deletedAt"]}}}}, "roomKeys": {"$roomId": {".write": "auth != null && !data.exists() && newData.isString() && newData.val().length === 16"}}, "keyIndex": {"$fingerprint": {".read": "auth != null", ".write": "auth != null && !data.exists() && newData.isString()"}}, "updates": {".read": "auth != null"}, "registry": {"$roomId": {".read": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()", "approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === false"}, "requireTabletApproval": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists()"}, "createdAt": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "phoneNumber": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "tablets": {"$deviceId": {"approved": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists() && !data.exists() && newData.val() === !(root.child('registry/' + $roomId + '/requireTabletApproval').val() === true)"}, "name": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "model": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "app": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "firstSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}, "lastSeen": {".write": "auth != null && root.child('rooms/' + $roomId + '/members/' + auth.uid).exists()"}}}}}, "pairAlias": {"$id": {".read": "auth != null && data.child('exp').val() > now"}}}};
 // The file-storage rules: the dashboard's own file sign-in (Security > Lock the picture and video files > Set up file access) may list files,
 // so it can measure rooms and delete a room's files; devices may upload and delete with their sign-in; anyone may open a file by its link.
 function storageRulesFor(uid) {
@@ -455,7 +455,7 @@ function empty(text) { return Object.assign(document.createElement("div"), { cla
 // ---------- navigation ----------
 const stack = [];
 let leave = []; // cleanups of the screen being left (timers, codes shown)
-const TITLES = { devices: "Rooms and devices", security: "Security", datamenu: "Storage and cleanup", mine: "This dashboard", phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", logs: "Logs", cleanup: "Daily cleanup", pin: "Change PIN", pair: "Pair a new device", notice: "Send a message", rules: "Database rules", retire: "Retire the old secret", storage: "Picture and video files" };
+const TITLES = { devices: "Rooms and devices", security: "Security", datamenu: "Storage and cleanup", mine: "This dashboard", phones: "Phones", tablets: "Tablets", rooms: "Rooms", room: "Room", logs: "Logs", activity: "Tablet activity", oldbuilds: "Shut out old builds", cleanup: "Daily cleanup", pin: "Change PIN", pair: "Pair a new device", notice: "Send a message", rules: "Database rules", retire: "Retire the old secret", storage: "Picture and video files" };
 function go(name, arg) { stack.push({ name, arg }); render(); }
 function back() { if (stack.length > 1) stack.pop(); render(); }
 $("back").onclick = back;
@@ -474,7 +474,7 @@ async function render() {
   const view = $("view");
   const key = cur.name + ":" + JSON.stringify(cur.arg || {});
   const same = key === lastShown && view.firstChild;
-  const fn = { home: screenHome, devices: screenDevices, security: screenSecurity, datamenu: screenData, mine: screenMine, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, logs: screenLogs, cleanup: screenCleanup, pin: screenPin, pair: screenPair, notice: screenNotice, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
+  const fn = { home: screenHome, devices: screenDevices, security: screenSecurity, datamenu: screenData, mine: screenMine, phones: screenPhones, tablets: screenTablets, rooms: screenRooms, room: screenRoom, logs: screenLogs, activity: screenActivity, oldbuilds: screenOldBuilds, cleanup: screenCleanup, pin: screenPin, pair: screenPair, notice: screenNotice, rules: screenRules, retire: screenRetire, storage: screenStorage }[cur.name];
   if (!same) {
     const cached = CACHED.includes(cur.name) ? cget(cur.name) : null;
     view.innerHTML = cached && cached.v && cached.v.html ? cached.v.html : '<div class="pad meta">Loading...</div>';
@@ -641,6 +641,9 @@ async function screenSecurity() {
     chips: [[d.rs === "current" ? "up to date" : d.rs === "previous" ? "close the 6-character door" : d.rs === "open" ? "not protected" : "custom", d.rs === "current" ? "ok" : d.rs === "previous" ? "warn" : d.rs === "open" ? "bad" : "grey"]], to: "rules" }));
   g.add(item({ icon: "cloud", title: "Lock the picture and video files", sub: "Uploads and deletes need a device's sign-in. Shows which devices are ready and checks the lock", to: "storage" }));
   g.add(item({ icon: "key", title: "Retire the old secret", sub: "A checklist that shows whether his phone and tablet have moved over", to: "retire" }));
+  const minB = await dbq("admin/minBuild");
+  g.add(item({ icon: "shield", title: "Shut out old builds", sub: minB ? `On: phones below build ${minB.phone}, tablets below build ${minB.tablet} get nothing from the database` : "Off: every build can use the relay. Shows which build each device runs",
+    chips: [[minB ? "on" : "off", minB ? "warn" : "grey"]], to: "oldbuilds" }));
   root.appendChild(g);
   const p = group("Who can join");
   p.add(item({
@@ -649,6 +652,56 @@ async function screenSecurity() {
     toggle: async (v) => { for (const c of Object.keys(d.reg)) await db("PATCH", `registry/${c}`, { requireTabletApproval: v }); await db("PUT", "admin/approveTablets", v); render(); }, on: d.approveOn,
   }));
   root.appendChild(p);
+  return root;
+}
+
+// Shut out old builds: each device reports its app and build (rooms/<room>/builds/<uid> {k, b}); with admin/minBuild set, the database
+// rules give a room's messages only to devices that reported at least that build. Old builds report nothing, so they get nothing.
+async function screenOldBuilds() {
+  const root = document.createElement("div");
+  const [minB, reg, live, latestP, latestT] = await Promise.all([dbq("admin/minBuild"), dbq("registry"), readRules(), latestPhoneBuild(), latestTabletBuild()]);
+  const rooms = Object.keys(reg || {});
+  const ruleIn = live && live.json ? JSON.stringify(live.json).includes("admin/minBuild") : null;
+  const head = group("");
+  head.add(item({ icon: "shield", title: minB ? "On" : "Off",
+    sub: minB ? `Phones need build ${minB.phone} or newer, tablets ${minB.tablet}, the web app ${minB.web}. Older ones get no messages and cannot send; they can still update themselves.` : "Every build can use the relay.",
+    chips: [[ruleIn === null ? "rule: unknown" : ruleIn ? "rule in place" : "rule not applied yet", ruleIn ? "ok" : "warn"]] }));
+  if (ruleIn === false) head.add(item({ icon: "info", title: "Apply the database rules first", sub: "Security > Database rules > Apply the current rules. Until then turning this on does nothing.", to: "rules" }));
+  root.appendChild(head);
+  const want = minB || { phone: latestP || 0, tablet: latestT || 0, web: 1 };
+  const kindName = { phone: "Flip phone", tablet: "Tablet", web: "Web app" };
+  let shutOut = 0;
+  for (const room of rooms) {
+    const [members, builds] = await Promise.all([dbq(`rooms/${room}/members`), dbq(`rooms/${room}/builds`)]);
+    const uids = Object.keys(members || {});
+    const g = group(`Room ${room} (${uids.length} device${uids.length === 1 ? "" : "s"})`);
+    for (const uid of uids) {
+      const b = (builds || {})[uid];
+      const ok = b && Number(b.b) >= Number(want[b.k] || 0);
+      if (!ok) shutOut++;
+      g.add(item({ icon: b && b.k === "phone" ? "phone" : "tablet", title: b ? `${kindName[b.k] || b.k} · build ${b.b}` : "Old build (has not reported)", sub: "Device " + uid.slice(0, 8),
+        chips: [[ok ? (minB ? "allowed" : "would be allowed") : (minB ? "shut out" : "would be shut out"), ok ? "ok" : "bad"]] }));
+    }
+    if (!uids.length) g.add(item({ icon: "info", title: "No devices on the guest list" }));
+    root.appendChild(g);
+  }
+  const act = group("");
+  act.add(actions(minB ? [
+    { label: "Change the builds", onclick: () => turnOn() },
+    { label: "Turn off (every build works again)", cls: "ghost", onclick: async () => { await db("DELETE", "admin/minBuild"); render(); } },
+  ] : [{ label: "Turn on", cls: "danger", onclick: () => turnOn() }]));
+  root.appendChild(act);
+  async function turnOn() {
+    const p = Number(prompt(`Phones: lowest build allowed? (newest published: ${latestP || "unknown"}; only 165 and newer report themselves)`, String(want.phone || "")));
+    if (!p) return;
+    const t = Number(prompt(`Tablets: lowest build allowed? (newest published: ${latestT || "unknown"}; only 649 and newer report themselves)`, String(want.tablet || "")));
+    if (!t) return;
+    const w = Number(prompt("Web app: lowest version allowed?", String(want.web || 1)));
+    if (!w) return;
+    if (!confirm(`Shut out phones below ${p}, tablets below ${t} and web pages below ${w}?` + (shutOut ? `\n\n${shutOut} device(s) listed here would stop working until they update.` : ""))) return;
+    await db("PUT", "admin/minBuild", { phone: p, tablet: t, web: w });
+    render();
+  }
   return root;
 }
 
@@ -914,6 +967,31 @@ function deleteRoomItem(room, label) {
     } });
 }
 
+// when each tablet in a room was in use, last 7 days, one list per tablet
+async function screenActivity({ room }) {
+  const root = document.createElement("div");
+  const sess = await dbq(`rooms/${room}/tabletSessions`);
+  const week = Date.now() - 7 * 86400000;
+  const sessions = Object.values(sess || {}).filter((v) => v && v.start > week).sort((a, b) => b.start - a.start);
+  const fmtT = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const fmtD = (ms) => { const d = new Date(ms); const t = new Date(); return d.toDateString() === t.toDateString() ? "Today" : d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }); };
+  const dur = (a, b) => { const m = Math.max(0, Math.round((b - a) / 60000)); return m < 1 ? "under a minute" : m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60) + " min"; };
+  const byTablet = {};
+  for (const v of sessions) (byTablet[v.name || "Tablet"] = byTablet[v.name || "Tablet"] || []).push(v);
+  for (const [name, list] of Object.entries(byTablet)) {
+    const total = list.reduce((s, v) => s + Math.max(0, v.end - v.start), 0);
+    const g = group(`${name} (${list.length} time${list.length === 1 ? "" : "s"}, ${dur(0, total)} in all)`);
+    for (const v of list.slice(0, 60)) {
+      const live = Date.now() - v.end < 6 * 60000;
+      g.add(item({ icon: "clock", title: fmtD(v.start), sub: fmtT(v.start) + " to " + (live ? "now" : fmtT(v.end)) + " (" + dur(v.start, v.end) + ")", pill: live ? "in use now" : "" }));
+    }
+    root.appendChild(g);
+  }
+  if (!sessions.length) root.appendChild(group("").add(item({ icon: "info", title: "No activity recorded yet", sub: "Tablets on the newest build note when the app is opened and when it is left alone" })));
+  if (sessions.length) root.appendChild(group("").add(actions([{ label: "Clear the activity list", cls: "ghost", onclick: async () => { if (!confirm("Delete the activity list for this room?")) return; await db("DELETE", `rooms/${room}/tabletSessions`); render(); } }])));
+  return root;
+}
+
 async function screenLogs({ room, label }) {
   const root = document.createElement("div");
   const [pc, tc] = await Promise.all([dbq(`rooms/${room}/phoneCrashes`), dbq(`rooms/${room}/tabletCrashes`)]);
@@ -1077,20 +1155,11 @@ async function screenRoom({ room, label }) {
   if (!tabs.length) tg.add(item({ icon: "info", title: "None listed", sub: "Tablets and web pages appear here when they check in" }));
   root.appendChild(tg);
 
-  // when each tablet was in use
+  // when each tablet was in use: its own page, like the logs
   const week = Date.now() - 7 * 86400000;
-  const sessions = Object.values(sess || {}).filter((v) => v && v.start > week).sort((a, b) => b.start - a.start);
-  const ag = group("Tablet activity, last 7 days (" + sessions.length + ")");
-  const fmtT = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  const fmtD = (ms) => { const d = new Date(ms); const t = new Date(); return d.toDateString() === t.toDateString() ? "Today" : d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }); };
-  const dur = (a, b) => { const m = Math.max(0, Math.round((b - a) / 60000)); return m < 1 ? "under a minute" : m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60) + " min"; };
-  for (const v of sessions.slice(0, 40)) {
-    const live = Date.now() - v.end < 6 * 60000;
-    ag.add(item({ icon: "clock", title: (v.name || "Tablet") + " · " + fmtD(v.start), sub: fmtT(v.start) + " to " + (live ? "now" : fmtT(v.end)) + " (" + dur(v.start, v.end) + ")", pill: live ? "in use now" : "" }));
-  }
-  if (!sessions.length) ag.add(item({ icon: "info", title: "No activity recorded yet", sub: "Tablets on the newest build note when the app is opened and when it is left alone" }));
-  if (sessions.length) ag.add(actions([{ label: "Clear the activity list", cls: "ghost", onclick: async () => { if (!confirm("Delete the activity list for this room?")) return; await db("DELETE", `rooms/${room}/tabletSessions`); render(); } }]));
-  root.appendChild(ag);
+  const nSess = Object.values(sess || {}).filter((v) => v && v.start > week);
+  const liveNow = nSess.some((v) => Date.now() - v.end < 6 * 60000);
+  root.appendChild(group("").add(item({ icon: "clock", title: "Tablet activity", sub: nSess.length ? `${nSess.length} time${nSess.length === 1 ? "" : "s"} in use in the last 7 days` : "No activity recorded yet", pill: liveNow ? "in use now" : "", onclick: () => go("activity", { room, label }) })));
 
   // messages sent to tablets
   const nl = Object.entries(notices || {}).filter(([k, n]) => n).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
