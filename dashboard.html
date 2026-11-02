@@ -675,8 +675,10 @@ async function phoneNote(room, kind) {
     if (!text) return;
     n.title = title.trim(); n.text = text.trim();
   } else {
-    let min = await latestPhoneBuild();
-    if (!min) { const a = prompt("The newest published phone build could not be read. Which build must the phone reach?", ""); if (!a) return; min = Number(a); }
+    const latest = await latestPhoneBuild();
+    const a = prompt(`Which build must the phone reach? The newest published build is ${latest || "unknown"}. (For a test phone already on that build or newer, type a higher number.)`, latest ? String(latest) : "");
+    if (!a) return;
+    const min = Number(a);
     if (!min) return;
     const what = kind === "off" ? `Flip Relay turns OFF on this phone now, until it is on build ${min} or newer. Its texts stop reaching the tablets.`
       : `The phone shows "Please update" each time Message+ opens. One hour after it first appears, Flip Relay stops relaying until the phone is on build ${min} or newer.`;
@@ -687,8 +689,19 @@ async function phoneNote(room, kind) {
   alert("Sent. The phone picks it up the next time Message+ opens (or within a minute while it is open).");
 }
 
+/** Registry entries of rooms that no longer exist (the room was deleted): removed, so Phones and Tablets show only real rooms. */
+async function dropDeletedRooms(reg) {
+  const rooms = await dbq("rooms", "&shallow=true");
+  if (!rooms) return reg; // could not read the rooms: show everything rather than guess
+  for (const code of Object.keys(reg)) {
+    if (!rooms[code]) { delete reg[code]; db("DELETE", `registry/${code}`).catch(() => {}); }
+  }
+  return reg;
+}
+
 async function screenPhones() {
   const [{ reg, names }, numbers] = await Promise.all([registry(), dbq("admin/roomNumbers")]);
+  await dropDeletedRooms(reg);
   const hand = numbers || {};
   const root = document.createElement("div");
   root.appendChild(note("A new phone does nothing (no sync, no uploads) until you press Approve."));
@@ -739,6 +752,7 @@ async function screenPhones() {
 async function screenTablets() {
   const [{ reg, names }, roomList] = await Promise.all([registry(), dbq("rooms", "&shallow=true")]);
   const rooms = Object.keys(roomList || {});
+  await dropDeletedRooms(reg);
   const root = document.createElement("div");
   const all = group("Every room");
   all.add(item({ icon: "tablet", title: "Make every tablet update", sub: "Every tablet in every room shows the update screen until it is on the newest published build", onclick: async () => {
