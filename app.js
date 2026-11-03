@@ -72,8 +72,79 @@ function loadCache() {
 function saveCache() {
   try {
     localStorage.setItem(cacheKey(), JSON.stringify(messages));
+    localStorage.setItem(CACHE_OK_PREFIX + roomId, "1");
   } catch (e) {
-    // storage full or unavailable -- not fatal, just means history won't persist
+    // storage full or unavailable -- not fatal, just means history won't persist (and the next load takes the whole folder again)
+    try { localStorage.removeItem(CACHE_OK_PREFIX + roomId); } catch (e2) {}
+  }
+}
+
+// ---- downloading only what's new (the database bill).
+// Every load and every stream (re)connect used to download the room's whole message folders. Once this page has them saved, it asks
+// only for messages from a day before the newest one it has; deletions of older ones arrive through the trash streams instead.
+const CACHE_OK_PREFIX = "flip_relay_cache_ok_";
+const WINDOW_MARGIN_MS = 24 * 3600 * 1000;
+let windowRefusedUntil = 0;
+let trashStreams = [];
+
+function newestSeen(direction) {
+  let best = 0;
+  const limit = Date.now() + 3600 * 1000;
+  for (const m of messages) {
+    if (m.direction !== direction || String(m.id).startsWith("local-")) continue;
+    if (m.timestamp > best && m.timestamp < limit) best = m.timestamp;
+  }
+  return best;
+}
+
+/** Start of the recent-only window for a folder, or 0 = take the whole folder (nothing saved yet, or the query was refused). */
+function windowSince(direction) {
+  if (Date.now() < windowRefusedUntil) return 0;
+  try { if (localStorage.getItem(CACHE_OK_PREFIX + roomId) !== "1") return 0; } catch (e) { return 0; }
+  const s = newestSeen(direction);
+  return s > 0 ? s - WINDOW_MARGIN_MS : 0;
+}
+
+function windowUrl(path, since, field) {
+  return since > 0 ? roomUrl(path) + `&orderBy=%22${field || "timestamp"}%22&startAt=${since}` : roomUrl(path);
+}
+
+async function fetchFolder(path, since) {
+  if (since > 0) {
+    const r = await fetch(windowUrl(path, since));
+    if (r.status !== 400) return r;
+    windowRefusedUntil = Date.now() + 3600 * 1000; // no index for the query: whole folder for an hour
+  }
+  return fetch(roomUrl(path));
+}
+
+/** A message deleted elsewhere lands in the trash folder: drop it here. A trash record that disappears was restored (or emptied). */
+function startTrashStreams() {
+  for (const t of trashStreams) t.close();
+  trashStreams = [];
+  for (const [which, dir] of [["incoming", "in"], ["sent", "out"]]) {
+    const seenSet = () => (dir === "in" ? seenIncomingKeys : seenSentKeys);
+    const query = () => {
+      const s = newestSeen(dir);
+      return windowUrl(`deletedMessages/${which}`, (s > 0 ? s : Date.now()) - WINDOW_MARGIN_MS, "deletedAt");
+    };
+    trashStreams.push(openStream(`deletedMessages/${which}`, (key) => {
+      const before = messages.length;
+      messages = messages.filter((m) => !(m.direction === dir && m.id === key));
+      seenSet().delete(key);
+      return messages.length !== before;
+    }, (key) => {
+      fetch(roomUrl(`messages/${which}/${key}`)).then((r) => r.ok ? r.json() : null).then((data) => {
+        if (!data) return;
+        const changed = dir === "in" ? upsertIncoming(key, data) : upsertSent(key, data);
+        if (changed) {
+          saveCache();
+          renderConversationList();
+          if (currentChatNumber) renderChat(currentChatNumber);
+        }
+      }).catch(() => {});
+      return false;
+    }, () => {}, null, query));
   }
 }
 
@@ -966,9 +1037,10 @@ async function connectToRoom(code, persist) {
   setPairingProgress(true, "Connecting to " + code + "...");
 
   try {
+    loadCache(); // what this page already has decides how much to download
     const [incomingRes, sentRes, scheduledRes] = await Promise.all([
-      fetch(roomUrl("messages/incoming")),
-      fetch(roomUrl("messages/sent")),
+      fetchFolder("messages/incoming", windowSince("in")),
+      fetchFolder("messages/sent", windowSince("out")),
       fetch(roomUrl("messages/scheduled")),
     ]);
     if (!incomingRes.ok || !sentRes.ok || !scheduledRes.ok) {
@@ -980,7 +1052,6 @@ async function connectToRoom(code, persist) {
         await Promise.all([incomingRes.json(), sentRes.json(), scheduledRes.json()]);
 
     if (persist) localStorage.setItem(ROOM_KEY, code);
-    loadCache();
     loadReadState();
     loadPinnedState();
     loadGroupNames();
@@ -1047,6 +1118,8 @@ function onForgetClick() {
   if (incomingStream) incomingStream.close();
   if (sentStream) sentStream.close();
   if (scheduledStream) scheduledStream.close();
+  for (const t of trashStreams) t.close();
+  trashStreams = [];
   if (phoneHeartbeatTimer) clearInterval(phoneHeartbeatTimer);
   phoneHeartbeatTimer = null;
   // Reset the heartbeat baseline too -- otherwise pairing a *different*
@@ -1175,14 +1248,18 @@ function startStreams() {
     messages = messages.filter((m) => !(m.direction === "in" && m.id === key));
     seenIncomingKeys.delete(key);
     return messages.length !== before;
-  }, (connected) => { incomingConnected = connected; updateConnectionStatus(); }, notifyIncoming);
+  }, (connected) => { incomingConnected = connected; updateConnectionStatus(); }, notifyIncoming,
+  () => windowUrl("messages/incoming", windowSince("in")));
 
   sentStream = openStream("messages/sent", upsertSent, (key) => {
     const before = messages.length;
     messages = messages.filter((m) => !(m.direction === "out" && m.id === key));
     seenSentKeys.delete(key);
     return messages.length !== before;
-  }, (connected) => { sentConnected = connected; updateConnectionStatus(); });
+  }, (connected) => { sentConnected = connected; updateConnectionStatus(); }, null,
+  () => windowUrl("messages/sent", windowSince("out")));
+
+  startTrashStreams();
 
   scheduledStream = openStream("messages/scheduled", upsertScheduled, (key) => {
     const before = messages.length;
@@ -1405,16 +1482,22 @@ function updateChatConnectionWarning() {
 // EventSource has no equivalent built-in protection, so it's handled here.
 const STREAM_STALE_MS = 60 * 1000;
 
-function openStream(path, upsertFn, deleteFn, onConnectedChange, onSingleItemUpserted) {
+function openStream(path, upsertFn, deleteFn, onConnectedChange, onSingleItemUpserted, urlFn) {
   let es = null;
   let lastEventAt = Date.now();
   const bump = () => { lastEventAt = Date.now(); };
 
   function connect() {
-    es = new EventSource(roomUrl(path));
+    const url = urlFn ? urlFn() : roomUrl(path);
+    const windowed = url.includes("&orderBy=");
+    es = new EventSource(url);
 
     es.addEventListener("open", () => { bump(); onConnectedChange(true); });
-    es.addEventListener("error", () => onConnectedChange(false));
+    es.addEventListener("error", () => {
+      onConnectedChange(false);
+      // a refused query closes the stream for good: take the whole folder for an hour instead of retrying the same query
+      if (windowed && es.readyState === EventSource.CLOSED) windowRefusedUntil = Date.now() + 3600 * 1000;
+    });
     // Catches any keep-alive/unnamed event too, so idle-but-healthy rooms
     // don't get mistaken for dead ones.
     es.addEventListener("message", bump);
