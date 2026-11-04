@@ -1123,11 +1123,19 @@ async function screenRoom({ room, label }) {
   ]));
   root.appendChild(bg);
 
-  const guests = group("Guest list (" + memberEntries.length + ")");
+  // every device allowed into this room (the flip phone too): named by what it reported (rooms/<room>/builds/<uid>)
+  const builds = (await dbq(`rooms/${room}/builds`)) || {};
+  const guests = group("Devices allowed in this room (" + memberEntries.length + ")");
   for (const [uid, v] of memberEntries) {
-    const kind = v === roomKey ? "joined with the permanent code" : v === room ? "joined with the old room code (migration)" : "joined with a one-time code";
-    guests.add(item({ icon: "tablet", title: "Device " + uid.slice(0, 8), sub: kind }));
-    guests.add(actions([{ label: "Remove from the guest list", cls: "ghost", onclick: async () => { if (confirm("Remove this device from the guest list? It loses access until it is paired again.")) { await db("DELETE", `rooms/${room}/members/${uid}`); render(); } } }]));
+    const how = v === roomKey ? "joined with the room's permanent code" : v === room ? "joined with the old room code (migration)" : "joined with a one-time code";
+    const b = builds[uid] || {};
+    const what = b.k === "phone" ? "Flip phone (Message+)" : b.k === "tablet" ? "Tablet" : b.k === "web" ? "Web page" : "Device (has not said what it is)";
+    const isPhone = b.k === "phone";
+    guests.add(item({ icon: isPhone ? "phone" : "tablet", title: what + (b.b ? " · build " + b.b : ""), sub: how + " · id " + uid.slice(0, 8) }));
+    guests.add(actions([{ label: isPhone ? "Remove the flip phone (stops all relaying)" : "Remove this device", cls: "ghost", onclick: async () => {
+      const q = isPhone ? "This is the FLIP PHONE. Removing it stops texts going to and from every tablet until it rejoins. Remove it anyway?" : "Remove this device? It loses access until it is paired again.";
+      if (confirm(q)) { await db("DELETE", `rooms/${room}/members/${uid}`); render(); }
+    } }]));
   }
   if (!memberEntries.length) guests.add(item({ icon: "info", title: "Nobody yet", sub: "Devices appear here once they have updated and joined" }));
   root.appendChild(guests);
