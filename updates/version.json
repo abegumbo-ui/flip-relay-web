@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "ed7209b3b58b309f7c2a67338692d2e983b3eba9",
-    "publishedAt": "2026-11-04T15:43:53Z",
-    "build": 650,
-    "notes": "Pairing with a QR code or code from the dashboard works again: it no longer says the code was already used or has expired."
+    "sha": "37ee7f373433a91943017df11caddd9db1994f63",
+    "publishedAt": "2026-11-04T16:32:31Z",
+    "build": 653,
+    "notes": "The pairing screen has a menu (top left) with Check for updates. If this tablet was removed from its room on the dashboard, it now puts itself back by itself. Pairing with a code from the dashboard works again."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
