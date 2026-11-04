@@ -2707,7 +2707,7 @@ function organizeSettings() {
   main.appendChild(list);
   // anything left over (a row added by an older part of the page) still shows, under Help
   for (const n of [...body.children]) if (n.classList && n.classList.contains("settings-row")) pages.help.g.appendChild(n);
-  const extra = document.getElementById("extra-settings"); if (extra && !extra.children.length) extra.remove();
+  const extra = document.getElementById("extra-settings"); if (extra) extra.hidden = true; // kept (empty) so it is never made twice
   body.appendChild(main);
   for (const s of SETTINGS_SECTIONS) body.appendChild(pages[s.key].page);
 }
@@ -3951,7 +3951,8 @@ function setApprovalOverlay(show) {
 // ---------- extra settings: show sent-from icon, backup / restore of this page's own data ----------
 function addExtraSettings() {
   const body = document.getElementById("settings-body");
-  if (!body || document.getElementById("extra-settings")) return;
+  // made once: after the first time its rows live in the Settings sections (organizeSettings), so they must not be made again
+  if (!body || document.getElementById("extra-settings") || document.getElementById("show-source-btn")) return;
   const box = document.createElement("div");
   box.id = "extra-settings";
   const mk = (label, fn) => { const b = document.createElement("button"); b.className = "settings-row"; b.textContent = label; b.addEventListener("click", fn); box.appendChild(b); return b; };
