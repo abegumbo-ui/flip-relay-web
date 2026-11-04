@@ -1649,6 +1649,7 @@ function startPhoneHeartbeatPoll() {
       // two separate icons.
       const network = data ? { wifi: !!data.wifi, cellular: !!data.cellular } : null;
       const charging = !!(data && data.charging);
+      phoneSsidSeen = data && typeof data.ssid === "string" ? data.ssid : "";
       const now = Date.now();
       if (value != null) {
         if (hasPolledHeartbeatOnce && value !== lastHeartbeatValue) {
@@ -1683,7 +1684,33 @@ function startPhoneHeartbeatPoll() {
   phoneHeartbeatTimer = setInterval(poll, 5000);
 }
 
+// The flip phone at a glance, in a line at the top of the web page (the tablet has its own round card for this).
+let phoneSsidSeen = "";
+function updateFlipStrip(connected, batteryPercent, network, charging) {
+  let s = document.getElementById("flip-strip");
+  if (!s) {
+    const tabs = document.querySelector("#screen-conversations .tl-tabs.tl-main");
+    if (!tabs) return;
+    s = document.createElement("div");
+    s.id = "flip-strip";
+    s.style.cssText = "flex:none;padding:0 max(16px,env(safe-area-inset-left)) 8px;font-size:13px;opacity:.85;cursor:pointer";
+    s.title = "Flip phone and sync";
+    s.onclick = () => { onSettingsClick(); openSettingsSection("phone"); };
+    tabs.after(s);
+  }
+  const parts = ["Flip phone: " + (connected ? "Connected" : "Not connected")];
+  if (connected) {
+    if (network && network.wifi) parts.push("Wi-Fi" + (phoneSsidSeen ? " " + phoneSsidSeen : ""));
+    else if (network && network.cellular) parts.push("Mobile data");
+    else if (network) parts.push("No Wi-Fi or data");
+    if (batteryPercent != null) parts.push("Battery " + batteryPercent + "%" + (charging ? ", charging" : ""));
+  }
+  s.textContent = parts.join("  ·  ");
+  s.style.color = !connected || (batteryPercent != null && batteryPercent <= 20 && !charging) ? "var(--gm-red,#d93025)" : "";
+}
+
 function updatePhoneStatus(connected, batteryPercent, network, charging) {
+  updateFlipStrip(connected, batteryPercent, network, charging);
   const phoneStatusEl = el("phone-status-text");
   if (!phoneStatusEl) return;
   phoneStatusEl.textContent = connected ? "Phone is connected to Firebase" : "Phone not reachable right now";
