@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "37ee7f373433a91943017df11caddd9db1994f63",
-    "publishedAt": "2026-11-04T16:32:31Z",
-    "build": 653,
-    "notes": "The pairing screen has a menu (top left) with Check for updates. If this tablet was removed from its room on the dashboard, it now puts itself back by itself. Pairing with a code from the dashboard works again."
+    "sha": "76fabee49f18db6e9c9c57b1bcb54b9add3b21e1",
+    "publishedAt": "2026-11-04T17:01:37Z",
+    "build": 654,
+    "notes": "New: Settings > Flip phone and sync > Flip phone buttons. Turn each of the flip's home-screen buttons on or off from here, see whether they are working, troubleshooting steps, and an option to turn the flip's accessibility off completely (asks three times). Needs Message+ build 170 on the flip."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26132055,
+    "versionName": "6.4.5-FR GOLOMBECK (build 170)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26132055/messageplus-26132055.apk",
+    "at": 1793811697934,
+    "notes": "New: Flip phone buttons can be managed from the tablet (Settings > Flip phone and sync > Flip phone buttons), one switch per button. The buttons only work while Message+ is the default texting app."
+  },
+  "messageplus_previous": {
     "versionCode": 26132012,
     "versionName": "6.4.5-FR GOLOMBECK (build 169)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26132012/messageplus-26132012.apk",
     "at": 1793808722119,
     "notes": "If the flip phone was removed from its room on the dashboard, it now puts itself back by itself within a few minutes."
-  },
-  "messageplus_previous": {
-    "versionCode": 26131983,
-    "versionName": "6.4.5-FR GOLOMBECK (build 168)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26131983/messageplus-26131983.apk",
-    "at": 1793807033943,
-    "notes": "Pairing with a code from the dashboard works again: it no longer says the code was already used or has run out."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
