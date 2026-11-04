@@ -378,6 +378,7 @@ function addGmHeader() {
 
 function init() {
   addGmHeader();
+  addTabBars();
   const savedRoom = localStorage.getItem(ROOM_KEY);
   if (savedRoom) {
     connectToRoom(savedRoom, false);
@@ -390,7 +391,7 @@ function init() {
     if (e.key === "Enter") onConnectClick();
   });
   el("settings-btn").addEventListener("click", onSettingsClick);
-  el("settings-back-btn").addEventListener("click", () => showScreen("conversations"));
+  el("settings-back-btn").addEventListener("click", () => { if (settingsSectionOpen) openSettingsSection(null); else showScreen("conversations"); });
   el("disconnect-btn").addEventListener("click", onForgetClick);
   el("sync-log-btn").addEventListener("click", onSyncLogClick);
   el("layout-btn").addEventListener("click", onLayoutClick);
@@ -407,7 +408,7 @@ function init() {
   applyLayout();
   el("calls-btn").addEventListener("click", onCallsClick);
   el("groups-btn").addEventListener("click", () => { groupsView = !groupsView; renderConversationList(); });
-  el("calls-back-btn").addEventListener("click", () => showScreen("conversations"));
+  el("calls-back-btn").addEventListener("click", () => goTab(groupsView ? "groups" : "chats"));
   el("calls-refresh-btn").addEventListener("click", onCallsRefreshClick);
   el("deleted-select-multiple-btn").addEventListener("click", () => enterDeletedGroupsSelectionMode(null));
   el("deleted-selection-cancel-btn").addEventListener("click", exitDeletedGroupsSelectionMode);
@@ -676,7 +677,191 @@ async function createGroupFlow() {
   openChat(multiKey(mode, numbers));
 }
 
+// ---------- start a chat, like the tablet: a "To" box, everyone you text with (search as you type), a typed number, and
+// "Create group" only when group texts are in the same list as the chats ----------
+const AV_COLORS = ["#1a73e8", "#e8710a", "#188038", "#d93025", "#9334e6", "#12b5cb", "#e52592", "#5f6368"];
+function avatarFor(name, number) {
+  let h = 0; for (const ch of String(number)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const letter = (name && /[A-Za-z]/.test(name[0])) ? name[0].toUpperCase() : "";
+  return `<span class="tl-av" style="background:${AV_COLORS[h % AV_COLORS.length]}">${letter || svgIcon("person", 22)}</span>`;
+}
+function openNewChat() {
+  injectTabletStyles();
+  // "Create group" only where groups are: in the Chats list (Show groups in Messages), or straight away from the Groups tab
+  const groupsHere = !groupsHidden() && groupsInMessages();
+  const startInGroup = !groupsHidden() && !groupsInMessages() && currentTab === "groups";
+  const ov = document.createElement("div");
+  ov.className = "tl-nc";
+  ov.innerHTML = `<header><button class="icon-btn" data-x="back" title="Back">&#8592;</button><h2 style="margin:0;font-weight:400" data-x="title">New conversation</h2></header>
+    <div class="to"><span style="opacity:.7">To</span><input data-x="q" type="text" inputmode="text" autocomplete="off" placeholder="Type a name or phone number"></div>
+    <div class="chips" data-x="chips"></div><div data-x="list"></div>`;
+  document.body.appendChild(ov);
+  const q = (k) => ov.querySelector(`[data-x="${k}"]`);
+  const input = q("q");
+  let groupMode = false;
+  const picked = [];
+  const close = () => ov.remove();
+  q("back").onclick = () => { if (groupMode && !startInGroup) { groupMode = false; picked.length = 0; render(); } else close(); };
+  // everyone this room texts with, most recent first (from every conversation, whichever tab this was opened from)
+  const people = [];
+  const seen = new Set();
+  for (const c of conversationsByNumber()) {
+    if (isMulti(c.number) || seen.has(c.number)) continue;
+    seen.add(c.number);
+    people.push({ number: c.number, name: displayName(c.number) || "" });
+  }
+  let goBtn = null;
+  const finishGroup = async () => {
+    if (picked.length < 2) { if (picked.length === 1) { close(); openChat(picked[0]); } return; }
+    const mode = await tabletSheet("Recipients reply to", [
+      { icon: "group", color: "#1a73e8", title: "Group", sub: "One shared conversation, everyone sees every reply", value: "g:" },
+      { icon: "person", color: "#188038", title: "Just me", sub: "A mass text: each person gets it on their own, replies come only to you", value: "m:" },
+    ]);
+    if (!mode) return;
+    close();
+    openChat(multiKey(mode, picked));
+  };
+  const row = (iconHtml, title, sub, fn) => {
+    const r = document.createElement("button");
+    r.className = "tl-row";
+    r.innerHTML = `${iconHtml}<span style="flex:1;min-width:0"><div class="tl-t"></div>${sub ? '<div class="tl-s"></div>' : ""}</span>`;
+    r.querySelector(".tl-t").textContent = title;
+    if (sub) r.querySelector(".tl-s").textContent = sub;
+    r.onclick = fn;
+    return r;
+  };
+  const circle = (icon, color) => `<span class="tl-av" style="background:${color}">${svgIcon(icon, 22)}</span>`;
+  function render() {
+    q("title").textContent = groupMode ? "New group" : "New conversation";
+    const chips = q("chips");
+    chips.innerHTML = "";
+    for (const n of picked) {
+      const c = document.createElement("span");
+      c.className = "chip";
+      c.textContent = (displayName(n) || n) + "  ×";
+      c.onclick = () => { picked.splice(picked.indexOf(n), 1); render(); };
+      chips.appendChild(c);
+    }
+    if (goBtn) { goBtn.remove(); goBtn = null; }
+    if (groupMode && picked.length) {
+      goBtn = document.createElement("button");
+      goBtn.className = "go";
+      goBtn.textContent = picked.length >= 2 ? "Next" : "Open chat";
+      goBtn.onclick = finishGroup;
+      ov.appendChild(goBtn);
+    }
+    const list = q("list");
+    list.innerHTML = "";
+    const text = input.value.trim();
+    const digits = text.replace(/\D/g, "");
+    const box = document.createElement("div");
+    // a typed number
+    if (digits.length >= 3) {
+      const n = normalizeNumber(text);
+      if (n) box.appendChild(row(circle("dialpad", "#5f6368"), (groupMode ? "Add " : "Send to ") + text, null, () => {
+        if (groupMode) { if (!picked.includes(n)) picked.push(n); input.value = ""; render(); input.focus(); }
+        else { close(); openChat(n); }
+      }));
+    }
+    if (!groupMode && !text) {
+      if (groupsHere) box.appendChild(row(circle("group", "#1a73e8"), "Create group", null, () => { groupMode = true; render(); input.focus(); }));
+      if (navigator.contacts && navigator.contacts.select) box.appendChild(row(circle("person", "#188038"), "Choose from this device's contacts", null, async () => {
+        try {
+          const [c] = await navigator.contacts.select(["name", "tel"], { multiple: false });
+          const n = c && normalizeNumber((c.tel && c.tel[0]) || "");
+          if (n) { close(); openChat(n); }
+        } catch (e) { /* cancelled */ }
+      }));
+    }
+    if (box.children.length) { box.className = "tl-group"; list.appendChild(box); }
+    const lower = text.toLowerCase();
+    const match = people.filter((p) => !text || p.name.toLowerCase().includes(lower) || (digits && p.number.includes(digits)));
+    if (match.length) {
+      const hd = document.createElement("div");
+      hd.className = "hd";
+      hd.textContent = text ? "Matches" : "People you text";
+      list.appendChild(hd);
+      const g = document.createElement("div");
+      g.className = "tl-group";
+      for (const p of match.slice(0, 200)) {
+        const isOn = picked.includes(p.number);
+        g.appendChild(row(avatarFor(p.name, p.number), (isOn ? "✓ " : "") + (p.name || p.number), p.name ? p.number : null, () => {
+          if (groupMode) { if (isOn) picked.splice(picked.indexOf(p.number), 1); else picked.push(p.number); input.value = ""; render(); }
+          else { close(); openChat(p.number); }
+        }));
+      }
+      list.appendChild(g);
+    } else if (text && digits.length < 3) {
+      const e = document.createElement("p");
+      e.className = "settings-hint";
+      e.style.margin = "16px 24px";
+      e.textContent = "Nobody by that name. Type their phone number instead.";
+      list.appendChild(e);
+    }
+  }
+  if (startInGroup) groupMode = true;
+  input.addEventListener("input", render);
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const first = ov.querySelector(".tl-row");
+    if (first) first.click();
+  });
+  render();
+  setTimeout(() => input.focus(), 50);
+}
+
+// A sheet near the top with big rows (icon in a circle, title, line under it). Resolves with the chosen value, or null.
+function tabletSheet(title, options) {
+  injectTabletStyles();
+  return new Promise((resolve) => {
+    const bg = document.createElement("div");
+    bg.className = "tl-sheet-bg";
+    bg.innerHTML = `<div class="tl-sheet"><div style="font-size:20px;margin:4px 6px 12px"></div><div></div></div>`;
+    bg.querySelector(".tl-sheet > div").textContent = title;
+    const box = bg.querySelector(".tl-sheet > div:last-child");
+    const done = (v) => { bg.remove(); resolve(v); };
+    for (const o of options) {
+      const r = document.createElement("button");
+      r.className = "tl-row";
+      r.style.borderRadius = "16px";
+      r.innerHTML = `<span class="tl-av" style="background:${o.color}">${svgIcon(o.icon, 22)}</span><span style="flex:1;min-width:0"><div class="tl-t"></div><div class="tl-s"></div></span>`;
+      r.querySelector(".tl-t").textContent = o.title;
+      r.querySelector(".tl-s").textContent = o.sub || "";
+      r.onclick = () => done(o.value);
+      box.appendChild(r);
+    }
+    bg.onclick = (e) => { if (e.target === bg) done(null); };
+    document.body.appendChild(bg);
+  });
+}
+
+// The attach picker: one row of round buttons, like the tablet (Gallery, Camera, Video, Contact).
+function attachPicker() {
+  injectTabletStyles();
+  return new Promise((resolve) => {
+    const bg = document.createElement("div");
+    bg.className = "tl-sheet-bg";
+    bg.innerHTML = `<div class="tl-sheet"><div style="font-size:18px;margin:2px 6px 10px">Attach</div><div class="tl-grid"></div></div>`;
+    const grid = bg.querySelector(".tl-grid");
+    const done = (v) => { bg.remove(); resolve(v); };
+    for (const [value, icon, color, label] of [["gallery", "photo", "#1a73e8", "Gallery"], ["camera", "camera", "#e8710a", "Camera"], ["video", "video", "#d93025", "Video"], ["contact", "person", "#188038", "Contact"]]) {
+      const t = document.createElement("button");
+      t.className = "tl-tile";
+      t.innerHTML = `<span class="c" style="background:${color}">${svgIcon(icon, 26)}</span><span></span>`;
+      t.lastElementChild.textContent = label;
+      t.onclick = () => done(value);
+      grid.appendChild(t);
+    }
+    bg.onclick = (e) => { if (e.target === bg) done(null); };
+    document.body.appendChild(bg);
+  });
+}
+
 async function onNewMessageClick() {
+  openNewChat();
+}
+
+async function onNewMessageClickOld() {
   {
     const choice0 = await showActionSheet("New Message", [
       { label: "⌨️ Type a number", value: "type" },
@@ -845,28 +1030,20 @@ function pickFile({ accept, capture, multiple }) {
 }
 
 async function onAttachClick() {
-  const type = await showActionSheet("Attach", [
-    { label: "📷 Photo", value: "photo" },
-    { label: "🎥 Video", value: "video" },
-    { label: "👤 Contact", value: "contact" },
-  ]);
-  if (!type) return;
+  const pick = await attachPicker();
+  if (!pick) return;
 
-  if (type === "contact") {
+  if (pick === "contact") {
     await attachContact();
     return;
   }
-
-  const mode = await showActionSheet(type === "photo" ? "Photo" : "Video", [
-    { label: type === "photo" ? "Take Photo" : "Take Video", value: "live" },
-    { label: "Choose From Gallery", value: "gallery" },
-  ]);
-  if (!mode) return;
-
+  // Gallery: pictures or videos from the device; Camera: take a picture now; Video: record or pick a video
+  const type = pick === "video" ? "video" : "photo";
+  const live = pick === "camera";
   const picked = await pickFile({
-    accept: type === "photo" ? "image/*" : "video/*",
-    capture: mode === "live" ? "environment" : null,
-    multiple: mode !== "live",
+    accept: pick === "gallery" ? "image/*,video/*" : type === "photo" ? "image/*" : "video/*",
+    capture: live ? "environment" : null,
+    multiple: !live,
   });
   const files = Array.isArray(picked) ? picked : (picked ? [picked] : []);
   if (!files.length) return;
@@ -879,7 +1056,7 @@ async function onAttachClick() {
       alert(file.name + " is too large to send (over 60MB) and was left out.");
       continue;
     }
-    setPendingAttachment(file, type, null);
+    setPendingAttachment(file, (file.type || "").startsWith("video/") ? "video" : type, null);
   }
 }
 
@@ -2234,6 +2411,10 @@ async function onForceResyncClick() {
 function onSettingsClick() {
   showScreen("settings");
   addExtraSettings();
+  addLockSettingsButton();
+  addThemeSettingsButton();
+  organizeSettings();
+  openSettingsSection(null);
   loadDeletedMessages();
 }
 
@@ -2318,6 +2499,250 @@ function openPhoneButtons() {
     timer = setTimeout(load, 5000);
   };
   load();
+}
+
+// ---------- Settings laid out like the tablet: a list of sections (icon, title, what is inside); each opens its own page ----------
+const ICONS = {
+  tablet: "M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-2 14H5V6h14v12z",
+  archive: "M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z",
+  star: "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
+  bell: "M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z",
+  bellOff: "M20 18.69L7.84 6.14 5.27 3.49 4 4.76l2.8 2.8v.01c-.52.99-.8 2.16-.8 3.42v5l-2 2v1h13.73l2 2L21 19.72l-1-1.03zM12 22c1.11 0 2-.89 2-2h-4c0 1.11.89 2 2 2zm6-7.32V11c0-3.08-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68c-.15.03-.29.08-.42.12-.1.03-.2.07-.3.11h-.01c-.01 0-.01 0-.02.01-.23.09-.46.2-.68.31 0 0-.01 0-.01.01L18 14.68z",
+  lock: "M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z",
+  history: "M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z",
+  info: "M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z",
+  trash: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+  doneAll: "M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z",
+  block: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z",
+  phone: "M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 20h-4v-1h4v1zm3.25-3H6.75V4h10.5v14z",
+  place: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+  voicemail: "M18.5 6C15.46 6 13 8.46 13 11.5c0 1.33.47 2.55 1.26 3.5H9.74c.79-.95 1.26-2.17 1.26-3.5C11 8.46 8.54 6 5.5 6S0 8.46 0 11.5 2.46 17 5.5 17h13c3.04 0 5.5-2.46 5.5-5.5S21.54 6 18.5 6zm-13 9C3.57 15 2 13.43 2 11.5S3.57 8 5.5 8 9 9.57 9 11.5 7.43 15 5.5 15zm13 0c-1.93 0-3.5-1.57-3.5-3.5S16.57 8 18.5 8 22 9.57 22 11.5 20.43 15 18.5 15z",
+  sync: "M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z",
+  undo: "M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z",
+  reply: "M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z",
+  snooze: "M7.88 3.39L6.6 1.86 2 5.71l1.29 1.53 4.59-3.85zM22 5.72l-4.6-3.86-1.29 1.53 4.6 3.86L22 5.72zM12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7zm-3-9h3.63L9 15.2V17h6v-2h-3.63L15 10.8V9H9v2z",
+  palette: "M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z",
+  swipe: "M18.89 6.28L20.56 3H15v5.56l1.98-1.98C18.3 8.07 19 9.96 19 12c0 3.31-2.24 6.1-5.29 6.92l.51 1.93C17.98 19.83 21 16.27 21 12c0-2.24-.83-4.29-2.11-5.72zM3 12c0 4.27 3.02 7.83 6.79 8.85l.51-1.93C7.24 18.1 5 15.31 5 12c0-2.04.7-3.93 2.02-5.42L9 8.56V3H3.44l1.67 3.28C3.83 7.71 3 9.76 3 12z",
+  group: "M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z",
+  save: "M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z",
+  restart: "M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z",
+  logout: "M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z",
+  person: "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",
+  photo: "M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z",
+  camera: "M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z",
+  video: "M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z",
+  dialpad: "M12 19c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM6 1c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12-8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
+};
+function svgIcon(name, size) {
+  return `<svg viewBox="0 0 24 24" width="${size || 24}" height="${size || 24}" aria-hidden="true" style="flex:none;fill:currentColor"><path d="${ICONS[name] || ICONS.info}"/></svg>`;
+}
+function injectTabletStyles() {
+  if (document.getElementById("tablet-look-css")) return;
+  const s = document.createElement("style");
+  s.id = "tablet-look-css";
+  s.textContent = `
+    .tl-group{background:var(--gm-card,rgba(127,127,127,.12));border-radius:24px;padding:6px 0;margin:8px 12px 14px}
+    .tl-row{display:flex;align-items:center;gap:18px;min-height:64px;padding:8px 20px;cursor:pointer;width:100%;box-sizing:border-box;background:none;border:0;color:inherit;text-align:left;font:inherit;border-radius:0}
+    .tl-row:hover{background:rgba(127,127,127,.08)}
+    .tl-row .tl-ic{color:var(--gm-blue,#1a73e8);display:flex}
+    .tl-row .tl-t{font-size:16px;line-height:1.3}
+    .tl-row .tl-s{font-size:13px;opacity:.7;margin-top:2px;line-height:1.3}
+    .tl-row.danger .tl-t,.tl-row.danger .tl-ic{color:var(--gm-red,#d93025)}
+    #settings-body .tl-group .settings-row{display:flex;align-items:center;gap:18px;min-height:56px;padding:8px 20px 8px 62px;margin:0;width:100%;box-sizing:border-box;background:none;border-radius:0;text-align:left;font-size:16px;position:relative}
+    #settings-body .tl-group .settings-row[data-ic]::before{content:"";position:absolute;left:20px;top:50%;width:24px;height:24px;margin-top:-12px;background:var(--gm-blue,#1a73e8);-webkit-mask:var(--ic) center/24px no-repeat;mask:var(--ic) center/24px no-repeat}
+    #settings-body .tl-group .settings-row.danger[data-ic]::before{background:var(--gm-red,#d93025)}
+    #settings-body .tl-group .settings-row[data-sub]::after{content:attr(data-sub);position:absolute;left:62px;right:20px;bottom:8px;font-size:13px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #settings-body .tl-group .settings-row[data-sub]{padding-bottom:28px;padding-top:12px;align-items:flex-start;min-height:64px}
+    .tl-sectionpage>.settings-heading-row,.tl-sectionpage>.settings-hint,.tl-sectionpage>#deleted-list,.tl-sectionpage>#deleted-selection-toolbar{margin-left:12px;margin-right:12px}
+    .tl-sheet-bg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.35);display:flex;align-items:flex-start;justify-content:center;padding-top:calc(64px + env(safe-area-inset-top,0px))}
+    .tl-sheet{background:var(--gm-page,#fff);color:var(--gm-ink,#202124);border-radius:28px;padding:18px;width:min(520px,calc(100vw - 32px));box-shadow:0 8px 32px rgba(0,0,0,.3)}
+    .tl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .tl-tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 4px;border:0;background:none;color:inherit;font:inherit;font-size:13px;cursor:pointer;border-radius:16px}
+    .tl-tile:hover{background:rgba(127,127,127,.1)}
+    .tl-tile span.c{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}
+    .tl-nc{position:fixed;inset:0;z-index:65;overflow:auto;background:var(--gm-page,var(--bg,#fff));color:var(--gm-ink,inherit)}
+    .tl-nc header{position:sticky;top:0;background:inherit;display:flex;align-items:center;gap:8px;padding:12px max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left))}
+    .tl-nc .to{display:flex;align-items:center;gap:10px;margin:0 16px 8px;padding:6px 16px;border-radius:28px;background:var(--gm-card,rgba(127,127,127,.12))}
+    .tl-nc .to input{flex:1;min-width:0;border:0;background:none;font-size:17px;color:inherit;padding:10px 0;outline:none}
+    .tl-nc .chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 16px 8px}
+    .tl-nc .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:16px;background:var(--gm-blue,#1a73e8);color:#fff;font-size:14px;cursor:pointer}
+    .tl-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;flex:none}
+    .tl-nc .hd{font-size:14px;color:var(--gm-blue,#1a73e8);padding:14px 24px 6px}
+    .tl-nc .go{position:fixed;right:max(20px,env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top,0px));padding:10px 20px;border-radius:20px;border:0;background:var(--gm-blue,#1a73e8);color:#fff;font-size:15px;cursor:pointer}
+  `;
+  document.head.appendChild(s);
+}
+const iconMask = (name) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='${ICONS[name]}'/></svg>`)}")`;
+
+const SETTINGS_SECTIONS = [
+  { key: "layout", icon: "tablet", title: "Layout and screens", sub: "Layout, theme, swipe, group texts, where messages came from" },
+  { key: "messages", icon: "archive", title: "Messages", sub: "Mark all as read, archived, trash, backup and restore, blocked and muted" },
+  { key: "features", icon: "star", title: "Messages features", sub: "Undo send, I'm busy, needs a reply" },
+  { key: "notifications", icon: "bell", title: "Notifications", sub: "New-message notifications on this browser" },
+  { key: "privacy", icon: "lock", title: "Privacy", sub: "Lock this page with a code" },
+  { key: "phone", icon: "history", title: "Flip phone and sync", sub: "Sync messages and attachments, where the phone is, voicemail, flip phone buttons" },
+  { key: "help", icon: "info", title: "Help", sub: "Reload, disconnect this page" },
+];
+// which existing row goes where, with its icon and the line under it
+const SETTINGS_ROWS = [
+  ["layout", "layout-btn", "tablet", "Phone, tablet or classic look"],
+  ["layout", "theme-btn", "palette", ""],
+  ["layout", "swipe-btn", "swipe", "Swipe left and right to move between screens"],
+  ["layout", "tl-groups-in-msgs-btn", "group", "Groups in the Chats list (no Groups tab); New chat then offers Create group"],
+  ["layout", "hide-groups-btn", "group", "Group texts left out of the list on this page"],
+  ["layout", "show-source-btn", "info", "Shows which device sent each message"],
+  ["messages", "mark-all-read-btn", "doneAll", "Every conversation, here and on the flip phone"],
+  ["messages", "archived-btn", "archive", "Conversations you put away"],
+  ["messages", "tl-blocked-btn", "block", "See who is blocked and unblock (same list as the flip phone)"],
+  ["messages", "tl-muted-btn", "bellOff", "See every muted conversation and unmute (same as the flip phone)"],
+  ["messages", "backup-save-btn", "save", "Save this page's settings to a file"],
+  ["messages", "backup-restore-btn", "restart", "Set this page up again from a saved file"],
+  ["features", "undo-send-btn", "undo", ""],
+  ["features", "tl-busy-btn", "snooze", ""],
+  ["features", "needs-reply-btn", "reply", "Conversations whose last message is waiting for you"],
+  ["notifications", "tl-notif-btn", "bell", ""],
+  ["privacy", "app-lock-btn", "lock", "Asked every time this page opens"],
+  ["phone", "sync-btn", "sync", "Progress from the flip phone, and Sync now"],
+  ["phone", "sync-log-btn", "history", "Recent syncs from the phone"],
+  ["phone", "locate-btn", "place", "Ask the phone for its location, only when you press Locate"],
+  ["phone", "voicemail-btn", "voicemail", "Play, delete, check for new voicemail"],
+  ["phone", "phone-buttons-btn", "phone", "Which home-screen buttons open Message+, one switch each, and troubleshooting"],
+  ["help", "tl-reload-btn", "restart", "Loads the newest version of this page"],
+  ["help", "disconnect-btn", "logout", "This page forgets the room; pair again to come back"],
+];
+let settingsSectionOpen = null;
+function organizeSettings() {
+  injectTabletStyles();
+  const body = el("settings-body");
+  if (!body || body.dataset.tl === "1") return;
+  body.dataset.tl = "1";
+  const mkBtn = (id, text, fn, cls) => { const b = document.createElement("button"); b.id = id; b.className = "settings-row" + (cls ? " " + cls : ""); b.textContent = text; b.addEventListener("click", fn); body.appendChild(b); return b; };
+  mkBtn("tl-blocked-btn", "Blocked numbers", showBlockedList);
+  mkBtn("tl-muted-btn", "Muted conversations", showMutedList);
+  const busyBtn = mkBtn("tl-busy-btn", "I'm busy", toggleBusyFromWeb);
+  refreshBusyLabel(busyBtn);
+  const notifBtn = mkBtn("tl-notif-btn", "", async () => {
+    if (!("Notification" in window)) { alert("This browser does not show notifications."); return; }
+    if (Notification.permission === "default") await Notification.requestPermission();
+    else alert(Notification.permission === "granted" ? "Notifications are on. To turn them off, use the browser's site settings (the icon left of the address)." : "Notifications are blocked for this page. Allow them in the browser's site settings (the icon left of the address).");
+    notifLabel();
+  });
+  const notifLabel = () => { notifBtn.textContent = "New-message notifications: " + (!("Notification" in window) ? "not available" : Notification.permission === "granted" ? "On" : Notification.permission === "denied" ? "Blocked" : "Off (tap to allow)"); notifBtn.dataset.sub = "Only while this page is open in the browser; muted chats stay quiet"; };
+  notifLabel();
+  mkBtn("tl-reload-btn", "Reload the page", () => location.reload());
+  const gim = mkBtn("tl-groups-in-msgs-btn", "", () => {
+    try { localStorage.setItem(GROUPS_IN_MSGS_KEY, groupsInMessages() ? "0" : "1"); } catch (e) { /* storage blocked */ }
+    groupsView = false; currentTab = "chats";
+    gimLabel(); renderConversationList(); updateTabs();
+  });
+  const gimLabel = () => { gim.textContent = "Show groups in Messages: " + (groupsInMessages() ? "On" : "Off"); };
+  gimLabel();
+  // the section pages
+  const pages = {};
+  for (const s of SETTINGS_SECTIONS) {
+    const page = document.createElement("div");
+    page.className = "tl-sectionpage";
+    page.dataset.sec = s.key;
+    page.hidden = true;
+    const g = document.createElement("div");
+    g.className = "tl-group";
+    page.appendChild(g);
+    pages[s.key] = { page, g };
+  }
+  for (const [sec, id, icon, sub] of SETTINGS_ROWS) {
+    const b = document.getElementById(id);
+    if (!b) continue;
+    b.dataset.ic = icon;
+    b.style.setProperty("--ic", iconMask(icon));
+    if (sub) b.dataset.sub = sub;
+    pages[sec].g.appendChild(b);
+  }
+  // Trash (Recently Deleted) is its own block inside Messages, like the tablet's Trash
+  const trash = pages.messages.page;
+  for (const id of ["deleted-selection-toolbar", "deleted-list", "deleted-empty-state"]) { const n = document.getElementById(id); if (n) trash.appendChild(n); }
+  const headRow = body.querySelector(".settings-heading-row"), hint = headRow && headRow.nextElementSibling;
+  if (headRow) trash.insertBefore(headRow, document.getElementById("deleted-selection-toolbar"));
+  if (hint && hint.classList.contains("settings-hint")) trash.insertBefore(hint, document.getElementById("deleted-selection-toolbar"));
+  // the main list
+  const main = document.createElement("div");
+  main.id = "tl-settings-main";
+  const list = document.createElement("div");
+  list.className = "tl-group";
+  for (const s of SETTINGS_SECTIONS) {
+    const r = document.createElement("button");
+    r.className = "tl-row";
+    r.innerHTML = `<span class="tl-ic">${svgIcon(s.icon)}</span><span style="flex:1;min-width:0"><div class="tl-t"></div><div class="tl-s"></div></span>`;
+    r.querySelector(".tl-t").textContent = s.title;
+    r.querySelector(".tl-s").textContent = s.sub;
+    r.onclick = () => openSettingsSection(s.key);
+    list.appendChild(r);
+  }
+  main.appendChild(list);
+  // anything left over (a row added by an older part of the page) still shows, under Help
+  for (const n of [...body.children]) if (n.classList && n.classList.contains("settings-row")) pages.help.g.appendChild(n);
+  const extra = document.getElementById("extra-settings"); if (extra && !extra.children.length) extra.remove();
+  body.appendChild(main);
+  for (const s of SETTINGS_SECTIONS) body.appendChild(pages[s.key].page);
+}
+function openSettingsSection(key) {
+  settingsSectionOpen = key;
+  const body = el("settings-body");
+  if (!body) return;
+  const main = document.getElementById("tl-settings-main");
+  if (main) main.hidden = !!key;
+  for (const p of body.querySelectorAll(".tl-sectionpage")) p.hidden = p.dataset.sec !== key;
+  const h = document.querySelector("#screen-settings .topbar h2");
+  if (h) h.textContent = key ? (SETTINGS_SECTIONS.find((s) => s.key === key) || {}).title || "Settings" : "Settings";
+  if (key === "features") refreshBusyLabel(document.getElementById("tl-busy-btn"));
+  body.scrollTop = 0;
+}
+async function showBlockedList() {
+  let o = null;
+  try { const r = await fetch(roomUrl("blockedNumbers")); if (r.ok) o = (await r.json()) || {}; } catch (e) { /* offline */ }
+  if (!o) { alert("Could not load the list (no internet?)"); return; }
+  const nums = Object.keys(o);
+  const pick = await showActionSheet(nums.length ? "Blocked - tap one to unblock" : "Blocked numbers", nums.length ? nums.map((n) => ({ label: (displayName(n) || n) + (displayName(n) && displayName(n) !== n ? " · " + n : ""), value: n })) : [{ label: "Nobody is blocked", value: "" }]);
+  if (pick && confirm("Unblock " + (displayName(pick) || pick) + "? (on the flip phone too)")) await toggleBlocked(pick);
+}
+async function showMutedList() {
+  await loadMuted();
+  const nums = [...mutedSet];
+  const pick = await showActionSheet(nums.length ? "Muted - tap one to unmute" : "Muted conversations", nums.length ? nums.map((n) => ({ label: displayName(n) || n, value: n })) : [{ label: "Nothing is muted", value: "" }]);
+  if (pick) await toggleMuted(pick);
+}
+async function refreshBusyLabel(b) {
+  if (!b) return;
+  try {
+    const r = await fetch(roomUrl("busyMode"));
+    const j = r.ok ? await r.json() : null;
+    const on = !!(j && j.on && (!j.endsAt || j.endsAt > Date.now()));
+    b.textContent = "I'm busy: " + (on ? "On" : "Off");
+    b.dataset.sub = on ? "Texts are answered automatically by the tablets. Tap to turn off." : "Turn it on here; the tablets that have the feature send the replies";
+  } catch (e) { b.textContent = "I'm busy"; }
+}
+async function toggleBusyFromWeb() {
+  const b = document.getElementById("tl-busy-btn");
+  let j = null;
+  try { const r = await fetch(roomUrl("busyMode")); j = r.ok ? await r.json() : null; } catch (e) { alert("No connection."); return; }
+  const on = !!(j && j.on && (!j.endsAt || j.endsAt > Date.now()));
+  let next;
+  if (on) {
+    if (!confirm("Turn I'm busy off on every tablet?")) return;
+    next = Object.assign({}, j, { on: false, by: "web page", at: Date.now() });
+  } else {
+    const how = await showActionSheet("Turn on I'm busy", [
+      { label: "For 1 hour", value: 3600e3 }, { label: "For 3 hours", value: 3 * 3600e3 }, { label: "Until I turn it off", value: 0 }]);
+    if (how === null || how === undefined) return;
+    const msg = prompt("Message people get when they text you:", (j && j.message) || "I'm busy right now and can't answer. I'll get back to you as soon as I can.");
+    if (msg === null) return;
+    // the same defaults as the tablet (BusyLogic): answer texts and calls, one reply per person per 4 hours
+    next = Object.assign({ callMessage: "Sorry I missed your call - I'm busy right now. I'll call you back as soon as I can.", answerCalls: true, scope: 0, windowMs: 4 * 3600e3 }, j || {}, { on: true, endsAt: how ? Date.now() + how : 0, message: msg, by: "web page", at: Date.now() });
+  }
+  try {
+    const r = await fetch(roomUrl("busyMode"), { method: "PUT", body: JSON.stringify(next) });
+    if (!r.ok) throw new Error(r.status);
+  } catch (e) { alert("Not changed: no connection."); }
+  refreshBusyLabel(b);
 }
 
 // A full-page panel over the app (Back closes it). Returns {ov, body, alive(), onClose(fn)}.
@@ -3073,11 +3498,68 @@ function updateGroupsButton() {
   b.style.color = unread && !groupsView ? "#e53935" : "";
   const g = document.getElementById("gm-groups-btn");
   if (g) { g.classList.toggle("hidden", groupsHidden()); g.style.position = "relative"; g.style.color = groupsView ? "var(--accent, #0b57d0)" : ""; g.dataset.dot = unread && !groupsView ? "1" : "0"; }
+  updateTabs();
 }
+// "Show groups in Messages" (like the tablet): groups sit in the Chats list and there is no Groups tab
+const GROUPS_IN_MSGS_KEY = "flip_relay_web_groups_in_messages";
+function groupsInMessages() { try { return localStorage.getItem(GROUPS_IN_MSGS_KEY) === "1"; } catch (e) { return false; } }
+
+// ---------- tabs at the top: Chats, Groups, Calls, Voicemail (the one you are on is lit; no button to switch back off) ----------
+let currentTab = "chats";
+function addTabBars() {
+  injectTabletStyles();
+  if (!document.getElementById("tl-tabs-css")) {
+    const s = document.createElement("style");
+    s.id = "tl-tabs-css";
+    s.textContent = `.tl-tabs{display:flex;gap:8px;padding:4px max(12px,env(safe-area-inset-left)) 10px;overflow-x:auto;scrollbar-width:none}
+      .tl-tab{flex:none;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;border:0;background:var(--gm-card,rgba(127,127,127,.14));color:inherit;font:inherit;font-size:15px;cursor:pointer;position:relative}
+      .tl-tab.on{background:var(--gm-blue,#1a73e8);color:#fff}
+      .tl-tab[data-dot="1"]::after{content:"";position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;background:#e53935}
+      #groups-btn,#calls-btn,#gm-groups-btn,#gm-calls-btn{display:none!important}`;
+    document.head.appendChild(s);
+  }
+  for (const screen of ["screen-conversations", "screen-calls"]) {
+    const sec = document.getElementById(screen);
+    if (!sec || sec.querySelector(".tl-tabs")) continue;
+    const bar = document.createElement("div");
+    bar.className = "tl-tabs";
+    for (const [key, icon, label] of [["chats", "reply", "Chats"], ["groups", "group", "Groups"], ["calls", "phone", "Calls"], ["voicemail", "voicemail", "Voicemail"]]) {
+      const b = document.createElement("button");
+      b.className = "tl-tab";
+      b.dataset.tab = key;
+      b.innerHTML = svgIcon(icon, 18) + "<span></span>";
+      b.lastElementChild.textContent = label;
+      b.onclick = () => goTab(key);
+      bar.appendChild(b);
+    }
+    const top = sec.querySelector(".topbar");
+    if (top) top.after(bar); else sec.prepend(bar);
+  }
+  updateTabs();
+}
+function goTab(key) {
+  if (key === "voicemail") { openVoicemailPanel(); return; } // opens over the list; Back returns to the tab you were on
+  currentTab = key;
+  if (key === "calls") { onCallsClick(); updateTabs(); return; }
+  groupsView = key === "groups";
+  showScreen("conversations");
+  renderConversationList();
+  updateTabs();
+}
+function updateTabs() {
+  const groupsTab = !groupsHidden() && !groupsInMessages();
+  if (!groupsTab && currentTab === "groups") { currentTab = "chats"; groupsView = false; }
+  const unreadGroups = groupsTab && conversationsByNumber().some((c) => isMulti(c.number) && c.unread && !archived.has(c.number));
+  for (const b of document.querySelectorAll(".tl-tab")) {
+    b.classList.toggle("on", b.dataset.tab === currentTab);
+    if (b.dataset.tab === "groups") { b.hidden = !groupsTab; b.dataset.dot = unreadGroups && currentTab !== "groups" ? "1" : "0"; }
+  }
+}
+
 function filteredConversations() {
   let convos = conversationsByNumber().filter((c) => !archived.has(c.number));
   if (groupsHidden()) convos = convos.filter((c) => !isMulti(c.number));
-  else convos = convos.filter((c) => isMulti(c.number) === groupsView); // groups only on their own screen
+  else if (!groupsInMessages()) convos = convos.filter((c) => isMulti(c.number) === groupsView); // groups only on their own tab
   const q = conversationSearchQuery.trim().toLowerCase();
   if (q) {
     convos = convos.filter(({ number }) => {
@@ -3417,6 +3899,7 @@ function addExtraSettings() {
   hg.textContent = "Hide group texts (this page only): " + (groupsHidden() ? "On" : "Off");
   const sw = mk("", () => { try { localStorage.setItem(SWIPE_KEY, swipeOn() ? "0" : "1"); } catch (e) { /* blocked */ } sw.textContent = "Swipe between screens: " + (swipeOn() ? "On" : "Off"); });
   sw.textContent = "Swipe between screens: " + (swipeOn() ? "On" : "Off");
+  src.id = "show-source-btn"; hg.id = "hide-groups-btn"; sw.id = "swipe-btn";
   mk("Archived conversations", async () => {
     const list = [...archived];
     if (!list.length) { await showActionSheet("Archived", [{ label: "Nothing archived", value: "x" }]); return; }
@@ -3442,6 +3925,8 @@ function addExtraSettings() {
       location.reload();
     } catch (e) { alert("That file could not be read."); }
   });
+  const [, , , arch, save, restore] = box.children;
+  arch.id = "archived-btn"; save.id = "backup-save-btn"; restore.id = "backup-restore-btn";
   body.insertBefore(box, body.firstChild);
 }
 
