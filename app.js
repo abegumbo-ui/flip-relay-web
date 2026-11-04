@@ -954,19 +954,26 @@ async function fbSignIn() {
   if (!fbTimer) fbTimer = setInterval(() => { fbSignIn().catch((e) => logDebug("token renewal failed: " + e)); }, 40 * 60 * 1000);
   return fbUid;
 }
+const joinedThisLoad = new Set();
 // Puts this page on the room's guest list with the room's long key (a page without the key has to scan or type it).
 async function joinRoomWeb(room) {
   if (!fbUid) await fbSignIn();
   const done = "flip_relay_web_joined_" + room;
-  let joined = false;
-  try { joined = !!localStorage.getItem(done); } catch (e) { /* storage blocked */ }
-  if (!joined) {
+  // joined again on every page load (one small write): if this page was removed from the room on the dashboard, it gets back in
+  // with the room key instead of being refused everywhere while it thinks all is well
+  let wasJoined = false;
+  try { wasJoined = !!localStorage.getItem(done); } catch (e) { /* storage blocked */ }
+  if (!joinedThisLoad.has(room)) {
     let key = null;
     try { key = localStorage.getItem(roomKeyStore(room)); } catch (e) { /* storage blocked */ }
-    if (!key) return false;
-    const r = await fetch(`${DATABASE_URL}/rooms/${room}/members/${fbUid}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(key) });
-    if (!r.ok) return false;
-    try { localStorage.setItem(done, "1"); } catch (e) { /* storage blocked */ }
+    if (!key) {
+      if (!wasJoined) return false; // never joined and no key: it has to scan or type the code
+    } else {
+      const r = await fetch(`${DATABASE_URL}/rooms/${room}/members/${fbUid}.json?auth=${encodeURIComponent(DATABASE_SECRET)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(key) });
+      if (!r.ok && !wasJoined) return false;
+      if (r.ok) try { localStorage.setItem(done, "1"); } catch (e) { /* storage blocked */ }
+    }
+    joinedThisLoad.add(room);
   }
   await reportBuildWeb(room);
   return true;
@@ -3166,6 +3173,10 @@ async function decryptConfig(pass) {
 }
 
 async function configGate() {
+  // Since every page signs in on its own (anonymous sign-in) and the database rules let only a room's own devices in, the database
+  // address is not a secret any more: it is built in, and no passphrase is asked for.
+  if (!DATABASE_URL) DATABASE_URL = "https://flip-relay-default-rtdb.firebaseio.com";
+  if (DATABASE_URL) return;
   if (ENC_CONFIG.indexOf("__") === 0) return; // local/unbuilt copy: nothing encrypted
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(CFG_KEY) || "null"); } catch (e) {}
