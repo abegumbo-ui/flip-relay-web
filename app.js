@@ -1290,6 +1290,47 @@ function startStreams() {
 
   startPhoneHeartbeatPoll();
   loadMuted();
+  startAutoBanner();
+}
+
+// ---------- banner while "I'm busy" or automatic replies are on (set on a tablet, shared through the room; shown here, never sent from here) ----------
+let autoBannerTimer = 0;
+function startAutoBanner() {
+  clearInterval(autoBannerTimer);
+  const tick = async () => {
+    if (!roomId || document.hidden) return;
+    let busy, rules;
+    try {
+      const [a, b] = await Promise.all([fetch(roomUrl("busyMode")), fetch(roomUrl("personRules"))]);
+      if (!a.ok && !b.ok) return;
+      busy = a.ok ? await a.json() : null;
+      rules = b.ok ? await b.json() : null;
+    } catch (e) { return; }
+    const ban = el("auto-banner");
+    if (!ban) return;
+    const now = Date.now();
+    let text = "";
+    if (busy && busy.on && (!busy.endsAt || busy.endsAt > now)) {
+      const until = busy.endsAt > now ? " until " + new Date(busy.endsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
+      text = `I'm busy is ON${until} - texts are answered automatically${busy.by ? " (turned on on " + busy.by + ")" : ""}. Tap to turn it off.`;
+      ban.onclick = async () => {
+        if (!confirm("Turn I'm busy off on every tablet?")) return;
+        try {
+          const r = await fetch(roomUrl("busyMode"), { method: "PUT", body: JSON.stringify(Object.assign({}, busy, { on: false, by: "web page", at: Date.now() })) });
+          if (!r.ok) throw new Error(r.status);
+          ban.classList.add("hidden");
+        } catch (e) { alert("Not changed: no connection."); }
+      };
+    } else if (rules) {
+      const people = Object.values(rules).filter((r) => r && (r.t || r.d || r.m)).length;
+      if (people) text = `Automatic replies are on for ${people} ${people === 1 ? "person" : "people"} (set on a tablet).`;
+      ban.onclick = null;
+    }
+    ban.textContent = text;
+    ban.classList.toggle("hidden", !text);
+  };
+  tick();
+  autoBannerTimer = setInterval(tick, 15000);
 }
 
 // ---------- muted conversations: shared with the flip phone and the tablets (rooms/<room>/muted/<number> = true) ----------
