@@ -3273,15 +3273,16 @@ function renderCallsList() {
   if (!bar) {
     bar = document.createElement("div");
     bar.id = "calls-tabs";
-    bar.style.cssText = "display:flex;gap:6px;padding:6px 12px;overflow-x:auto";
+    bar.className = "tl-tabs";
+    bar.style.cssText = "flex:none";
     list.parentNode.insertBefore(bar, list);
   }
   bar.innerHTML = "";
-  ["All", "Contacts", "Not contacts", "Missed"].forEach((label, i) => {
+  const missedCount = allCalls.filter((c) => c.type === "missed").length;
+  ["All", "Contacts", "Not contacts", "Missed" + (missedCount ? " (" + missedCount + ")" : "")].forEach((label, i) => {
     const b = document.createElement("button");
-    b.className = "toolbar-btn";
+    b.className = "tl-tab" + (i === callsTab ? " on" : "");
     b.textContent = label;
-    if (i === callsTab) b.style.fontWeight = "700";
     b.addEventListener("click", () => { callsTab = i; renderCallsList(); });
     bar.appendChild(b);
   });
@@ -3511,7 +3512,9 @@ function addTabBars() {
   if (!document.getElementById("tl-tabs-css")) {
     const s = document.createElement("style");
     s.id = "tl-tabs-css";
-    s.textContent = `.tl-tabs{display:flex;gap:8px;padding:4px max(12px,env(safe-area-inset-left)) 10px;overflow-x:auto;scrollbar-width:none}
+    s.textContent = `.tl-tabs{display:flex;flex:none;gap:8px;padding:4px max(12px,env(safe-area-inset-left)) 10px;overflow-x:auto;scrollbar-width:none;min-height:52px;box-sizing:border-box;align-items:center}
+      #screen-calls>*{flex-shrink:0}#screen-calls>#calls-list{flex-shrink:1;min-height:0;overflow:auto}
+      #screen-calls .settings-hint{margin-left:16px;margin-right:16px}
       .tl-tab{flex:none;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;border:0;background:var(--gm-card,rgba(127,127,127,.14));color:inherit;font:inherit;font-size:15px;cursor:pointer;position:relative}
       .tl-tab.on{background:var(--gm-blue,#1a73e8);color:#fff}
       .tl-tab[data-dot="1"]::after{content:"";position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;background:#e53935}
@@ -3520,9 +3523,9 @@ function addTabBars() {
   }
   for (const screen of ["screen-conversations", "screen-calls"]) {
     const sec = document.getElementById(screen);
-    if (!sec || sec.querySelector(".tl-tabs")) continue;
+    if (!sec || sec.querySelector(".tl-tabs.tl-main")) continue;
     const bar = document.createElement("div");
-    bar.className = "tl-tabs";
+    bar.className = "tl-tabs tl-main";
     for (const [key, icon, label] of [["chats", "reply", "Chats"], ["groups", "group", "Groups"], ["calls", "phone", "Calls"], ["voicemail", "voicemail", "Voicemail"]]) {
       const b = document.createElement("button");
       b.className = "tl-tab";
@@ -3550,7 +3553,7 @@ function updateTabs() {
   const groupsTab = !groupsHidden() && !groupsInMessages();
   if (!groupsTab && currentTab === "groups") { currentTab = "chats"; groupsView = false; }
   const unreadGroups = groupsTab && conversationsByNumber().some((c) => isMulti(c.number) && c.unread && !archived.has(c.number));
-  for (const b of document.querySelectorAll(".tl-tab")) {
+  for (const b of document.querySelectorAll(".tl-tab[data-tab]")) { // the main tabs only (the Calls filters have their own)
     b.classList.toggle("on", b.dataset.tab === currentTab);
     if (b.dataset.tab === "groups") { b.hidden = !groupsTab; b.dataset.dot = unreadGroups && currentTab !== "groups" ? "1" : "0"; }
   }
