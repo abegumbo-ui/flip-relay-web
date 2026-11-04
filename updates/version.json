@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26131973,
+    "versionName": "6.4.5-FR GOLOMBECK (build 167)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26131973/messageplus-26131973.apk",
+    "at": 1793806364527,
+    "notes": "Sync works without internet: the phone now prepares all of your messages for the tablet even while it is offline, and sends them as soon as the internet is back. A sync that was interrupted also carries on by itself without internet, and blocked people stay left out."
+  },
+  "messageplus_previous": {
     "versionCode": 26130697,
     "versionName": "6.4.5-FR GOLOMBECK (build 166)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26130697/messageplus-26130697.apk",
     "at": 1793729731365,
     "notes": "Uses much less data: after you delete messages, Message+ now looks up only those messages instead of downloading your whole message history again."
-  },
-  "messageplus_previous": {
-    "versionCode": 26129126,
-    "versionName": "6.4.5-FR GOLOMBECK (build 165)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26129126/messageplus-26129126.apk",
-    "at": 1793635493332,
-    "notes": "Message+ now tells the relay which build it is, so the owner can shut out old builds that have not updated."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
