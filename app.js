@@ -390,6 +390,7 @@ function init() {
   el("disconnect-btn").addEventListener("click", onForgetClick);
   el("sync-log-btn").addEventListener("click", onSyncLogClick);
   el("layout-btn").addEventListener("click", onLayoutClick);
+  el("phone-buttons-btn").addEventListener("click", openPhoneButtons);
   el("gm-fab").addEventListener("click", () => el("new-message-btn").click());
   applyLayout();
   el("calls-btn").addEventListener("click", onCallsClick);
@@ -2106,6 +2107,88 @@ function onSettingsClick() {
 }
 
 /** The phone's recent HistoricalSyncer.syncNow() history -- see the phone's own SyncLog.java. Read-only, so any pick just closes it. */
+// Settings > Flip phone buttons: the flip's home-screen button shortcuts (its accessibility service), the same as the tablet's screen.
+// rooms/<room>/buttons/config {on, keys, at} is applied on the flip within seconds; buttons/state is what the flip reports;
+// buttons/disable turns the accessibility service off (three confirmations; only a person on the flip can turn it back on).
+const PHONE_BUTTONS = [["DPAD_UP", "D-pad Up"], ["BACK", "Clear (C)"], ["SOFT_LEFT", "Left soft key"], ["SOFT_RIGHT", "Right soft key"], ["CALL", "Send/Call"], ["SPEAKER_IN", "Mic/voice (press and hold)"]];
+const PHONE_BUTTONS_DEFAULT = ["DPAD_UP", "BACK", "SOFT_RIGHT", "SPEAKER_IN"];
+function openPhoneButtons() {
+  const ov = document.createElement("div");
+  ov.style.cssText = "position:fixed;inset:0;z-index:60;overflow:auto;background:var(--gm-page,var(--bg,#fff));color:var(--gm-ink,inherit);padding:16px max(16px,env(safe-area-inset-right)) 32px max(16px,env(safe-area-inset-left))";
+  ov.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="icon-btn" data-x="back" title="Back">&#8592;</button><h2 style="margin:0">Flip phone buttons</h2></div>
+    <p class="settings-hint">On the flip phone's home screen, these buttons open Message+. Turn each one on or off here; the flip follows within a few seconds. They only work while Message+ is the flip's default texting app.</p>
+    <div style="border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"><div class="settings-hint" style="margin:0">Status on the flip</div><div data-x="state" style="font-size:18px;font-weight:600">Checking...</div></div>
+    <div data-x="switches" style="border-radius:20px;padding:6px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"></div>
+    <div style="border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"><h3 style="margin:0 0 6px">Troubleshooting</h3>
+      <p class="settings-hint">"Paused: Message+ is not the default texting app" - on the flip open Settings &gt; Apps &gt; Default apps &gt; SMS app and choose Message+. The buttons come back by themselves.</p>
+      <p class="settings-hint">"Not turned on in the flip's Accessibility settings" - this step has to be done on the flip itself: Settings &gt; Accessibility &gt; Message+ &gt; On, then OK. No app or tablet can do it.</p>
+      <p class="settings-hint">To turn it off by hand on the flip: Settings &gt; Accessibility &gt; Message+ &gt; Off.</p>
+      <p class="settings-hint">A button does something odd on the home screen: switch just that button off above.</p></div>
+    <button class="settings-row danger" data-x="off" style="border-radius:20px">Turn off accessibility completely</button>
+    <p class="settings-hint">This switches the flip's accessibility service off. It can only be turned back on by hand on the flip (Settings &gt; Accessibility &gt; Message+).</p>`;
+  document.body.appendChild(ov);
+  const q = (k) => ov.querySelector(`[data-x="${k}"]`);
+  const box = q("switches");
+  const rows = [["master", "Button shortcuts", "All of them on or off"], ...PHONE_BUTTONS.map(([id, label]) => [id, label, ""])];
+  const inputs = {};
+  for (const [id, label, sub] of rows) {
+    const r = document.createElement("label");
+    r.style.cssText = "display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer";
+    r.innerHTML = `<span style="flex:1;min-width:0"><span style="display:block;font-size:16px">${label}</span>${sub ? `<span class="settings-hint" style="margin:0">${sub}</span>` : ""}</span><input type="checkbox" style="width:22px;height:22px">`;
+    inputs[id] = r.querySelector("input");
+    box.appendChild(r);
+  }
+  let alive = true, timer = 0, filling = false;
+  const close = () => { alive = false; clearTimeout(timer); ov.remove(); };
+  q("back").onclick = close;
+  const save = async () => {
+    if (filling) return;
+    const keys = {};
+    for (const [id] of PHONE_BUTTONS) keys[id] = inputs[id].checked;
+    try {
+      const r = await fetch(roomUrl("buttons/config"), { method: "PUT", body: JSON.stringify({ on: inputs.master.checked, keys, by: "web", at: { ".sv": "timestamp" } }) });
+      if (!r.ok) throw new Error(r.status);
+    } catch (e) { alert("Not saved: no connection. Try again."); }
+  };
+  for (const id in inputs) inputs[id].onchange = () => {
+    if (id === "master") for (const [k] of PHONE_BUTTONS) inputs[k].disabled = !inputs.master.checked;
+    save();
+  };
+  q("off").onclick = async () => {
+    if (!confirm("Step 1 of 3: Do you understand what you are doing? This turns off the flip phone's accessibility service, so none of the buttons open Message+.")) return;
+    if (!confirm("Step 2 of 3: Are you sure? It cannot be turned back on from here. Someone has to do it on the flip: Settings > Accessibility > Message+.")) return;
+    if (!confirm("Step 3 of 3: Last question: turn off accessibility on the flip phone now?")) return;
+    try {
+      const r = await fetch(roomUrl("buttons/disable"), { method: "PUT", body: JSON.stringify({ at: { ".sv": "timestamp" }, by: "web" }) });
+      alert(r.ok ? "Sent. The flip turns it off within a few seconds." : "Not sent: no connection.");
+    } catch (e) { alert("Not sent: no connection."); }
+  };
+  const load = async () => {
+    if (!alive) return;
+    let all = null;
+    try { const r = await fetch(roomUrl("buttons")); if (r.ok) all = (await r.json()) || {}; } catch (e) { /* offline */ }
+    if (!alive) return;
+    const st = q("state");
+    if (!all) { st.textContent = "Could not reach the flip's settings (no internet?)"; }
+    else {
+      const s = (all.state || {}).state;
+      const lines = { working: "Working", off: "Off (switched off here)", not_default: "Paused: Message+ is not the flip's default texting app", not_allowed: "Not turned on in the flip's Accessibility settings" };
+      st.textContent = lines[s] || "Waiting for the flip (it needs Message+ build 170 or newer)";
+      st.style.color = s === "not_default" || s === "not_allowed" ? "var(--gm-red,#d93025)" : "";
+      const cfg = all.config, keys = cfg && cfg.keys;
+      if (document.activeElement == null || !box.contains(document.activeElement)) {
+        filling = true;
+        inputs.master.checked = !cfg || cfg.on !== false;
+        for (const [id] of PHONE_BUTTONS) { inputs[id].checked = keys ? !!keys[id] : PHONE_BUTTONS_DEFAULT.includes(id); inputs[id].disabled = !inputs.master.checked; }
+        filling = false;
+      }
+    }
+    timer = setTimeout(load, 5000);
+  };
+  load();
+}
+
 async function onSyncLogClick() {
   let entries = [];
   try {
