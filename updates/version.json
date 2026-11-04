@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "0492c293ac78e5b004b63c92cc1393f485515f20",
-    "publishedAt": "2026-11-04T19:18:52Z",
-    "build": 655,
-    "notes": "New: an orange banner at the top of the conversation list shows on every tablet while I'm busy or automatic replies are on. Tap it to change them."
+    "sha": "e98068dc596b65cccd084fef5ec2c6c7f96994ad",
+    "publishedAt": "2026-11-04T20:01:33Z",
+    "build": 656,
+    "notes": "New: search box at the top of Settings finds any setting in any section. New: a line at the top of the conversations shows the flip phone at a glance (connected, Wi-Fi, battery); tap it for Flip phone and sync."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
