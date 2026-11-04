@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "e98068dc596b65cccd084fef5ec2c6c7f96994ad",
-    "publishedAt": "2026-11-04T20:01:33Z",
-    "build": 656,
-    "notes": "New: search box at the top of Settings finds any setting in any section. New: a line at the top of the conversations shows the flip phone at a glance (connected, Wi-Fi, battery); tap it for Flip phone and sync."
+    "sha": "466965833b5bcf47d8ea45700a26f0935f3f6667",
+    "publishedAt": "2026-11-04T20:11:57Z",
+    "build": 657,
+    "notes": "The flip phone status line at the top of the conversations is gone again (it belongs to the web page; the round card shows the same). Settings search stays."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
