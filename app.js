@@ -4070,7 +4070,8 @@ function lockCard(opts) {
     (opts.fields || []).forEach((label) => {
       const i = document.createElement("input");
       i.type = "password";
-      i.inputMode = opts.textKeyboard ? "text" : "numeric";
+      i.inputMode = "text"; // letters and numbers (the number-only keyboard made it look like nothing but 123 could be typed)
+      i.autocapitalize = "off";
       i.autocomplete = "off";
       i.placeholder = label;
       i.style.cssText = "font-size:18px;padding:12px;border:1px solid #c4c6d0;border-radius:12px;" + (opts.textKeyboard ? "" : "letter-spacing:4px");
@@ -4112,12 +4113,12 @@ function lockCard(opts) {
 async function lockSetNew() {
   return lockCard({
     title: "Set a code",
-    text: "At least 4 digits. It will be asked every time this app opens.",
+    text: "At least 4 letters or numbers. It will be asked every time this app opens.",
     fields: ["New code", "Repeat code"],
     okLabel: "Save",
     extra: opts_cancel(),
     validate: async (v) => {
-      if (!/^[0-9]{4,12}$/.test(v[0])) return "Use 4 to 12 digits.";
+      if (!/^[A-Za-z0-9]{4,20}$/.test(v[0])) return "Use 4 to 20 letters or numbers.";
       if (v[0] !== v[1]) return "The two codes are different.";
       const salt = Array.from(crypto.getRandomValues(new Uint8Array(8))).map((b) => b.toString(16).padStart(2, "0")).join("");
       localStorage.setItem(LOCK_KEY, JSON.stringify({ salt: salt, hash: await lockHash(v[0], salt) }));
@@ -4147,6 +4148,8 @@ async function lockGate() {
       await lockAskCode("Enter your code");
       return;
     }
+    // the offer to set a code waits until this page is paired: the very first screen is always the pairing code
+    if (!localStorage.getItem(ROOM_KEY)) return;
     if (!localStorage.getItem(LOCK_SKIP_KEY)) {
       const set = await lockCard({
         title: "Protect this app with a code?",
