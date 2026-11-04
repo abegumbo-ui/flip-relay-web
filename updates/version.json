@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "466965833b5bcf47d8ea45700a26f0935f3f6667",
-    "publishedAt": "2026-11-04T20:11:57Z",
-    "build": 657,
-    "notes": "The flip phone status line at the top of the conversations is gone again (it belongs to the web page; the round card shows the same). Settings search stays."
+    "sha": "4a71ec01ea586072159369182b14c300676c47a4",
+    "publishedAt": "2026-11-04T23:41:14Z",
+    "build": 659,
+    "notes": "Small update in the background (it notes when this tablet reads a conversation, for a feature coming later). Nothing changes on screen."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",

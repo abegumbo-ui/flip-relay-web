@@ -377,6 +377,14 @@ function addGmHeader() {
 }
 
 function init() {
+  if (location.hash === "#showreadby") { // hidden switch for this page only: a message's Info says who read it
+    try {
+      const on = localStorage.getItem("flip_relay_show_read_by") !== "1";
+      localStorage.setItem("flip_relay_show_read_by", on ? "1" : "0");
+      setTimeout(() => alert(on ? "Who read it: now shown in Message info on this page." : "Who read it: hidden on this page."), 500);
+    } catch (e) { /* storage blocked */ }
+    history.replaceState(null, "", location.pathname);
+  }
   addGmHeader();
   addTabBars();
   const savedRoom = localStorage.getItem(ROOM_KEY);
@@ -1534,6 +1542,7 @@ function sendReadMark(number, ts) {
   if (!roomId || !number || (readMarkSent[number] || 0) >= ts) return;
   readMarkSent[number] = ts;
   fetch(roomUrl(`readMarks/${number}`), { method: "PUT", body: JSON.stringify(ts) }).catch(() => { readMarkSent[number] = 0; });
+  putReadBy([number], ts);
 }
 async function markAllRead() {
   const now = Date.now(), patch = {};
@@ -1541,6 +1550,7 @@ async function markAllRead() {
   saveReadState();
   renderConversationList();
   try { await fetch(roomUrl("readMarks"), { method: "PATCH", body: JSON.stringify(patch) }); } catch (e) { /* the flip catches up next time */ }
+  putReadBy(Object.keys(patch), now);
 }
 
 // How long the heartbeat value can go unchanged before it's treated as
@@ -2301,7 +2311,43 @@ function showMessageInfo(m) {
   if (m.fromNumber) lines.push("Written by: " + displayName(m.fromNumber));
   if (m.direction === "out") lines.push("Sent from: " + (m.source === "web" ? "this page (through the phone)" : "the phone"));
   lines.push("Message ID: " + m.id, "Conversation: " + m.number);
-  alert(lines.join("\n"));
+  // "who read it" shows only on a page where it was switched on (open the page once with #showreadby); every page records it
+  let showReadBy = false;
+  try { showReadBy = localStorage.getItem("flip_relay_show_read_by") === "1"; } catch (e) { /* storage blocked */ }
+  if (m.direction !== "in" || !showReadBy) { alert(lines.join("\n")); return; }
+  // a received message: who read it (rooms/<room>/readBy/<number>); none of the tablets or web pages = read on the flip phone
+  readByLine(m).then((line) => alert([line, ...lines].join("\n")));
+}
+
+async function readByLine(m) {
+  let o;
+  try {
+    const r = await fetch(roomUrl(`readBy/${m.number}`));
+    if (!r.ok) return "Read: could not check (no connection)";
+    o = (await r.json()) || {};
+  } catch (e) { return "Read: could not check (no connection)"; }
+  const fmt = (t) => new Date(t).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const who = Object.values(o).filter((d) => d && (d.at || 0) >= (m.timestamp || 0)).sort((a, b) => a.at - b.at)
+    .map((d) => (d.n || "a device") + (d.k === "web" ? "" : " (tablet)") + " at " + fmt(d.at));
+  if (who.length) return "Read on: " + who.join(", ");
+  if (phoneUnread) {
+    const n = phoneUnread[m.number] || 0;
+    return n > 0 ? "Not read yet" : "Read on the flip phone";
+  }
+  return "Read: not known yet";
+}
+
+// this page in the "who read it" list (rooms/<room>/readBy/<number>/<this page's id>)
+function readByName() {
+  const ua = navigator.userAgent || "";
+  const os = /Windows/.test(ua) ? "Windows" : /Mac OS/.test(ua) ? "Mac" : /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iPhone" : /Linux/.test(ua) ? "Linux" : "";
+  return "Web page" + (os ? " (" + os + ")" : "");
+}
+function putReadBy(numbers, ts) {
+  if (!roomId || !fbUid || !numbers.length) return;
+  const patch = {};
+  for (const n of numbers) if (n && !/[.#$\[\]]/.test(n)) patch[`${n}/${fbUid}`] = { n: readByName(), k: "web", at: ts };
+  fetch(roomUrl("readBy"), { method: "PATCH", body: JSON.stringify(patch) }).catch(() => { /* best effort */ });
 }
 
 // ---------- forward ----------
