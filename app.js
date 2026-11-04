@@ -3265,6 +3265,21 @@ function formatCallDuration(seconds) {
   return `${m}:${s < 10 ? "0" + s : s}`;
 }
 
+// ---------- quick replies: the same ready-made texts as the tablet, plus your own (kept in this browser) ----------
+const QUICK_DEFAULTS = ["I'll call you back later", "I'm busy right now", "Can't talk now, what's up?", "I'm on my way"];
+const QUICK_KEY = "flip_relay_web_quick_replies";
+function quickCustom() { try { return JSON.parse(localStorage.getItem(QUICK_KEY) || "[]"); } catch (e) { return []; } }
+function quickReplies() { return QUICK_DEFAULTS.concat(quickCustom()); }
+function addQuickReply(t) { const l = quickCustom(); if (!l.includes(t)) l.push(t); try { localStorage.setItem(QUICK_KEY, JSON.stringify(l)); } catch (e) { /* storage blocked */ } }
+async function sendQuick(number, text, name) {
+  if (undoSendOn() && !(await undoBar(`Sending to ${name}: "${text}"`))) return;
+  const keep = currentChatNumber;
+  currentChatNumber = number;
+  try { await sendOne(text, null, null, null); } finally { currentChatNumber = keep; }
+  if (keep) renderChat(keep);
+  renderConversationList();
+}
+
 let callsTab = 0; // 0 = All, 1 = Contacts, 2 = Not contacts, 3 = Missed
 function renderCallsList() {
   const list = el("calls-list");
@@ -3297,12 +3312,29 @@ function renderCallsList() {
     }) : "";
     const durationPart = call.type === "missed" ? "" : `${formatCallDuration(call.duration)} &middot; `;
     row.innerHTML = `
-      <div class="info">
+      <div class="info" style="min-width:0">
         <div class="name">${escapeHtml(call.contactName || call.number)}</div>
         <div class="preview"${call.type === "missed" ? ' style="color:var(--danger)"' : ""}>${escapeHtml(callTypeLabel(call.type))} &middot; ${durationPart}${escapeHtml(when)}</div>
+        <div class="qr-row" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
       </div>
     `;
-    row.addEventListener("click", () => { window.location.href = "tel:" + call.number; });
+    // on a computer nobody dials back: open the conversation, or send a quick reply right from here
+    const n = normalizeNumber(call.number);
+    const qr = row.querySelector(".qr-row");
+    const chip = (label, fn, strong) => {
+      const b = document.createElement("button");
+      b.className = "tl-tab" + (strong ? " on" : "");
+      b.style.cssText = "padding:6px 12px;font-size:13px" + (strong ? "" : ";background:var(--gm-page,#fff);border:1px solid rgba(127,127,127,.35)");
+      b.textContent = label;
+      b.addEventListener("click", (e) => { e.stopPropagation(); fn(); });
+      qr.appendChild(b);
+    };
+    if (n) {
+      chip("Message", () => openChat(n), true);
+      for (const t of quickReplies()) chip(t, () => sendQuick(n, t, call.contactName || call.number));
+      chip("+ My own", () => { const t = prompt("New quick reply (saved for next time):", ""); if (t && t.trim()) { addQuickReply(t.trim()); renderCallsList(); } });
+    }
+    row.addEventListener("click", () => { if (n) openChat(n); });
     list.appendChild(row);
   }
 }
