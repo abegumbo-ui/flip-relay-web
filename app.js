@@ -278,6 +278,9 @@ function markRead(number) {
   if (!number) return;
   readState[number] = Date.now();
   saveReadState();
+  // tell the flip only when there was something unread from that person (not on every open)
+  const last = messages.filter((m) => m.number === number && m.direction === "in").reduce((t, m) => Math.max(t, m.timestamp || 0), 0);
+  if (last > (readMarkSent[number] || 0)) sendReadMark(number, readState[number]);
 }
 
 function isUnread(convo) {
@@ -340,6 +343,7 @@ function notifyIncoming(data) {
   if (number && number === currentChatNumber && !document.hidden) return; // already looking at it
   if (number && archivedStay.has(number) && archived.has(number)) return; // archived to stay archived: no notification
   if (groupsHidden() && String(data.sender || "").startsWith("gm:")) return; // group texts hidden here
+  if (number && mutedSet.has(number)) return; // muted (on any device)
   const title = data.contactName || number || "New message";
   const body = data.imageUrl ? "📷 Picture" : (data.attachmentType === "video" ? "🎥 Video"
       : data.attachmentType === "vcard" ? "👤 Contact" : (data.body || ""));
@@ -391,6 +395,14 @@ function init() {
   el("sync-log-btn").addEventListener("click", onSyncLogClick);
   el("layout-btn").addEventListener("click", onLayoutClick);
   el("phone-buttons-btn").addEventListener("click", openPhoneButtons);
+  el("mark-all-read-btn").addEventListener("click", async () => { if (confirm("Mark every conversation as read, here and on the flip phone?")) await markAllRead(); });
+  el("needs-reply-btn").addEventListener("click", showNeedsReply);
+  const undoLabel = () => { el("undo-send-btn").textContent = "Undo send: " + (undoSendOn() ? "On (5 seconds to take a message back)" : "Off"); };
+  undoLabel();
+  el("undo-send-btn").addEventListener("click", () => { try { localStorage.setItem(UNDO_KEY, undoSendOn() ? "off" : "on"); } catch (e) { /* storage blocked */ } undoLabel(); });
+  el("sync-btn").addEventListener("click", openSyncPanel);
+  el("locate-btn").addEventListener("click", openLocatePanel);
+  el("voicemail-btn").addEventListener("click", openVoicemailPanel);
   el("gm-fab").addEventListener("click", () => el("new-message-btn").click());
   applyLayout();
   el("calls-btn").addEventListener("click", onCallsClick);
@@ -1277,6 +1289,40 @@ function startStreams() {
   }, (connected) => { scheduledConnected = connected; updateConnectionStatus(); });
 
   startPhoneHeartbeatPoll();
+  loadMuted();
+}
+
+// ---------- muted conversations: shared with the flip phone and the tablets (rooms/<room>/muted/<number> = true) ----------
+let mutedSet = new Set();
+async function loadMuted() {
+  try {
+    const r = await fetch(roomUrl("muted"));
+    if (r.ok) mutedSet = new Set(Object.keys((await r.json()) || {}));
+  } catch (e) { /* offline: keep what we had */ }
+}
+async function toggleMuted(number) {
+  const want = !mutedSet.has(number);
+  try {
+    const r = await fetch(roomUrl(`muted/${number}`), want ? { method: "PUT", body: "true" } : { method: "DELETE" });
+    if (!r.ok) throw new Error(r.status);
+    if (want) mutedSet.add(number); else mutedSet.delete(number);
+    renderConversationList();
+  } catch (e) { alert("Not changed: no connection. Try again."); }
+}
+
+// ---------- read marks: tell the flip phone a conversation was read here, so it is marked read there too ----------
+const readMarkSent = {};
+function sendReadMark(number, ts) {
+  if (!roomId || !number || (readMarkSent[number] || 0) >= ts) return;
+  readMarkSent[number] = ts;
+  fetch(roomUrl(`readMarks/${number}`), { method: "PUT", body: JSON.stringify(ts) }).catch(() => { readMarkSent[number] = 0; });
+}
+async function markAllRead() {
+  const now = Date.now(), patch = {};
+  for (const c of filteredConversations()) { readState[c.number] = now; patch[c.number] = now; readMarkSent[c.number] = now; }
+  saveReadState();
+  renderConversationList();
+  try { await fetch(roomUrl("readMarks"), { method: "PATCH", body: JSON.stringify(patch) }); } catch (e) { /* the flip catches up next time */ }
 }
 
 // How long the heartbeat value can go unchanged before it's treated as
@@ -1722,6 +1768,29 @@ async function uploadToStorage(file, path) {
 let stagedAttachments = [];
 let lastSendTs = 0;
 
+// ---------- undo send: a message waits 5 seconds with an Undo button before it goes out (on by default, like the tablet) ----------
+const UNDO_KEY = "flip_relay_undo_send";
+function undoSendOn() { try { return localStorage.getItem(UNDO_KEY) !== "off"; } catch (e) { return true; } }
+function undoBar(text) {
+  return new Promise((resolve) => {
+    const bar = document.createElement("div");
+    bar.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;gap:16px;align-items:center;padding:12px 16px;border-radius:14px;background:#323232;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:calc(100vw - 32px)";
+    bar.innerHTML = `<span></span><button style="background:none;border:0;color:#8ab4f8;font-weight:600;font-size:15px;cursor:pointer">Undo</button>`;
+    bar.firstElementChild.textContent = text;
+    document.body.appendChild(bar);
+    const t = setTimeout(() => { bar.remove(); resolve(true); }, 5000);
+    bar.querySelector("button").onclick = () => { clearTimeout(t); bar.remove(); resolve(false); };
+  });
+}
+
+// ---------- needs a reply: conversations whose last message came in and was not answered ----------
+async function showNeedsReply() {
+  const list = filteredConversations().filter((c) => c.last && c.last.direction === "in" && !isMulti(c.number)).slice(0, 40);
+  if (!list.length) { await showActionSheet("Needs a reply", [{ label: "Nothing waiting for a reply", value: "" }]); return; }
+  const pick = await showActionSheet("Needs a reply", list.map((c) => ({ label: `${displayName(c.number) || c.number} · ${agoText(c.last.timestamp || 0)}`, value: c.number })));
+  if (pick) openChat(pick);
+}
+
 async function onSendClick() {
   const input = el("compose-input");
   const rawBody = input.value.trim();
@@ -1732,6 +1801,20 @@ async function onSendClick() {
   stagedAttachments = [];
   input.value = "";
   clearAttachment();
+  if (undoSendOn()) { // 5 seconds to take it back (Settings > Undo send)
+    const to = currentChatNumber;
+    const sent = await undoBar(items.length ? "Sending " + items.length + " attachment" + (items.length === 1 ? "" : "s") + "..." : "Sending...");
+    if (!sent) {
+      if (currentChatNumber === to) input.value = rawBody;
+      if (items.length) alert("Not sent. Attach the picture or file again to send it.");
+      return;
+    }
+    if (currentChatNumber !== to) { const keep = currentChatNumber; currentChatNumber = to; try { await sendAll(rawBody, items); } finally { currentChatNumber = keep; } return; }
+  }
+  await sendAll(rawBody, items);
+}
+
+async function sendAll(rawBody, items) {
   if (!items.length) { await sendOne(rawBody, null, null, null); return; }
   for (let i = 0; i < items.length; i++) {
     await sendOne(i === items.length - 1 ? rawBody : "", items[i].file, items[i].kind, items[i].name);
@@ -2192,6 +2275,149 @@ function openPhoneButtons() {
       }
     }
     timer = setTimeout(load, 5000);
+  };
+  load();
+}
+
+// A full-page panel over the app (Back closes it). Returns {ov, body, alive(), onClose(fn)}.
+function openPanel(title) {
+  const ov = document.createElement("div");
+  ov.style.cssText = "position:fixed;inset:0;z-index:60;overflow:auto;background:var(--gm-page,var(--bg,#fff));color:var(--gm-ink,inherit);padding:16px max(16px,env(safe-area-inset-right)) 32px max(16px,env(safe-area-inset-left))";
+  ov.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="icon-btn" title="Back">&#8592;</button><h2 style="margin:0"></h2></div><div></div>`;
+  ov.querySelector("h2").textContent = title;
+  document.body.appendChild(ov);
+  let alive = true; const closers = [];
+  ov.querySelector("button").onclick = () => { alive = false; closers.forEach((f) => f()); ov.remove(); };
+  return { ov, body: ov.lastElementChild, alive: () => alive, onClose: (f) => closers.push(f) };
+}
+const panelCard = "border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))";
+function agoText(t) {
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  return s < 60 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 86400 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago";
+}
+
+// Settings > Sync messages and attachments: the flip phone's history sync (rooms/<room>/syncStatus, start = syncRequest/<kind>).
+function openSyncPanel() {
+  const p = openPanel("Sync messages and attachments");
+  p.body.innerHTML = `<p class="settings-hint">The flip phone sends your whole message history (and, separately, the pictures, videos and voice messages) to the tablets. It runs on the flip; this shows its progress.</p>`;
+  const kinds = [["texts", "Messages"], ["media", "Attachments (pictures, videos, voice, contacts)"]];
+  const lines = {};
+  for (const [kind, title] of kinds) {
+    const c = document.createElement("div"); c.style.cssText = panelCard;
+    c.innerHTML = `<div style="font-size:17px;font-weight:600"></div><div class="settings-hint" style="margin:6px 0"></div><button class="settings-row" style="border-radius:16px">Sync now</button>`;
+    c.firstElementChild.textContent = title;
+    lines[kind] = c.children[1];
+    c.querySelector("button").onclick = async () => {
+      try {
+        const r = await fetch(roomUrl(`syncRequest/${kind}`), { method: "PUT", body: JSON.stringify({ at: Date.now(), by: "web" }) });
+        alert(r.ok ? "Asked. The flip starts within a minute (not again within 10 minutes of the last one)." : "Not sent: no connection.");
+      } catch (e) { alert("Not sent: no connection."); }
+    };
+    p.body.appendChild(c);
+  }
+  const states = { building: "preparing", uploading: "sending", waiting: "paused", paused: "paused", done: "done", failed: "stopped", stopped: "stopped" };
+  const load = async () => {
+    if (!p.alive()) return;
+    let s = null;
+    try { const r = await fetch(roomUrl("syncStatus")); if (r.ok) s = (await r.json()) || {}; } catch (e) { /* offline */ }
+    for (const [kind] of kinds) {
+      const x = s && s[kind];
+      if (!s) lines[kind].textContent = "Could not reach the database (no internet?)";
+      else if (!x) lines[kind].textContent = "Not run yet";
+      else {
+        const parts = [(states[x.state] || x.state) + (typeof x.percent === "number" && x.state !== "done" ? " " + x.percent + "%" : "")];
+        if (x.state === "done" && x.count) parts.push(x.count + " messages");
+        if (x.note) parts.push(x.note);
+        parts.push("updated " + agoText(x.at || 0));
+        lines[kind].textContent = parts.join(" · ");
+      }
+    }
+    setTimeout(load, 3000);
+  };
+  load();
+}
+
+// Settings > Where is the phone?: asks the flip for its location (locate/request), waits for locate/result.
+function openLocatePanel() {
+  const p = openPanel("Where is the phone?");
+  p.body.innerHTML = `<p class="settings-hint">Asks the flip phone where it is, only when you press the button.</p>
+    <div style="${panelCard}"><div data-x="h" style="font-size:18px;font-weight:600">Not asked yet</div><div data-x="d" class="settings-hint" style="margin:6px 0"></div><a data-x="map" target="_blank" rel="noopener" style="display:none">Open in Maps</a></div>
+    <button data-x="go" class="settings-row" style="border-radius:20px">Locate now</button>`;
+  const q = (k) => p.body.querySelector(`[data-x="${k}"]`);
+  const show = (res, fromHistory) => {
+    if (!res.ok) {
+      const r = res.reason || "";
+      q("h").textContent = "The phone could not answer";
+      q("d").textContent = r === "off" ? "Location requests are switched off on the phone (Settings > Flip Relay > Location requests)."
+        : r === "permission" ? "The phone has not allowed Location for Message+ (Settings > Flip Relay > App Permissions)."
+        : r === "gps_off" ? "Location is turned off on the phone itself. On the phone: Settings > Location > On, then try again."
+        : "The phone could not get a GPS reading (it may be indoors). Try again outside or near a window.";
+      q("map").style.display = "none";
+      return;
+    }
+    q("h").textContent = `${Number(res.lat).toFixed(5)}, ${Number(res.lng).toFixed(5)}`;
+    q("d").textContent = (res.old ? "Last place the phone remembers, " : fromHistory ? "Last known, " : "Reading taken ") + agoText(res.fixAt || res.ts || 0) + (res.acc ? " · accurate to about " + res.acc + " m" : "");
+    q("map").href = `https://www.google.com/maps?q=${res.lat},${res.lng}`;
+    q("map").style.display = "";
+  };
+  fetch(roomUrl("locate/result")).then((r) => r.ok ? r.json() : null).then((res) => { if (res && p.alive()) show(res, true); }).catch(() => {});
+  q("go").onclick = async () => {
+    const id = Date.now().toString(36), started = Date.now();
+    q("go").disabled = true; q("go").textContent = "Locating...";
+    q("d").textContent = "Asking the phone... this can take up to a minute.";
+    try { await fetch(roomUrl("locate/request"), { method: "PUT", body: JSON.stringify({ id, ts: Date.now() }) }); } catch (e) { /* the wait below reports it */ }
+    while (p.alive() && Date.now() - started < 95000) {
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const r = await fetch(roomUrl("locate/result"));
+        const res = r.ok ? await r.json() : null;
+        if (res && res.id === id) { show(res, false); q("go").disabled = false; q("go").textContent = "Locate now"; return; }
+      } catch (e) { /* keep waiting */ }
+    }
+    if (!p.alive()) return;
+    q("go").disabled = false; q("go").textContent = "Locate now";
+    q("d").textContent = "No answer. The phone may be off, without data, or out of the app's reach. Try again in a moment.";
+  };
+}
+
+// Settings > Voicemail: the voicemails the flip relays (rooms/<room>/voicemails/<id>), play, mark heard, delete.
+function openVoicemailPanel() {
+  const p = openPanel("Voicemail");
+  p.body.innerHTML = `<p class="settings-hint">Voicemails the flip phone picked up. Playing one marks it heard on the phone too.</p><div data-x="list">Loading...</div>
+    <button data-x="check" class="settings-row" style="border-radius:20px">Check for new voicemail now</button>`;
+  const list = p.body.querySelector('[data-x="list"]');
+  p.body.querySelector('[data-x="check"]').onclick = async () => {
+    try {
+      const r = await fetch(roomUrl("voicemailCheck/request"), { method: "PUT", body: JSON.stringify({ id: "w" + Date.now(), at: Date.now(), to: "" }) });
+      alert(r.ok ? "Asked the phone to check. New ones show up here in a minute or two." : "Not sent: no connection.");
+      setTimeout(load, 30000);
+    } catch (e) { alert("Not sent: no connection."); }
+  };
+  const load = async () => {
+    if (!p.alive()) return;
+    let o = null;
+    try { const r = await fetch(roomUrl("voicemails")); if (r.ok) o = (await r.json()) || {}; } catch (e) { /* offline */ }
+    if (!o) { list.textContent = "Could not load voicemail (no internet?)"; return; }
+    const items = Object.entries(o).filter(([, v]) => v && !v.deleted).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+    list.innerHTML = items.length ? "" : `<p class="settings-hint">No voicemail.</p>`;
+    for (const [id, v] of items) {
+      const c = document.createElement("div"); c.style.cssText = panelCard;
+      const who = v.contactName || displayName(normalizeNumber(v.from)) || v.from || "Unknown";
+      c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong></strong><span class="settings-hint" style="margin:0"></span></div><audio controls preload="none" style="width:100%;margin-top:8px"></audio><button class="settings-row danger" style="border-radius:16px;margin-top:6px">Delete</button>`;
+      c.querySelector("strong").textContent = (v.read ? "" : "● ") + who;
+      c.querySelector("span").textContent = new Date(v.timestamp || 0).toLocaleString() + (v.durationSec ? " · " + v.durationSec + " s" : "");
+      const a = c.querySelector("audio"); a.src = v.url || "";
+      a.onplay = () => { if (!v.read) { v.read = true; c.querySelector("strong").textContent = who; fetch(roomUrl(`voicemails/${id}/read`), { method: "PUT", body: "true" }).catch(() => {}); } };
+      c.querySelector("button").onclick = async () => {
+        if (!confirm("Delete this voicemail? It is deleted on the phone too.")) return;
+        try {
+          await fetch(roomUrl(`voicemails/${id}/deleted`), { method: "PUT", body: "true" });
+          await fetch(roomUrl("voicemailCheck/request"), { method: "PUT", body: JSON.stringify({ id: "d" + Date.now(), at: Date.now() }) });
+          c.remove();
+        } catch (e) { alert("Not deleted: no connection."); }
+      };
+      list.appendChild(c);
+    }
   };
   load();
 }
@@ -2743,6 +2969,8 @@ async function showConversationLongPressMenu(number) {
   const options = [
     { label: pinned ? "📌 Unpin" : "📌 Pin to top", value: "pin" },
     { label: "🗄️ Archive", value: "archive" },
+    { label: mutedSet.has(number) ? "🔔 Unmute" : "🔕 Mute (on every device and the flip)", value: "mute" },
+    { label: lockedChats().has(number) ? "🔓 Unlock chat" : "🔒 Lock chat (asks for the app code)", value: "lock" },
     { label: "☑️ Select", value: "select" },
   ];
   if (isMulti(number)) options.splice(2, 0, { label: "✏️ Rename group", value: "rename" });
@@ -2758,6 +2986,8 @@ async function showConversationLongPressMenu(number) {
   }
   if (choice === "rename") { const n = prompt("Name this group:", groupNames[number] || ""); if (n !== null) { setGroupName(number, n.trim()); renderConversationList(); } return; }
   if (choice === "pin") togglePinned(number);
+  else if (choice === "mute") toggleMuted(number);
+  else if (choice === "lock") toggleChatLock(number);
   else if (choice === "select") enterConversationSelectionMode(number);
   else if (choice === "block") toggleBlocked(number);
 }
@@ -2854,7 +3084,38 @@ function renderConversationList() {
   }
 }
 
+// ---------- lock a chat: a locked chat asks for the app code before it opens (this browser only) ----------
+const chatUnlocked = new Set();
+function lockedChatsKey() { return "flip_relay_locked_chats_" + roomId; }
+function lockedChats() { try { return new Set(JSON.parse(localStorage.getItem(lockedChatsKey()) || "[]")); } catch (e) { return new Set(); } }
+async function toggleChatLock(number) {
+  const s = lockedChats();
+  if (!s.has(number) && !lockStored()) {
+    if (!confirm("Locking a chat uses the app code, and none is set yet. Set one now?")) return;
+    await lockSetNew();
+    if (!lockStored()) return;
+  }
+  if (s.has(number)) {
+    const st = lockStored();
+    if (st) {
+      const r = await lockCard({ title: "Enter your code to unlock this chat", fields: ["Code"], okLabel: "Unlock", extra: [{ label: "Cancel", value: "cancel" }],
+        validate: async (v) => ((await lockHash(v[0], st.salt)) === st.hash ? "" : "Wrong code") });
+      if (r === "cancel") return;
+    }
+    s.delete(number);
+  } else { s.add(number); chatUnlocked.delete(number); }
+  try { localStorage.setItem(lockedChatsKey(), JSON.stringify([...s])); } catch (e) { /* storage blocked */ }
+  renderConversationList();
+}
+
 function openChat(number) {
+  if (lockedChats().has(number) && !chatUnlocked.has(number) && lockStored()) {
+    const st = lockStored();
+    lockCard({ title: "This chat is locked", text: "Enter your app code to open it.", fields: ["Code"], okLabel: "Open", extra: [{ label: "Cancel", value: "cancel" }],
+      validate: async (v) => ((await lockHash(v[0], st.salt)) === st.hash ? "" : "Wrong code") })
+      .then((r) => { if (r !== "cancel") { chatUnlocked.add(number); openChat(number); } });
+    return;
+  }
   currentChatNumber = number;
   el("chat-title").textContent = displayName(number);
   el("chat-subtitle").textContent = isMulti(number) ? (number.startsWith("m:") ? "Mass text - tap the name to rename" : "Group - tap the name to rename") : number;
