@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26132435,
+    "versionName": "6.4.5-FR GOLOMBECK (build 171)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26132435/messageplus-26132435.apk",
+    "at": 1793834259050,
+    "notes": "Voice messages and flip-phone videos now play everywhere: voice messages from flip phones (which no tablet or computer could play) and from other phones are turned into a normal audio file, and flip-phone videos into a normal video, before they go to the tablet."
+  },
+  "messageplus_previous": {
     "versionCode": 26132055,
     "versionName": "6.4.5-FR GOLOMBECK (build 170)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26132055/messageplus-26132055.apk",
     "at": 1793811697934,
     "notes": "New: Flip phone buttons can be managed from the tablet (Settings > Flip phone and sync > Flip phone buttons), one switch per button. The buttons only work while Message+ is the default texting app."
-  },
-  "messageplus_previous": {
-    "versionCode": 26132012,
-    "versionName": "6.4.5-FR GOLOMBECK (build 169)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26132012/messageplus-26132012.apk",
-    "at": 1793808722119,
-    "notes": "If the flip phone was removed from its room on the dashboard, it now puts itself back by itself within a few minutes."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
