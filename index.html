@@ -8,19 +8,21 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#0f1720" />
   <link rel="stylesheet" href="styles.css?v=__BUILD_VERSION__" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" />
   <link rel="stylesheet" href="gm.css?v=__BUILD_VERSION__" />
+  <link rel="stylesheet" href="tablet.css?v=__BUILD_VERSION__" />
 </head>
 <body>
 
   <!-- Screen 1: enter the pairing code shown on the flip phone -->
   <section id="screen-pairing" class="screen">
     <div class="pairing-card">
-      <h1>Flip Relay</h1>
+      <h1>Connect to your phone</h1>
 
       <div id="pairing-form">
-        <p>Enter the pairing code shown on the flip phone to connect this tablet to it.</p>
+        <p>On the flip phone open Settings &gt; Flip Relay Settings &gt; Pairing Code. Type the 16-character code shown under the QR code. The code works once and for 10 minutes.</p>
         <input id="code-input" maxlength="40" autocapitalize="characters" autocomplete="off"
-               inputmode="text" placeholder="ABC123" />
+               inputmode="text" placeholder="XXXX-XXXX-XXXX-XXXX" />
         <button id="connect-btn" class="btn-primary">Connect</button>
         <div id="pairing-error"></div>
       </div>
