@@ -2502,11 +2502,11 @@ function openPhoneButtons() {
   ov.style.cssText = "position:fixed;inset:0;z-index:60;overflow:auto;background:var(--gm-page,var(--bg,#fff));color:var(--gm-ink,inherit);padding:16px max(16px,env(safe-area-inset-right)) 32px max(16px,env(safe-area-inset-left))";
   ov.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="icon-btn" data-x="back" title="Back">&#8592;</button><h2 style="margin:0">Flip phone buttons</h2></div>
-    <p class="settings-hint">On the flip phone's home screen, these buttons open Message+. Turn each one on or off here; the flip follows within a few seconds. They only work while Message+ is the flip's default texting app.</p>
+    <p class="settings-hint">On the flip phone's home screen, these buttons open Message+. Turn each one on or off here; the flip follows within a few seconds.</p>
     <div style="border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"><div class="settings-hint" style="margin:0">Status on the flip</div><div data-x="state" style="font-size:18px;font-weight:600">Checking...</div></div>
     <div data-x="switches" style="border-radius:20px;padding:6px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"></div>
     <div style="border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"><h3 style="margin:0 0 6px">Troubleshooting</h3>
-      <p class="settings-hint">"Paused: Message+ is not the default texting app" - on the flip open Settings &gt; Apps &gt; Default apps &gt; SMS app and choose Message+. The buttons come back by themselves.</p>
+      <p class="settings-hint">"Paused: Message+ is not the default texting app" - turn on "Work even if Message+ is not the default" above. Or on the flip open Settings &gt; Apps &gt; Default apps &gt; SMS app and choose Message+. The buttons come back by themselves.</p>
       <p class="settings-hint">"Not turned on in the flip's Accessibility settings" - this step has to be done on the flip itself: Settings &gt; Accessibility &gt; Message+ &gt; On, then OK. No app or tablet can do it.</p>
       <p class="settings-hint">To turn it off by hand on the flip: Settings &gt; Accessibility &gt; Message+ &gt; Off.</p>
       <p class="settings-hint">A button does something odd on the home screen: switch just that button off above.</p></div>
@@ -2515,7 +2515,7 @@ function openPhoneButtons() {
   document.body.appendChild(ov);
   const q = (k) => ov.querySelector(`[data-x="${k}"]`);
   const box = q("switches");
-  const rows = [["master", "Button shortcuts", "All of them on or off"], ...PHONE_BUTTONS.map(([id, label]) => [id, label, ""])];
+  const rows = [["master", "Button shortcuts", "All of them on or off"], ["anyDefault", "Work even if Message+ is not the default", "Off: while another app is the flip's default texting app, every button does what it normally does"], ...PHONE_BUTTONS.map(([id, label]) => [id, label, ""])];
   const inputs = {};
   for (const [id, label, sub] of rows) {
     const r = document.createElement("label");
@@ -2532,12 +2532,12 @@ function openPhoneButtons() {
     const keys = {};
     for (const [id] of PHONE_BUTTONS) keys[id] = inputs[id].checked;
     try {
-      const r = await fetch(roomUrl("buttons/config"), { method: "PUT", body: JSON.stringify({ on: inputs.master.checked, keys, by: "web", at: { ".sv": "timestamp" } }) });
+      const r = await fetch(roomUrl("buttons/config"), { method: "PUT", body: JSON.stringify({ on: inputs.master.checked, anyDefault: inputs.anyDefault.checked, keys, by: "web", at: { ".sv": "timestamp" } }) });
       if (!r.ok) throw new Error(r.status);
     } catch (e) { alert("Not saved: no connection. Try again."); }
   };
   for (const id in inputs) inputs[id].onchange = () => {
-    if (id === "master") for (const [k] of PHONE_BUTTONS) inputs[k].disabled = !inputs.master.checked;
+    if (id === "master") { for (const [k] of PHONE_BUTTONS) inputs[k].disabled = !inputs.master.checked; inputs.anyDefault.disabled = !inputs.master.checked; }
     save();
   };
   q("off").onclick = async () => {
@@ -2558,13 +2558,15 @@ function openPhoneButtons() {
     if (!all) { st.textContent = "Could not reach the flip's settings (no internet?)"; }
     else {
       const s = (all.state || {}).state;
-      const lines = { working: "Working", off: "Off (switched off here)", not_default: "Paused: Message+ is not the flip's default texting app", not_allowed: "Not turned on in the flip's Accessibility settings" };
+      const lines = { working: (all.state || {}).isDefault === false ? "Working (Message+ is not the default texting app)" : "Working", off: "Off (switched off here)", not_default: "Paused: Message+ is not the flip's default texting app", not_allowed: "Not turned on in the flip's Accessibility settings" };
       st.textContent = lines[s] || "Waiting for the flip (it needs Message+ build 170 or newer)";
       st.style.color = s === "not_default" || s === "not_allowed" ? "var(--gm-red,#d93025)" : "";
       const cfg = all.config, keys = cfg && cfg.keys;
       if (document.activeElement == null || !box.contains(document.activeElement)) {
         filling = true;
         inputs.master.checked = !cfg || cfg.on !== false;
+        inputs.anyDefault.checked = !cfg || cfg.anyDefault !== false;
+        inputs.anyDefault.disabled = !inputs.master.checked;
         for (const [id] of PHONE_BUTTONS) { inputs[id].checked = keys ? !!keys[id] : PHONE_BUTTONS_DEFAULT.includes(id); inputs[id].disabled = !inputs.master.checked; }
         filling = false;
       }
