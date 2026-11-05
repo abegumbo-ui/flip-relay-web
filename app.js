@@ -4300,6 +4300,7 @@ function tlRowsFor(key) {
     case "help": return [
       tlRow({ icon: "restart", title: "Restart the app", sub: "Reloads the page, if something does not update", onclick: () => location.reload() }),
       tlRow({ icon: "info", title: "Crash log", sub: "Flip phone and tablets: why one closed by itself, if it ever did", onclick: openCrashLog }),
+      ...(window.flipDesktop ? [] : [tlRow({ icon: "tablet", title: "Desktop app for Windows", sub: "Its own window, starts with Windows, and notifications even with the window closed", onclick: () => window.open("https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/desktop-1.0.0/Message-Plus-Setup-1.0.0.exe", "_blank") })]),
       tlRow({ icon: "update", title: "Version", sub: "The web app is always the newest version; it updates by itself when it reloads" }),
     ];
   }
