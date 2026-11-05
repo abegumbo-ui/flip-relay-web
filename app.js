@@ -250,7 +250,7 @@ function foldIntoMassText(to, body, ts) {
 
 // "Show where messages were sent from": a small phone / computer icon by each sent message.
 const SHOW_SOURCE_KEY = "flip_relay_web_show_source";
-function showSourceOn() { try { return localStorage.getItem(SHOW_SOURCE_KEY) === "1"; } catch (e) { return false; } }
+function showSourceOn() { try { return localStorage.getItem(SHOW_SOURCE_KEY) !== "0"; } catch (e) { return false; } }
 
 // ---------- read state (mirrors the tablet app's ReadState) ----------
 
@@ -400,7 +400,7 @@ function init() {
     if (e.key === "Enter") onConnectClick();
   });
   el("settings-btn").addEventListener("click", onSettingsClick);
-  el("settings-back-btn").addEventListener("click", () => { if (settingsSectionOpen) openSettingsSection(null); else showScreen("conversations"); });
+  el("settings-back-btn").addEventListener("click", () => { if (tlSettingsBack()) return; if (settingsSectionOpen) openSettingsSection(null); else showScreen("conversations"); });
   el("disconnect-btn").addEventListener("click", onForgetClick);
   el("sync-log-btn").addEventListener("click", onSyncLogClick);
   el("layout-btn").addEventListener("click", onLayoutClick);
@@ -1364,7 +1364,7 @@ function storedLayout() {
 function effectiveLayout() {
   const m = storedLayout();
   if (m === "tablet" || m === "phone") return m;
-  return window.innerWidth >= 900 ? "tablet" : "phone";
+  return window.innerWidth >= 600 ? "tablet" : "phone";
 }
 
 function applyLayout() {
@@ -1697,7 +1697,9 @@ function startPhoneHeartbeatPoll() {
 
 // The flip phone at a glance, in a line at the top of the web page (the tablet has its own round card for this).
 let phoneSsidSeen = "";
+let lastFlip = null;
 function updateFlipStrip(connected, batteryPercent, network, charging) {
+  lastFlip = { connected, batteryPercent, network, charging };
   let s = document.getElementById("flip-strip");
   if (!s) {
     const tabs = document.querySelector("#screen-conversations .tl-dock");
@@ -2241,34 +2243,7 @@ async function onMessageLongPress(m) {
     toggleSelection(m.id);
     return;
   }
-  const options = [
-    { label: "📋 Copy", value: "copy" },
-    { label: "↪️ Forward", value: "forward" },
-    { label: "ℹ️ Message info", value: "info" },
-    { label: "☑️ Select", value: "select" },
-  ];
-  if (m.imageUrl || m.attachmentUrl) options.splice(2, 0, { label: "💾 Save", value: "save" });
-  const isPending = m.direction === "out" && m.id.startsWith("local-");
-  if (isPending) options.push({ label: "🗑️ Delete", value: "delete" });
-
-  const choice = await showActionSheet("Message", options);
-  if (choice === "copy") {
-    try {
-      await navigator.clipboard.writeText(m.body || "");
-    } catch (e) {
-      logDebug("Copy failed: " + (e && e.stack ? e.stack : e));
-    }
-  } else if (choice === "forward") {
-    startForward(m.body);
-  } else if (choice === "info") {
-    showMessageInfo(m);
-  } else if (choice === "select") {
-    enterSelectionMode(m.id);
-  } else if (choice === "save") {
-    saveMessageMedia(m);
-  } else if (choice === "delete") {
-    if (await gmConfirm("Delete this message? It hasn't gone through yet.")) deletePending(m.id);
-  }
+  tlMessageMenu(m);
 }
 
 // Saves a picture / video / voice message to the browser's Downloads. A web page cannot pick a folder, so the file name starts with "Messages".
@@ -2576,6 +2551,14 @@ function openPhoneButtons() {
 
 // ---------- Settings laid out like the tablet: a list of sections (icon, title, what is inside); each opens its own page ----------
 const ICONS = {
+  systemUpdate: "M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14zm-1-6h-3V8h-2v5H8l4 4 4-4z",
+  close: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
+  more: "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
+  gear: "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z",
+  download: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z",
+  share: "M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z",
+  playOutline: "M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z",
+  checklist: "M22 7h-9v2h9V7zm0 8h-9v2h9v-2zM5.54 11L2 7.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 11zm0 8L2 15.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 19z",
   tablet: "M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-2 14H5V6h14v12z",
   archive: "M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z",
   star: "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
@@ -2780,39 +2763,109 @@ function openLocatePanel() {
 // Settings > Voicemail: the voicemails the flip relays (rooms/<room>/voicemails/<id>), play, mark heard, delete.
 function openVoicemailPanel() {
   const p = openPanel("Voicemail");
-  p.body.innerHTML = `<p class="settings-hint">Voicemails the flip phone picked up. Playing one marks it heard on the phone too.</p><div data-x="list">Loading...</div>
-    <button data-x="check" class="settings-row" style="border-radius:20px">Check for new voicemail now</button>`;
+  p.ov.classList.add("tl-vm");
+  const backBtn = p.ov.querySelector(".tl-panel-top button");
+  backBtn.style.display = "none";
+  const top = p.ov.querySelector(".tl-panel-top");
+  const refresh = document.createElement("button");
+  refresh.className = "tl-chat-btn"; refresh.title = "Refresh"; refresh.innerHTML = svgIcon("sync"); refresh.style.color = "var(--gm-blue)"; refresh.style.marginLeft = "auto";
+  top.appendChild(refresh);
+  const dock = document.querySelector("#screen-conversations .tl-dock").cloneNode(true);
+  for (const b of dock.querySelectorAll(".tl-dock-item")) {
+    b.classList.toggle("on", b.dataset.tab === "voicemail");
+    b.onclick = () => { if (b.dataset.tab !== "voicemail") { backBtn.click(); goTab(b.dataset.tab); } };
+  }
+  top.after(dock);
+  p.body.innerHTML = `<div class="tl-vm-count"></div><div data-x="list" class="tl-vm-empty">Loading...</div>`;
   const list = p.body.querySelector('[data-x="list"]');
-  p.body.querySelector('[data-x="check"]').onclick = async () => {
+  refresh.onclick = async () => {
     try {
       const r = await fetch(roomUrl("voicemailCheck/request"), { method: "PUT", body: JSON.stringify({ id: "w" + Date.now(), at: Date.now(), to: "" }) });
-      alert(r.ok ? "Asked the phone to check. New ones show up here in a minute or two." : "Not sent: no connection.");
+      tlToast(r.ok ? "Asked the phone to check. New ones show up in a minute or two." : "Not sent: no connection.");
       setTimeout(load, 30000);
-    } catch (e) { alert("Not sent: no connection."); }
+    } catch (e) { tlToast("Not sent: no connection."); }
+  };
+  let audio = null;
+  p.onClose(() => { if (audio) audio.pause(); });
+  const rowFor = (id, v, saved) => {
+    const who = v.contactName || displayName(normalizeNumber(v.from)) || v.from || "Unknown";
+    const when = new Date(v.timestamp || 0).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " \u2022 " + clockOf(v.durationSec || 0);
+    const n = normalizeNumber(v.from);
+    const c = document.createElement("div");
+    c.className = "tl-vm-row" + (!saved && !v.read ? " new" : "");
+    c.innerHTML = `<div class="line">${gmAvatarHtml(n || v.from)}<div class="col"><div class="nm"></div><div class="dt">${svgIcon("voicemail")}<span></span></div></div><button class="tl-chat-btn" title="Play">${svgIcon("playOutline")}</button></div>`;
+    c.querySelector(".nm").textContent = who;
+    c.querySelector(".dt span").textContent = when;
+    const open = () => {
+      if (c.classList.contains("open")) return;
+      if (audio) audio.pause();
+      for (const x of list.querySelectorAll(".tl-vm-row.open")) { x.classList.remove("open"); const o = x.querySelector(".more"); if (o) o.remove(); }
+      c.classList.add("open");
+      const more = document.createElement("div");
+      more.className = "more";
+      more.innerHTML = `<div class="bar"><b></b></div><div class="times"><span>0:00</span><span>${Math.floor((v.durationSec || 0) / 60)}:${String((v.durationSec || 0) % 60).padStart(2, "0")}</span></div>
+        <div class="ctl"><button class="play">${svgIcon("play")}</button><button class="spd">1.0\u00d7</button><span style="flex:1"></span><button title="Download" data-a="dl">${svgIcon("download")}</button><button title="Share" data-a="share">${svgIcon("share")}</button><button title="Delete" data-a="del">${svgIcon("trash")}</button></div>
+        <button class="act" data-a="call">${svgIcon("call")}<span>Voice call</span></button><button class="act" data-a="msg">${svgIcon("chat")}<span>Send a message</span></button>`;
+      c.appendChild(more);
+      c.querySelector(".line > button").style.display = "none";
+      const a = audio = new Audio(v.url || "");
+      const playBtn = more.querySelector(".play"), fill = more.querySelector(".bar b"), now = more.querySelector(".times span");
+      let heard = false;
+      playBtn.onclick = () => {
+        if (a.paused) a.play().catch(() => tlToast("This voicemail can't play here. Download it to play it on this computer."));
+        else a.pause();
+      };
+      a.onplay = () => {
+        playBtn.innerHTML = svgIcon("pause");
+        if (!saved && !v.read && !heard) { heard = true; v.read = true; c.classList.remove("new"); fetch(roomUrl(`voicemails/${id}/read`), { method: "PUT", body: "true" }).catch(() => {}); voicemailUnread = Math.max(0, voicemailUnread - 1); updateTabs(); }
+      };
+      a.onpause = () => { playBtn.innerHTML = svgIcon("play"); };
+      a.ontimeupdate = () => { const d = a.duration || v.durationSec || 1; fill.style.width = Math.min(100, a.currentTime / d * 100) + "%"; now.textContent = Math.floor(a.currentTime / 60) + ":" + String(Math.floor(a.currentTime % 60)).padStart(2, "0"); };
+      more.querySelector(".bar").onclick = (e) => { const r = e.currentTarget.getBoundingClientRect(); if (a.duration) a.currentTime = (e.clientX - r.left) / r.width * a.duration; };
+      const speeds = [1, 1.5, 2, 0.75];
+      more.querySelector(".spd").onclick = (e) => { const i = (speeds.indexOf(a.playbackRate) + 1) % speeds.length; a.playbackRate = speeds[i]; e.currentTarget.textContent = speeds[i].toFixed(speeds[i] === 0.75 ? 2 : 1) + "\u00d7"; };
+      more.querySelector('[data-a="dl"]').onclick = () => { if (v.url) window.open(v.url, "_blank"); };
+      more.querySelector('[data-a="share"]').onclick = async () => { try { if (navigator.share) await navigator.share({ title: "Voicemail from " + who, url: v.url }); else { await navigator.clipboard.writeText(v.url); tlToast("Link copied"); } } catch (e) { /* cancelled */ } };
+      more.querySelector('[data-a="call"]').onclick = () => { if (n) location.href = "tel:" + n; };
+      more.querySelector('[data-a="msg"]').onclick = () => { if (n) { backBtn.click(); openChat(n); } };
+      more.querySelector('[data-a="del"]').onclick = async () => {
+        if (!await gmConfirm(saved ? "Delete this saved voicemail?" : "Delete this voicemail? It is deleted on the phone too.")) return;
+        try {
+          if (saved) await fetch(roomUrl(`voicemailArchive/${id}`), { method: "DELETE" });
+          else { await fetch(roomUrl(`voicemails/${id}/deleted`), { method: "PUT", body: "true" }); await fetch(roomUrl("voicemailCheck/request"), { method: "PUT", body: JSON.stringify({ id: "d" + Date.now(), at: Date.now() }) }); }
+          a.pause(); c.remove();
+        } catch (e) { tlToast("Not deleted: no connection."); }
+      };
+    };
+    c.querySelector(".line").onclick = open;
+    return c;
   };
   const load = async () => {
     if (!p.alive()) return;
-    let o = null;
-    try { const r = await fetch(roomUrl("voicemails")); if (r.ok) o = (await r.json()) || {}; } catch (e) { /* offline */ }
+    let o = null, arch = null;
+    try { const r = await fetch(roomUrl("voicemails")); if (r.ok) o = (await r.json()) || {}; const r2 = await fetch(roomUrl("voicemailArchive")); if (r2.ok) arch = (await r2.json()) || {}; } catch (e) { /* offline */ }
     if (!o) { list.textContent = "Could not load voicemail (no internet?)"; return; }
-    const items = Object.entries(o).filter(([, v]) => v && !v.deleted).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
-    list.innerHTML = items.length ? "" : `<p class="settings-hint">No voicemail.</p>`;
-    for (const [id, v] of items) {
-      const c = document.createElement("div"); c.style.cssText = panelCard;
-      const who = v.contactName || displayName(normalizeNumber(v.from)) || v.from || "Unknown";
-      c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong></strong><span class="settings-hint" style="margin:0"></span></div><div style="margin-top:10px">${tlVoiceHtml()}</div><button class="settings-row danger" style="border-radius:16px;margin-top:6px">Delete</button>`;
-      c.querySelector("strong").textContent = (v.read ? "" : "● ") + who;
-      c.querySelector("span").textContent = new Date(v.timestamp || 0).toLocaleString() + (v.durationSec ? " · " + v.durationSec + " s" : "");
-      wireVoice(c, v.url || "", () => { if (!v.read) { v.read = true; c.querySelector("strong").textContent = who; fetch(roomUrl(`voicemails/${id}/read`), { method: "PUT", body: "true" }).catch(() => {}); voicemailUnread = Math.max(0, voicemailUnread - 1); updateTabs(); } });
-      c.querySelector("button").onclick = async () => {
-        if (!await gmConfirm("Delete this voicemail? It is deleted on the phone too.")) return;
-        try {
-          await fetch(roomUrl(`voicemails/${id}/deleted`), { method: "PUT", body: "true" });
-          await fetch(roomUrl("voicemailCheck/request"), { method: "PUT", body: JSON.stringify({ id: "d" + Date.now(), at: Date.now() }) });
-          c.remove();
-        } catch (e) { alert("Not deleted: no connection."); }
-      };
-      list.appendChild(c);
+    const byTime = (a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0);
+    const box = Object.entries(o).filter(([, v]) => v && !v.deleted && !v.acct).sort(byTime);
+    const seen = new Set();
+    const savedList = [...Object.entries(arch || {}), ...Object.entries(o).filter(([, v]) => v && !v.deleted && v.acct)].filter(([k, v]) => v && !seen.has(k) && seen.add(k)).sort(byTime);
+    p.body.querySelector(".tl-vm-count").textContent = box.length ? box.length + (box.length === 1 ? " voicemail" : " voicemails") : "";
+    list.className = "";
+    list.innerHTML = box.length || savedList.length ? "" : `<div class="tl-vm-empty">No voicemails</div>`;
+    let state = null, group = null;
+    for (const [id, v] of box) {
+      const s = v.read ? "Older" : "New";
+      if (s !== state) {
+        state = s;
+        const h = document.createElement("div"); h.className = "tl-day"; h.textContent = s; list.appendChild(h);
+        group = document.createElement("div"); group.className = "tl-vm-group"; list.appendChild(group);
+      }
+      group.appendChild(rowFor(id, v, false));
+    }
+    if (savedList.length) {
+      const h = document.createElement("div"); h.className = "tl-vm-saved"; h.innerHTML = "<div>Saved voicemails</div><span>Every voicemail that has ever come in, kept here even after you delete it. These are not part of your voicemail box above.</span>"; list.appendChild(h);
+      group = document.createElement("div"); group.className = "tl-vm-group"; list.appendChild(group);
+      for (const [id, v] of savedList) group.appendChild(rowFor(id, v, true));
     }
   };
   load();
@@ -3294,7 +3347,7 @@ function updateConversationSelectionToolbar() {
   toolbar.classList.toggle("hidden", !conversationSelectionMode);
   el("conv-toolbar").classList.toggle("hidden", conversationSelectionMode);
   if (conversationSelectionMode) {
-    el("conv-selection-count").textContent = selectedConversationNumbers.size + " selected";
+    el("conv-selection-count").textContent = String(selectedConversationNumbers.size);
     const visible = filteredConversations();
     const allSelected = visible.length > 0 && visible.every(({ number }) => selectedConversationNumbers.has(number));
     el("conv-select-all-btn").textContent = allSelected ? "Deselect All" : "Select All";
@@ -3331,9 +3384,10 @@ async function softDeleteConversation(number) {
   for (const id of ids) await softDeleteMessage(id);
 }
 
-async function showConversationLongPressMenu(number) {
-  if (conversationSelectionMode) {
-    toggleConversationSelection(number);
+async function showConversationLongPressMenu(number, forced, sheet) {
+  if (!forced && !sheet) {
+    if (conversationSelectionMode) toggleConversationSelection(number);
+    else enterConversationSelectionMode(number);
     return;
   }
   const pinned = isPinned(number);
@@ -3347,7 +3401,7 @@ async function showConversationLongPressMenu(number) {
   if (isMulti(number)) options.splice(2, 0, { label: "✏️ Rename group", value: "rename" });
   else options.push({ label: "🚫 Block/Unblock", value: "block" });
   options.push({ label: "🖼️ Chat theme", value: "theme" });
-  const choice = await showActionSheet(displayName(number) || number, options);
+  const choice = forced || await showActionSheet(displayName(number) || number, options);
   if (choice === "theme") { chatThemeMenu(number); return; }
   if (choice === "archive") {
     const how = await showActionSheet("Archive", [
@@ -4190,7 +4244,8 @@ function updateTabs() {
   for (const b of document.querySelectorAll(".tl-dock-item")) {
     b.classList.toggle("on", b.dataset.tab === currentTab);
     if (b.dataset.tab === "groups") { b.hidden = !groupsTab; b.dataset.dot = unreadGroups && currentTab !== "groups" ? "1" : "0"; }
-    if (b.dataset.tab === "voicemail") b.dataset.dot = voicemailUnread > 0 ? "1" : "0";
+    if (b.dataset.tab === "voicemail") { b.hidden = !vmTabShown(); b.dataset.dot = voicemailUnread > 0 ? "1" : "0"; }
+    if (b.dataset.tab === "calls") b.hidden = !callsTabShown();
   }
 }
 let voicemailUnread = 0;
@@ -4224,23 +4279,45 @@ const TL_SECTIONS = [
   ["messages", "archive", "Messages", "Archived, Trash, backup and restore, blocked and muted"],
   ["features", "star", "Messages features", "Undo send, I'm busy, automatic replies, needs a reply"],
   ["notifications", "bell", "Notifications", "New-message notifications on this device"],
-  ["privacy", "lock", "Privacy", "Lock the app with a code"],
+  ["privacy", "info", "Privacy", "Lock the app with a code"],
   ["phone", "history", "Flip phone and sync", "Default texting app, sync messages and attachments, where the phone is"],
-  ["help", "update", "Help and updates", "Reload, crash log"],
+  ["help", "systemUpdate", "Help and updates", "Reload, crash log"],
+  ["layoutpage", "tablet", "Layout", ""],
+  ["screens", "group", "Groups, Calls and Voicemail", ""],
 ];
+const TL_MAIN = ["layout", "notifications", "privacy", "phone", "help"];
+let settingsFromDrawer = null;
+function openSettingsFromDrawer(key) { settingsFromDrawer = key; onSettingsClick(); if (key) openSettingsSection(key); }
+function tlSettingsBack() {
+  const k = settingsSectionOpen;
+  if (k === "layoutpage" || k === "screens") { openSettingsSection("layout"); return true; }
+  if (k === "trash") { openSettingsSection("messages"); return true; }
+  if (k && k === settingsFromDrawer) { settingsFromDrawer = null; openSettingsSection(null); showScreen("conversations"); return true; }
+  return false;
+}
+function vmTabShown() { try { return localStorage.getItem("flip_relay_web_vm_tab") !== "0"; } catch (e) { return true; } }
+function callsTabShown() { try { return localStorage.getItem("flip_relay_web_calls_tab") !== "0"; } catch (e) { return true; } }
 function tlRowsFor(key) {
   const redraw = () => openSettingsSection(key);
   const sw = (title, sub, icon, get, set) => tlRow({ title, sub, icon, switchOn: get(), onclick: () => { set(!get()); redraw(); } });
   switch (key) {
     case "layout": return [
+      tlRow({ icon: "tablet", title: "Layout", sub: (LAYOUT_LABELS[storedLayout()] || LAYOUT_LABELS.auto) + "  ·  theme", onclick: () => openSettingsSection("layoutpage") }),
+      tlRow({ icon: "group", title: "Groups, Calls and Voicemail", sub: "Show or hide each one", onclick: () => openSettingsSection("screens") }),
+    ];
+    case "screens": return [
+      sw("Voicemail", "Shows Voicemail next to Calls", "voicemail", vmTabShown, (v) => { setPref("flip_relay_web_vm_tab", v); updateTabs(); }),
+      sw("Groups", groupsHidden() ? "Hidden on this page" : "Shown - group and mass texts have their own Groups tab", "group", () => !groupsHidden(), (v) => { setPref(HIDE_GROUPS_KEY, !v); groupsView = false; renderConversationList(); updateTabs(); }),
+      sw("Show groups in Messages", groupsInMessages() ? "On - group texts are in the Chats list" : "Off - group texts have their own Groups tab", "group", groupsInMessages, (v) => { setPref(GROUPS_IN_MSGS_KEY, v); groupsView = false; currentTab = "chats"; renderConversationList(); updateTabs(); }),
+      sw("Calls", callsTabShown() ? "Shown - Calls is on the main screen" : "Hidden on this page", "call", callsTabShown, (v) => { setPref("flip_relay_web_calls_tab", v); updateTabs(); }),
+    ];
+    case "layoutpage": return [
       tlRow({ icon: "tablet", title: "Layout", sub: (LAYOUT_LABELS[storedLayout()] || LAYOUT_LABELS.auto) + "  ·  side by side, or one screen at a time", onclick: async () => { clickOld("layout-btn"); } }),
       tlRow({ icon: "palette", title: "Theme", sub: { light: "Light", dark: "Dark" }[themeMode()] || "System default", onclick: async () => {
         const m = await showActionSheet("Theme", [{ label: "System default", value: "system" }, { label: "Light", value: "light" }, { label: "Dark", value: "dark" }]);
         if (m) { try { localStorage.setItem(THEME_KEY, m); } catch (e) { /* storage blocked */ } applyTheme(); redraw(); }
       } }),
       sw("Swipe between screens", "Swipe left and right to move between Chats, Groups and Calls", "swipe", swipeOn, (v) => setPref(SWIPE_KEY, v)),
-      sw("Show groups in Messages", "Group texts in the Chats list, and no Groups tab", "group", groupsInMessages, (v) => { setPref(GROUPS_IN_MSGS_KEY, v); groupsView = false; currentTab = "chats"; renderConversationList(); }),
-      sw("Hide group texts", "Group texts left out on this page only", "group", groupsHidden, (v) => { setPref(HIDE_GROUPS_KEY, v); groupsView = false; renderConversationList(); }),
       sw("Show where messages were sent from", "An icon beside each sent message: the phone or this page", "info", showSourceOn, (v) => { setPref(SHOW_SOURCE_KEY, v); if (currentChatNumber) renderChat(currentChatNumber); }),
     ];
     case "messages": return [
@@ -4341,7 +4418,7 @@ function openSettingsSection(key) {
     const normal = document.createElement("div");
     const list = document.createElement("div");
     list.className = "tl-group";
-    for (const [k, icon, t, sub] of TL_SECTIONS) list.appendChild(tlRow({ icon, title: t, sub, onclick: () => openSettingsSection(k) }));
+    for (const [k, icon, t, sub] of TL_SECTIONS) if (TL_MAIN.includes(k)) list.appendChild(tlRow({ icon, title: t, sub, onclick: () => openSettingsSection(k) }));
     normal.appendChild(list);
     const ah = document.createElement("div");
     ah.className = "tl-heading";
@@ -4503,7 +4580,15 @@ function setupTabletChrome() {
     if (b.textContent.trim() === "←") { b.innerHTML = svgIcon("back"); b.classList.add("tl-back"); }
   }
   const gear = el("gm-settings-btn");
-  if (gear && !gear.querySelector("img")) gear.innerHTML = '<img src="app-icon.png" alt="Settings">';
+  if (gear && !gear.querySelector("img")) {
+    gear.innerHTML = '<img src="app-icon.png" alt="Message+ menu">';
+    gear.title = "Message+ menu";
+    gear.addEventListener("click", (e) => { e.stopImmediatePropagation(); openTabletMenu(); }, { capture: true });
+  }
+  setupSelectionBar();
+  for (const b of document.querySelectorAll("#screen-calls .topbar button")) {
+    if (b.textContent.trim() === "\u21bb" || b.textContent.trim() === "↻") { b.innerHTML = svgIcon("sync"); b.classList.add("tl-chat-btn"); b.style.color = "var(--gm-blue)"; b.style.marginLeft = "auto"; }
+  }
   const input = el("compose-input"), attach = el("attach-btn"), send = el("send-btn");
   if (!input || document.querySelector(".tl-bar")) return;
   const bar = document.createElement("div");
@@ -4554,9 +4639,9 @@ function tlChatChrome(number) {
   if (!av) { av = document.createElement("div"); av.className = "tl-chat-avatar"; top.insertBefore(av, block); }
   av.innerHTML = gmAvatarHtml(number);
   av.style.cursor = "pointer";
-  av.onclick = () => showConversationLongPressMenu(number);
+  av.onclick = () => tlProfileCard(number);
   block.style.cursor = "pointer";
-  block.onclick = () => { if (!isMulti(number)) showConversationLongPressMenu(number); };
+  block.onclick = () => tlProfileCard(number);
   applyChatTheme(number);
   let box = top.querySelector(".tl-chat-btns");
   if (!box) { box = document.createElement("div"); box.className = "tl-chat-btns"; box.style.cssText = "display:flex;flex:none"; block.after(box); }
@@ -4602,18 +4687,181 @@ async function chatThemeMenu(number) {
   applyChatTheme(number);
 }
 
-function closeChatSearch() { const s = document.getElementById("tl-chat-search"); if (s) s.remove(); chatSearchQ = ""; }
+function closeChatSearch() {
+  const s = document.getElementById("tl-chat-search"), g = document.getElementById("tl-chat-gallery");
+  if (s) s.remove();
+  if (g) g.remove();
+  chatSearchQ = "";
+  const t = el("chat-title"), list = el("message-list");
+  if (t) t.closest(".topbar").hidden = false;
+  if (list) list.hidden = false;
+}
 function toggleChatSearch() {
-  const top = el("chat-title").closest(".topbar");
   if (document.getElementById("tl-chat-search")) { closeChatSearch(); if (currentChatNumber) renderChat(currentChatNumber); return; }
+  const top = el("chat-title").closest(".topbar"), list = el("message-list");
   const s = document.createElement("div");
   s.id = "tl-chat-search";
-  s.innerHTML = `<input placeholder="Search this conversation" autocomplete="off"><span></span>`;
+  s.innerHTML = `<div class="pill"><button class="tl-chat-btn" title="Back">${svgIcon("back")}</button><input placeholder="Search conversation" autocomplete="off"><button class="tl-chat-btn" title="Clear">${svgIcon("close")}</button></div><div class="chips"></div>`;
   top.after(s);
-  const i = s.firstElementChild;
-  i.oninput = () => { chatSearchQ = i.value.trim().toLowerCase(); renderChat(currentChatNumber); s.lastElementChild.textContent = chatSearchQ ? document.querySelectorAll("#message-list .bubble-row").length + " found" : ""; };
+  top.hidden = true;
+  const g = document.createElement("div");
+  g.id = "tl-chat-gallery";
+  list.before(g);
+  const mine = messages.filter((m) => m.number === currentChatNumber && m.direction !== "scheduled");
+  const images = mine.filter((m) => m.imageUrl), videos = mine.filter((m) => m.attachmentKind === "video" && m.attachmentUrl);
+  const phones = [...new Set(mine.flatMap((m) => String(m.body || "").match(/\+?\d[\d\s().-]{8,}\d/g) || []))];
+  let only = null;
+  const draw = () => {
+    g.innerHTML = "";
+    const sec = (key, title, fill) => {
+      if (only && only !== key) return;
+      const h = document.createElement("div"); h.className = "tl-gal-h"; h.textContent = title; g.appendChild(h);
+      const b = document.createElement("div"); b.className = key === "phones" ? "tl-gal-list" : "tl-gal"; g.appendChild(b); fill(b);
+    };
+    if (images.length) sec("images", "Images", (b) => { for (const m of images.slice().reverse()) { const i = document.createElement("img"); i.loading = "lazy"; i.src = m.imageUrl; i.onclick = () => window.open(m.imageUrl, "_blank"); b.appendChild(i); } });
+    if (videos.length) sec("videos", "Videos", (b) => { for (const m of videos.slice().reverse()) { const v = document.createElement("div"); v.className = "tl-gal-v"; v.innerHTML = svgIcon("play"); v.onclick = () => window.open(m.attachmentUrl, "_blank"); b.appendChild(v); } });
+    if (phones.length) sec("phones", "Phone numbers", (b) => { for (const n of phones) b.appendChild(tlRow({ icon: "phone", title: n })); });
+  };
+  const chips = s.querySelector(".chips");
+  for (const [key, label] of [["images", "Images"], ["videos", "Videos"], ["phones", "Phone numbers"]]) {
+    const c = document.createElement("button");
+    c.className = "tl-chip";
+    c.textContent = label;
+    c.onclick = () => { only = only === key ? null : key; for (const x of chips.children) x.classList.toggle("on", x === c && !!only); draw(); };
+    chips.appendChild(c);
+  }
+  const i = s.querySelector("input");
+  const apply = () => {
+    chatSearchQ = i.value.trim().toLowerCase();
+    g.hidden = !!chatSearchQ; chips.hidden = !!chatSearchQ; list.hidden = !chatSearchQ;
+    if (chatSearchQ) renderChat(currentChatNumber);
+  };
+  i.oninput = apply;
   i.onkeydown = (e) => { if (e.key === "Escape") toggleChatSearch(); };
-  i.focus();
+  const btns = s.querySelectorAll(".pill button");
+  btns[0].onclick = () => toggleChatSearch();
+  btns[1].onclick = () => { i.value = ""; apply(); i.focus(); };
+  draw(); apply(); i.focus();
+}
+
+// The red Message+ button: status of this page and the flip, and the way to Messages, Features and Settings
+function openTabletMenu() {
+  const f = lastFlip || {};
+  const net = f.network && f.network.wifi ? "Wi-Fi" : f.network && f.network.cellular ? "Mobile data" : "No Wi-Fi or data";
+  const okLine = (on) => `<span class="${on ? "ok" : "bad"}">${on ? "Connected to Firebase" : "Not connected"}</span>`;
+  const dim = document.createElement("div");
+  dim.className = "tl-dim tl-menu-dim";
+  dim.innerHTML = `<div class="tl-menu">
+    <div class="head"><img src="app-icon.png" alt=""><div class="col"><div class="t">Message+</div><div class="s">Paired with your flip phone</div></div><button class="tl-chat-btn" title="Close">${svgIcon("close")}</button></div>
+    <div class="card stat">
+      <div class="st"><span class="ic">${svgIcon("tablet")}</span><div class="col"><div>This page</div>${okLine(navigator.onLine)}</div><i class="${navigator.onLine ? "on" : ""}"></i></div>
+      <div class="st"><span class="ic">${svgIcon("call")}</span><div class="col"><div>Flip phone</div>${okLine(!!f.connected)}</div><i class="${f.connected ? "on" : ""}"></i></div>
+      ${f.connected ? `<div class="info">${escapeHtml(net)}${f.batteryPercent != null ? `<span class="batt"><b style="width:${Math.max(0, Math.min(100, f.batteryPercent))}%"></b><em>${f.batteryPercent}</em></span>` : ""}</div>` : ""}
+    </div>
+    <div class="card items"></div></div>`;
+  const close = () => dim.remove();
+  dim.onclick = (e) => { if (e.target === dim) close(); };
+  dim.querySelector(".head button").onclick = close;
+  const items = dim.querySelector(".items");
+  for (const [icon, label, key] of [["archive", "Messages", "messages"], ["star", "Messages features", "features"], ["gear", "Messages settings", null]]) {
+    const b = document.createElement("button");
+    b.innerHTML = `<span class="ic">${svgIcon(icon)}</span><span></span>`;
+    b.lastElementChild.textContent = label;
+    b.onclick = () => { close(); openSettingsFromDrawer(key); };
+    items.appendChild(b);
+  }
+  document.body.appendChild(dim);
+}
+
+// Selection bar on the list: pin, mute, archive, delete, more
+async function tlSelectionAct(choice) {
+  const nums = Array.from(selectedConversationNumbers);
+  if (choice === "archive") {
+    const how = await showActionSheet("Archive", [{ label: "Come back when a new message arrives", value: "back" }, { label: "Stay archived, even for new messages", value: "stay" }]);
+    if (!how) return;
+    exitConversationSelectionMode();
+    for (const n of nums) setArchived(n, true, how === "stay");
+    renderConversationList();
+    return;
+  }
+  exitConversationSelectionMode();
+  for (const n of nums) await showConversationLongPressMenu(n, choice);
+}
+async function tlSelectionMore() {
+  const nums = Array.from(selectedConversationNumbers), one = nums.length === 1 ? nums[0] : null;
+  const o = [];
+  if (one) o.push({ label: "Automatic replies", value: "auto" });
+  o.push({ label: one && lockedChats().has(one) ? "Unlock chat" : "Lock chat", value: "lock" });
+  if (one && isMulti(one)) o.push({ label: "Rename group", value: "rename" });
+  if (!one || !isMulti(one)) o.push({ label: "Block", value: "block" });
+  if (one) o.push({ label: "Chat theme", value: "theme" });
+  o.push({ label: "Select all", value: "all" });
+  const c = await showActionSheet(one ? displayName(one) || one : nums.length + " selected", o);
+  if (!c) return;
+  if (c === "all") { toggleSelectAllConversations(); return; }
+  if (c === "auto") { exitConversationSelectionMode(); openAutoRepliesPanel(); return; }
+  tlSelectionAct(c);
+}
+function setupSelectionBar() {
+  const bar = el("conv-selection-toolbar");
+  if (!bar || bar.dataset.tl) return;
+  bar.dataset.tl = "1";
+  el("conv-selection-cancel-btn").innerHTML = svgIcon("close");
+  const del = el("conv-selection-delete-btn");
+  del.innerHTML = svgIcon("trash");
+  const mk = (icon, title, fn) => { const b = document.createElement("button"); b.className = "icon-btn"; b.title = title; b.innerHTML = svgIcon(icon); b.onclick = fn; return b; };
+  del.before(mk("pin", "Pin", () => tlSelectionAct("pin")), mk("bellOff", "Mute", () => tlSelectionAct("mute")), mk("archive", "Archive", () => tlSelectionAct("archive")));
+  del.after(mk("more", "More", tlSelectionMore));
+  el("conv-select-all-btn").style.display = "none";
+}
+
+// Holding a message: the tablet's blurred screen with the reactions on top and the menu under the bubble
+function tlMessageMenu(m) {
+  const dim = document.createElement("div");
+  dim.className = "tl-mm " + (m.direction === "out" ? "out" : "in");
+  dim.innerHTML = `<div class="emojis"></div><div class="col"><div class="copy"></div><div class="menu"></div></div>`;
+  const close = () => dim.remove();
+  dim.onclick = (e) => { if (e.target === dim || e.target.classList.contains("col")) close(); };
+  dim.querySelector(".copy").textContent = m.body || (m.imageUrl ? "Picture" : m.attachmentKind === "audio" ? "Voice message" : m.attachmentUrl ? "Attachment" : "");
+  const pending = m.direction === "out" && String(m.id).startsWith("local-");
+  const react = (e) => {
+    close();
+    const snippet = String(m.body || "").slice(0, 60);
+    sendQuick(m.number, e + " to \u201c" + snippet + "\u201d", displayName(m.number) || m.number);
+  };
+  const emojis = dim.querySelector(".emojis");
+  if (m.body && !pending) {
+    for (const e of ["\u{1F44D}", "\u2764\uFE0F", "\u{1F602}", "\u{1F62E}", "\u{1F622}", "\u{1F621}", "\u{1F44E}"]) {
+      const b = document.createElement("button"); b.textContent = e; b.onclick = () => react(e); emojis.appendChild(b);
+    }
+  } else emojis.style.visibility = "hidden";
+  const menu = dim.querySelector(".menu");
+  const item = (icon, label, fn) => { const b = document.createElement("button"); b.innerHTML = `<span class="ic">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = label; b.onclick = () => { close(); fn(); }; menu.appendChild(b); };
+  if (m.body) item("forward", "Forward", () => startForward(m.body));
+  if (m.body) item("copy", "Copy", async () => { try { await navigator.clipboard.writeText(m.body); } catch (e) { logDebug("Copy failed: " + e); } });
+  if (m.imageUrl || m.attachmentUrl) item("download", "Save", () => saveMessageMedia(m));
+  item("trash", "Delete", async () => {
+    if (pending) { if (await gmConfirm("Delete this message? It hasn't gone through yet.")) deletePending(m.id); return; }
+    if (await gmConfirm("It stays in the trash for 30 days and can be restored.", "Delete this message?", "Delete")) softDeleteMessage(m.id);
+  });
+  item("checklist", "Select more", () => enterSelectionMode(m.id));
+  item("info", "Info", () => showMessageInfo(m));
+  document.body.appendChild(dim);
+}
+
+// The chat's picture: big, with Message, Call and Info under it
+function tlProfileCard(number) {
+  const dim = document.createElement("div");
+  dim.className = "tl-dim tl-profile";
+  dim.innerHTML = `<div class="box"><div class="big">${gmAvatarHtml(number)}</div><div class="acts"></div></div>`;
+  const close = () => dim.remove();
+  dim.onclick = (e) => { if (e.target === dim) close(); };
+  const acts = dim.querySelector(".acts");
+  const add = (icon, title, fn) => { const b = document.createElement("button"); b.title = title; b.innerHTML = svgIcon(icon); b.onclick = () => { close(); fn(); }; acts.appendChild(b); };
+  add("chat", "Message", () => { if (currentChatNumber !== number) openChat(number); });
+  if (!isMulti(number)) add("call", "Call", () => { location.href = "tel:" + number; });
+  add("info", "Info", () => showConversationLongPressMenu(number, null, true));
+  document.body.appendChild(dim);
 }
 
 // ---------- a voice message or voicemail player ----------
@@ -4661,50 +4909,117 @@ function callDay(ts) {
   const days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
   return days === 0 ? "Today" : days === 1 ? "Yesterday" : d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
 }
+let selectedCallKey = null;
+function callWords(c) { return c.type === "missed" ? "Missed call" : c.type === "rejected" || c.type === "blocked" ? "Declined call" : c.type === "outgoing" ? "Dialed call" : "Received call"; }
+function callKey(c) { return (c.timestamp || 0) + "|" + c.number; }
+function callIconHtml(c) {
+  const missed = c.type === "missed", declined = c.type === "rejected" || c.type === "blocked";
+  const color = missed ? "var(--gm-red)" : declined ? "#e37400" : c.type === "outgoing" ? "var(--gm-blue)" : "#1e8e3e";
+  const icon = declined ? "block" : missed ? "callMissed" : c.type === "outgoing" ? "callMade" : "callReceived";
+  return `<span style="color:${color};display:flex">${svgIcon(icon)}</span>`;
+}
+function callDetailInto(box, call) {
+  const n = normalizeNumber(call.number), name = call.contactName || displayName(n) || call.number;
+  const mine = allCalls.filter((c) => normalizeNumber(c.number) === n).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  const inN = mine.filter((c) => c.type === "incoming").length, outN = mine.filter((c) => c.type === "outgoing").length, talked = mine.reduce((t, c) => t + (c.duration || 0), 0);
+  const d = new Date(call.timestamp || 0);
+  const longDay = (x) => x.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+  const info = (k, v) => `<div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div>`;
+  const answered = call.type === "incoming" || call.type === "outgoing";
+  box.innerHTML = `<div class="who">${call.contactName ? gmMiniAvatar(call.contactName, "gm-avatar") : gmAvatarHtml(n || call.number)}<div class="col"><div class="nm"></div><div class="no"></div></div></div>
+    <div class="acts"></div>
+    <div class="tl-day">This call</div>
+    ${info("Type", callWords(call))}${info("Date", d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" }))}${info("Time", d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }))}${answered ? info("Length", call.duration ? formatCallDuration(call.duration) : "Not connected") : ""}
+    <div class="tl-day">History \u00b7 ${mine.length} ${mine.length === 1 ? "call" : "calls"}</div>
+    <div class="sum">${inN} received, ${outN} dialed, ${mine.length - inN - outN} missed or declined${talked ? " \u00b7 " + escapeHtml(formatCallDuration(talked)) + " talked" : ""}</div>
+    <div class="hist"></div>`;
+  box.querySelector(".nm").textContent = name;
+  box.querySelector(".no").textContent = call.number;
+  const acts = box.querySelector(".acts");
+  const act = (icon, label, fn) => { const b = document.createElement("button"); b.innerHTML = `<span class="circle">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = label; b.onclick = fn; acts.appendChild(b); };
+  if (n) {
+    act("call", "Call", () => { location.href = "tel:" + n; });
+    act("chat", "Message", () => openChat(n));
+    act("reply", "Quick replies", () => quickReplySheet(n));
+  }
+  const hist = box.querySelector(".hist");
+  let day = "", card = null;
+  for (const c of mine) {
+    const h = c.timestamp ? longDay(new Date(c.timestamp)) : "";
+    if (h !== day || !card) {
+      day = h;
+      const t = document.createElement("div"); t.className = "hd"; t.textContent = h; hist.appendChild(t);
+      card = document.createElement("div"); card.className = "hcard"; hist.appendChild(card);
+    }
+    const r = document.createElement("div");
+    r.className = "hrow" + (callKey(c) === callKey(call) ? " on" : "");
+    r.innerHTML = `<div class="tm"></div><div class="ty">${callIconHtml(c)}<span></span></div>`;
+    r.querySelector(".tm").textContent = new Date(c.timestamp || 0).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    r.querySelector(".ty > span:last-child").textContent = callWords(c) + (c.duration ? ", " + formatCallDuration(c.duration) : "");
+    card.appendChild(r);
+  }
+}
+function showCallDetail(call) {
+  selectedCallKey = callKey(call);
+  for (const r of document.querySelectorAll("#calls-list .tl-call")) r.classList.toggle("on", r.dataset.key === selectedCallKey);
+  if (document.body.classList.contains("gm-tablet")) { callDetailInto(el("tl-call-detail"), call); return; }
+  const p = openPanel("Call info");
+  const box = document.createElement("div");
+  box.className = "tl-call-detail";
+  p.body.appendChild(box);
+  callDetailInto(box, call);
+}
 function renderCallsList() {
   const list = el("calls-list");
+  let wrap = document.getElementById("tl-calls-wrap");
+  if (!wrap) {
+    wrap = document.createElement("div"); wrap.id = "tl-calls-wrap";
+    const left = document.createElement("div"); left.id = "tl-calls-left";
+    const detail = document.createElement("div"); detail.id = "tl-call-detail"; detail.className = "tl-call-detail";
+    list.parentNode.insertBefore(wrap, list);
+    const tabs = document.createElement("div"); tabs.id = "calls-tabs";
+    left.append(tabs, list, el("calls-empty-state"));
+    wrap.append(left, detail);
+  }
   list.innerHTML = "";
-  let bar = document.getElementById("calls-tabs");
-  if (!bar) { bar = document.createElement("div"); bar.id = "calls-tabs"; list.parentNode.insertBefore(bar, list); }
+  const bar = document.getElementById("calls-tabs");
   bar.innerHTML = "";
-  const missedCount = allCalls.filter((c) => c.type === "missed").length;
-  [["All", 0], ["Missed" + (missedCount ? " (" + missedCount + ")" : ""), 3], ["Incoming", 4], ["Outgoing", 5], ["Contacts", 1], ["Not contacts", 2]].forEach(([label, i]) => {
+  [["All", 0], ["Missed", 3], ["Received", 4], ["Dialed", 5], ["Contacts", 1], ["Not contacts", 2]].forEach(([label, i]) => {
     const b = document.createElement("button");
     b.className = "tl-chip" + (i === callsTab ? " on" : "");
     b.textContent = label;
     b.addEventListener("click", () => { callsTab = i; renderCallsList(); });
     bar.appendChild(b);
   });
-  const shown = allCalls.filter((c) => callsTab === 0 || (callsTab === 1 && c.contactName) || (callsTab === 2 && !c.contactName) || (callsTab === 3 && c.type === "missed") || (callsTab === 4 && c.type === "incoming") || (callsTab === 5 && c.type === "outgoing"));
+  const isDeclined = (c) => c.type === "rejected" || c.type === "blocked";
+  const shown = allCalls.filter((c) => callsTab === 0 || (callsTab === 1 && c.contactName) || (callsTab === 2 && !c.contactName) || (callsTab === 3 && (c.type === "missed" || isDeclined(c))) || (callsTab === 4 && c.type === "incoming") || (callsTab === 5 && c.type === "outgoing"));
   el("calls-empty-state").classList.toggle("hidden", shown.length > 0);
   let last = "";
   for (const call of shown) {
     const h = call.timestamp ? callDay(call.timestamp) : "";
     if (h && h !== last) { last = h; const d = document.createElement("div"); d.className = "tl-day"; d.textContent = h; list.appendChild(d); }
-    const missed = call.type === "missed", declined = call.type === "rejected" || call.type === "blocked";
     const n = normalizeNumber(call.number);
     const when = call.timestamp ? new Date(call.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
     const row = document.createElement("div");
-    row.className = "tl-call" + (missed ? " missed" : "");
-    const color = missed ? "var(--gm-red)" : declined ? "#e37400" : call.type === "outgoing" ? "var(--gm-blue)" : "#1e8e3e";
-    const icon = missed ? "callMissed" : call.type === "outgoing" ? "callMade" : "callReceived";
-    const detail = missed ? "Missed · " + when : declined ? "Declined · " + when : when + (call.duration ? " · " + formatCallDuration(call.duration) : "");
-    row.innerHTML = `${call.contactName ? gmMiniAvatar(call.contactName, "gm-avatar") : gmAvatarHtml(n || call.number)}<div class="tl-col"><div class="nm">${escapeHtml(call.contactName || call.number)}</div><div class="dt"><span style="display:flex;color:${color}">${svgIcon(icon, 16)}</span><span>${escapeHtml(detail)}</span></div><div class="qr-row"></div></div>`;
-    const qr = row.querySelector(".qr-row");
-    const chip = (label, fn, strong) => {
-      const b = document.createElement("button");
-      b.className = "tl-qr" + (strong ? " strong" : "");
-      b.textContent = label;
-      b.addEventListener("click", (e) => { e.stopPropagation(); fn(); });
-      qr.appendChild(b);
-    };
+    row.className = "tl-call";
+    row.dataset.key = callKey(call);
+    const detail = call.type === "missed" ? "Missed \u00b7 " + when : isDeclined(call) ? "Declined \u00b7 " + when : when + (call.duration ? " \u00b7 " + formatCallDuration(call.duration) : "");
+    row.innerHTML = `${call.contactName ? gmMiniAvatar(call.contactName, "gm-avatar") : gmAvatarHtml(n || call.number)}<div class="tl-col"><div class="nm"></div><div class="dt">${callIconHtml(call)}<span></span></div></div>`;
+    row.querySelector(".nm").textContent = call.contactName || call.number;
+    row.querySelector(".dt > span:last-child").textContent = detail;
     if (n) {
-      chip("Message", () => openChat(n), true);
-      for (const t of quickReplies()) chip(t, () => sendQuick(n, t, call.contactName || call.number));
-      chip("+ My own", async () => { const t = await gmPrompt("", "", "New quick reply", { positive: "Save" }); if (t && t.trim()) { addQuickReply(t.trim()); renderCallsList(); } });
-      row.addEventListener("click", () => openChat(n));
+      for (const [icon, t, fn] of [["chat", "Message", () => openChat(n)], ["call", "Call", () => { location.href = "tel:" + n; }]]) {
+        const b = document.createElement("button");
+        b.className = "tl-call-btn"; b.title = t; b.innerHTML = svgIcon(icon);
+        b.addEventListener("click", (e) => { e.stopPropagation(); fn(); });
+        row.appendChild(b);
+      }
     }
+    row.addEventListener("click", () => showCallDetail(call));
     list.appendChild(row);
+  }
+  if (document.body.classList.contains("gm-tablet") && shown.length) {
+    showCallDetail(shown.find((c) => callKey(c) === selectedCallKey) || shown[0]);
   }
 }
 
