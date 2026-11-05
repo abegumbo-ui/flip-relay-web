@@ -871,6 +871,7 @@ async function screenTablets() {
         icon: "tablet", title: t.name || t.model || "Device",
         sub: [`phone ${names[code] || code}`, t.app || "", "first seen " + ago(t.firstSeen), "last seen " + ago(t.lastSeen)].filter(Boolean).join(" · "),
         pill: signedOut ? "signed out - no longer in use" : waiting ? "waiting for approval" : "approved", warn: waiting || signedOut,
+        chips: Date.now() - (t.lastSeen || 0) < 5 * 60000 ? [["online", "ok"]] : [], // tablets (659+) send a heartbeat every 2 minutes
       }), actions([
         { label: waiting ? "Approve" : "Block", cls: waiting ? "" : "danger", onclick: async () => { await db("PATCH", `registry/${code}/tablets/${id}`, { approved: waiting }); render(); } },
         { label: "Remove", cls: "ghost", onclick: async () => { if (confirm("Remove this device from the list? It shows up again the next time it connects.")) { await db("DELETE", `registry/${code}/tablets/${id}`); render(); } } },
@@ -1150,7 +1151,7 @@ async function screenRoom({ room, label }) {
     const upd = Object.entries(notices || {}).find(([k, n]) => n && n.kind === "update" && (n.to === "all" || n.to === id));
     const tb = parseBuild(t.app);
     tg.add(item({ icon: "tablet", title: t.name || t.model || "Device", sub: [t.app || "", "first seen " + ago(t.firstSeen), "last seen " + ago(t.lastSeen)].filter(Boolean).join(" · "), pill: waiting ? "blocked or waiting" : "approved", warn: waiting,
-      chips: isApp ? [[upd ? "must update to build " + upd[1].minBuild + " or newer" : "no update required", upd ? "warn" : "ok"]].concat(tb && latestBuild && tb < latestBuild ? [["a newer build (" + latestBuild + ") is published", "warn"]] : []) : [] }));
+      chips: (Date.now() - (t.lastSeen || 0) < 5 * 60000 ? [["online", "ok"]] : []).concat(isApp ? [[upd ? "must update to build " + upd[1].minBuild + " or newer" : "no update required", upd ? "warn" : "ok"]].concat(tb && latestBuild && tb < latestBuild ? [["a newer build (" + latestBuild + ") is published", "warn"]] : []) : []) }));
     tg.add(actions((isApp ? [
       { label: "Send a message", cls: "ghost", onclick: () => go("notice", { room, id, name: t.name || t.model || "this tablet" }) },
       upd ? { label: "Lift the update requirement", cls: "ghost", onclick: async () => { await db("DELETE", `rooms/${room}/notices/${upd[0]}`); render(); } }

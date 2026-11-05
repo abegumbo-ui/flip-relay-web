@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "4a71ec01ea586072159369182b14c300676c47a4",
-    "publishedAt": "2026-11-04T23:41:14Z",
-    "build": 659,
-    "notes": "Small update in the background (it notes when this tablet reads a conversation, for a feature coming later). Nothing changes on screen."
+    "sha": "acd874e5977735c03538ef232045ebf0ae8674ac",
+    "publishedAt": "2026-11-05T00:12:18Z",
+    "build": 660,
+    "notes": "The dashboard now sees this tablet as online: it reports when it was last seen every 2 minutes while the app is running (it used to be every 6 hours)."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
