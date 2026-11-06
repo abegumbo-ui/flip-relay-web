@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "6e1079183add54936599b1a7a0a7152485ae13c2",
-    "publishedAt": "2026-11-05T05:01:02Z",
-    "build": 661,
-    "notes": "Flip phone buttons has a new switch: Work even if Message+ is not the default. It is on by default, so the buttons keep working when another app is the default texting app."
+    "sha": "a5dc3700f32f28390933230917dfd308423563e7",
+    "publishedAt": "2026-11-06T21:15:13Z",
+    "build": 662,
+    "notes": "New Contacts tab, like Google Voice: your contacts A to Z. Tap one, or tap anyone's picture anywhere, for a card with Message, Call and a pencil to name them. A group's card lists the people in it.\nSettings > Screens and the bar: show, hide or move Chats, Groups, Calls, Contacts and Voicemail, or take the bar away. New icons for Chats and Contacts.\nA name you give a person here shows on the web page too. The flip phone follows after its next update."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
