@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "a5dc3700f32f28390933230917dfd308423563e7",
-    "publishedAt": "2026-11-06T21:15:13Z",
-    "build": 662,
-    "notes": "New Contacts tab, like Google Voice: your contacts A to Z. Tap one, or tap anyone's picture anywhere, for a card with Message, Call and a pencil to name them. A group's card lists the people in it.\nSettings > Screens and the bar: show, hide or move Chats, Groups, Calls, Contacts and Voicemail, or take the bar away. New icons for Chats and Contacts.\nA name you give a person here shows on the web page too. The flip phone follows after its next update."
+    "sha": "ee527e67b4d593708e5c146069f07834fd4cc8a8",
+    "publishedAt": "2026-11-06T21:49:33Z",
+    "build": 664,
+    "notes": "Swiping follows the order of the bar, and Contacts swipes too. Settings > Screens and the bar > Rearrange the bar: hold a screen and drag it where you want it.\nThe Message+ menu circle is on every main screen, so Settings is never far. The bar switch now hides the bar on every screen.\nSettings > Layout: Display size (DPI), type your own. Calls has a search box for a name, number, date or Missed.\nA person's card: numbers are centred, the pencil opens the real contact editor, and Quick replies are only on Calls. The Contacts icon lost its two bars."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
