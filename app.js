@@ -2551,6 +2551,11 @@ function openPhoneButtons() {
 
 // ---------- Settings laid out like the tablet: a list of sections (icon, title, what is inside); each opens its own page ----------
 const ICONS = {
+  forum: "M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z",
+  contacts: "M20 0H4v2h16V0zM4 24h16v-2H4v2zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 2.75c1.24 0 2.25 1.01 2.25 2.25s-1.01 2.25-2.25 2.25S9.75 10.24 9.75 9 10.76 6.75 12 6.75zM17 17H7v-1.5c0-1.67 3.33-2.5 5-2.5s5 .83 5 2.5V17z",
+  arrowUp: "M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z",
+  arrowDown: "M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z",
+  people: "M16.67 13.13C18.04 14.06 19 15.32 19 17v3h4v-3c0-2.18-3.57-3.47-6.33-3.87zM15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4c-.47 0-.91.1-1.33.24C14.5 5.27 15 6.58 15 8s-.5 2.73-1.33 3.76c.42.14.86.24 1.33.24zM9 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 16.29 6.3 15 9 15s5.8 1.29 6 2v1z",
   systemUpdate: "M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14zm-1-6h-3V8h-2v5H8l4 4 4-4z",
   close: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
   more: "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
@@ -2770,12 +2775,7 @@ function openVoicemailPanel() {
   const refresh = document.createElement("button");
   refresh.className = "tl-chat-btn"; refresh.title = "Refresh"; refresh.innerHTML = svgIcon("sync"); refresh.style.color = "var(--gm-blue)"; refresh.style.marginLeft = "auto";
   top.appendChild(refresh);
-  const dock = document.querySelector("#screen-conversations .tl-dock").cloneNode(true);
-  for (const b of dock.querySelectorAll(".tl-dock-item")) {
-    b.classList.toggle("on", b.dataset.tab === "voicemail");
-    b.onclick = () => { if (b.dataset.tab !== "voicemail") { backBtn.click(); goTab(b.dataset.tab); } };
-  }
-  top.after(dock);
+  top.after(tlPanelDock("voicemail", backBtn));
   p.body.innerHTML = `<div class="tl-vm-count"></div><div data-x="list" class="tl-vm-empty">Loading...</div>`;
   const list = p.body.querySelector('[data-x="list"]');
   refresh.onclick = async () => {
@@ -2788,7 +2788,7 @@ function openVoicemailPanel() {
   let audio = null;
   p.onClose(() => { if (audio) audio.pause(); });
   const rowFor = (id, v, saved) => {
-    const who = v.contactName || displayName(normalizeNumber(v.from)) || v.from || "Unknown";
+    const who = chosenName(normalizeNumber(v.from)) || v.contactName || displayName(normalizeNumber(v.from)) || v.from || "Unknown";
     const when = new Date(v.timestamp || 0).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " \u2022 " + clockOf(v.durationSec || 0);
     const n = normalizeNumber(v.from);
     const c = document.createElement("div");
@@ -3309,6 +3309,8 @@ function displayName(number) {
     if (groupNames[number]) return groupNames[number];
     return number.slice(2).split(",").filter(Boolean).map((n) => displayName(n)).join(", ");
   }
+  const chosen = chosenName(number);
+  if (chosen) return chosen;
   const withName = messages.find((m) => m.number === number && m.contactName);
   return (withName && withName.contactName) || number;
 }
@@ -3469,6 +3471,7 @@ function groupsInMessages() { try { return localStorage.getItem(GROUPS_IN_MSGS_K
 let currentTab = "chats";
 function goTab(key) {
   if (key === "voicemail") { openVoicemailPanel(); return; } // opens over the list; Back returns to the tab you were on
+  if (key === "contacts") { openContactsPanel(); return; }
   currentTab = key;
   if (key === "calls") { onCallsClick(); updateTabs(); return; }
   groupsView = key === "groups";
@@ -3628,6 +3631,8 @@ function renderChat(number) {
         let hh = 0;
         for (let i = 0; i < who.length; i++) hh = (hh * 31 + who.charCodeAt(i)) | 0;
         hdr.innerHTML = gmMiniAvatar(who, "gm-sender-avatar") + '<span style="color:' + pal[Math.abs(hh) % pal.length] + '">' + escapeHtml(who) + "</span>";
+      const hdrAv = hdr.querySelector(".gm-sender-avatar");
+      if (hdrAv && m.fromNumber) { hdrAv.style.cursor = "pointer"; hdrAv.onclick = (ev) => { ev.stopPropagation(); tlProfileCard(normalizeNumber(m.fromNumber) || m.fromNumber); }; }
         list.appendChild(hdr);
       }
       row.classList.add("indent");
@@ -4220,20 +4225,24 @@ function tlToast(text) {
 function addTabBars() {
   for (const screen of ["screen-conversations", "screen-calls"]) {
     const sec = document.getElementById(screen);
-    if (!sec || sec.querySelector(".tl-dock")) continue;
+    if (!sec) continue;
+    const old = sec.querySelector(".tl-dock");
+    if (old) old.remove();
     const bar = document.createElement("div");
     bar.className = "tl-dock";
-    for (const [key, icon, label] of [["chats", "chat", "Chats"], ["groups", "group", "Groups"], ["calls", "call", "Calls"], ["voicemail", "voicemail", "Voicemail"]]) {
+    for (const key of webScreens()) {
       const b = document.createElement("button");
       b.className = "tl-dock-item";
       b.dataset.tab = key;
-      b.innerHTML = `<span class="tl-dock-pill">${svgIcon(icon)}</span><span class="tl-dock-label"></span>`;
-      b.lastElementChild.textContent = label;
+      b.innerHTML = `<span class="tl-dock-pill">${svgIcon(TAB_ICON[key])}</span><span class="tl-dock-label"></span>`;
+      b.lastElementChild.textContent = TAB_LABEL[key];
       b.onclick = () => goTab(key);
       bar.appendChild(b);
     }
     const top = sec.querySelector(".topbar");
     if (top) top.after(bar); else sec.prepend(bar);
+    const strip = document.getElementById("flip-strip");
+    if (strip && strip.parentNode === sec) bar.after(strip);
   }
   updateTabs();
 }
@@ -4246,7 +4255,10 @@ function updateTabs() {
     if (b.dataset.tab === "groups") { b.hidden = !groupsTab; b.dataset.dot = unreadGroups && currentTab !== "groups" ? "1" : "0"; }
     if (b.dataset.tab === "voicemail") { b.hidden = !vmTabShown(); b.dataset.dot = voicemailUnread > 0 ? "1" : "0"; }
     if (b.dataset.tab === "calls") b.hidden = !callsTabShown();
+    if (b.dataset.tab === "contacts") b.hidden = !screenShown("contacts");
+    if (b.dataset.tab === "chats") b.hidden = !screenShown("chats");
   }
+  document.body.classList.toggle("no-dock", !barShown());
 }
 let voicemailUnread = 0;
 async function pollVoicemailDot() {
@@ -4270,12 +4282,91 @@ function tlRow(o) {
   if (o.onclick) { r.dataset.click = "1"; r.onclick = o.onclick; }
   return r;
 }
+// ---------- the screens of the bar: Chats, Groups, Calls, Contacts, Voicemail (show, hide, order, and the bar itself) ----------
+const TAB_LABEL = { chats: "Chats", groups: "Groups", calls: "Calls", contacts: "Contacts", voicemail: "Voicemail" };
+const TAB_ICON = { chats: "forum", groups: "group", calls: "call", contacts: "contacts", voicemail: "voicemail" };
+const SCREEN_ORDER_KEY = "flip_relay_web_screen_order", BAR_KEY = "flip_relay_web_bar", CONTACTS_TAB_KEY = "flip_relay_web_contacts_tab", CHATS_TAB_KEY = "flip_relay_web_chats_tab";
+function webScreens() {
+  const all = Object.keys(TAB_LABEL);
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem(SCREEN_ORDER_KEY) || "[]"); } catch (e) { /* storage blocked */ }
+  const out = saved.filter((k, i) => all.includes(k) && saved.indexOf(k) === i);
+  for (const k of all) if (!out.includes(k)) out.push(k);
+  return out;
+}
+function moveScreen(key, delta) {
+  const o = webScreens(), i = o.indexOf(key), j = i + delta;
+  if (i < 0 || j < 0 || j >= o.length) return;
+  o.splice(i, 1); o.splice(j, 0, key);
+  try { localStorage.setItem(SCREEN_ORDER_KEY, JSON.stringify(o)); } catch (e) { /* storage blocked */ }
+  addTabBars(); updateTabs();
+}
+function prefOn(key, dflt) { try { const v = localStorage.getItem(key); return v === null ? dflt : v !== "0"; } catch (e) { return dflt; } }
+function screenShown(key) {
+  if (key === "groups") return !groupsHidden() && !groupsInMessages();
+  if (key === "calls") return callsTabShown();
+  if (key === "voicemail") return vmTabShown();
+  if (key === "contacts") return prefOn(CONTACTS_TAB_KEY, true);
+  return prefOn(CHATS_TAB_KEY, true);
+}
+function setScreenShown(key, on) {
+  if (key === "groups") { setPref(HIDE_GROUPS_KEY, !on); groupsView = false; renderConversationList(); }
+  else if (key === "calls") setPref("flip_relay_web_calls_tab", on);
+  else if (key === "voicemail") setPref("flip_relay_web_vm_tab", on);
+  else if (key === "contacts") setPref(CONTACTS_TAB_KEY, on);
+  else setPref(CHATS_TAB_KEY, on);
+}
+function barShown() { return prefOn(BAR_KEY, true); }
+function screenHint(key) {
+  const on = screenShown(key);
+  if (key === "groups") return on ? "Shown - group and mass texts have their own tab" : "Hidden - group and mass texts are not shown here or are in the Chats list";
+  if (key === "calls") return on ? "Shown - the call log" : "Hidden - not in the bar";
+  if (key === "voicemail") return on ? "Shown - voicemail from the flip phone" : "Hidden - not in the bar";
+  if (key === "contacts") return on ? "Shown - everyone the flip phone knows by name, A to Z" : "Hidden - not in the bar";
+  return on ? "Shown - your conversations" : "Hidden - not in the bar (the page still opens on it)";
+}
+
+// ---------- names: a name given here, on the tablet or on the flip phone is the same everywhere ----------
+let contactNameMap = {};
+try { contactNameMap = JSON.parse(localStorage.getItem("flip_relay_web_contact_names") || "{}") || {}; } catch (e) { /* storage blocked */ }
+function nameKey(number) {
+  if (!number || /^[gm]:/.test(String(number))) return null;
+  let d = String(number).replace(/\D/g, "");
+  if (d.length === 11 && d[0] === "1") d = d.slice(1);
+  return d.length >= 7 ? d : null;
+}
+function chosenName(number) { const k = nameKey(number), e = k && contactNameMap[k]; return e && e.n ? e.n : null; }
+function nameOver(number, fallback) { return chosenName(number) || fallback; }
+async function loadContactNames() {
+  if (!roomId || document.hidden) return;
+  try {
+    const r = await fetch(roomUrl("contactNames"));
+    if (!r.ok) return;
+    const o = (await r.json()) || {};
+    if (JSON.stringify(o) === JSON.stringify(contactNameMap)) return;
+    contactNameMap = o;
+    try { localStorage.setItem("flip_relay_web_contact_names", JSON.stringify(o)); } catch (e) { /* storage blocked */ }
+    if (typeof renderConversationList === "function") renderConversationList();
+    if (typeof currentChatNumber !== "undefined" && currentChatNumber && currentScreenName === "chat") renderChat(currentChatNumber);
+  } catch (e) { /* offline: the saved names stay */ }
+}
+async function setContactName(number, name) {
+  const k = nameKey(number);
+  if (!k) return;
+  const entry = { n: name, at: Date.now(), by: "web" };
+  contactNameMap[k] = entry;
+  try { localStorage.setItem("flip_relay_web_contact_names", JSON.stringify(contactNameMap)); } catch (e) { /* storage blocked */ }
+  try { await fetch(roomUrl("contactNames/" + k), { method: "PUT", body: JSON.stringify(entry) }); } catch (e) { /* the saved name is shown here; the next edit tries again */ }
+}
+setInterval(loadContactNames, 30000);
+setTimeout(loadContactNames, 3000);
+
 function setPref(key, on, onVal, offVal) { try { localStorage.setItem(key, on ? (onVal || "1") : (offVal || "0")); } catch (e) { /* storage blocked */ } }
 function clickOld(id) { const b = document.getElementById(id); if (b) b.click(); }
 
 // ---------- Settings: the same sections and rows as the tablet ----------
 const TL_SECTIONS = [
-  ["layout", "tablet", "Layout and screens", "Layout, sizes, swipe, group texts, Voicemail tab"],
+  ["layout", "tablet", "Layout and screens", "Layout, theme, swipe, and the screens in the bar"],
   ["messages", "archive", "Messages", "Archived, Trash, backup and restore, blocked and muted"],
   ["features", "star", "Messages features", "Undo send, I'm busy, automatic replies, needs a reply"],
   ["notifications", "bell", "Notifications", "New-message notifications on this device"],
@@ -4283,7 +4374,7 @@ const TL_SECTIONS = [
   ["phone", "history", "Flip phone and sync", "Default texting app, sync messages and attachments, where the phone is"],
   ["help", "systemUpdate", "Help and updates", "Reload, crash log"],
   ["layoutpage", "tablet", "Layout", ""],
-  ["screens", "group", "Groups, Calls and Voicemail", ""],
+  ["screens", "group", "Screens and the bar", ""],
 ];
 const TL_MAIN = ["layout", "notifications", "privacy", "phone", "help"];
 let settingsFromDrawer = null;
@@ -4305,12 +4396,26 @@ function tlRowsFor(key) {
       tlRow({ icon: "tablet", title: "Layout", sub: (LAYOUT_LABELS[storedLayout()] || LAYOUT_LABELS.auto) + "  ·  theme", onclick: () => openSettingsSection("layoutpage") }),
       tlRow({ icon: "group", title: "Groups, Calls and Voicemail", sub: "Show or hide each one", onclick: () => openSettingsSection("screens") }),
     ];
-    case "screens": return [
-      sw("Voicemail", "Shows Voicemail next to Calls", "voicemail", vmTabShown, (v) => { setPref("flip_relay_web_vm_tab", v); updateTabs(); }),
-      sw("Groups", groupsHidden() ? "Hidden on this page" : "Shown - group and mass texts have their own Groups tab", "group", () => !groupsHidden(), (v) => { setPref(HIDE_GROUPS_KEY, !v); groupsView = false; renderConversationList(); updateTabs(); }),
-      sw("Show groups in Messages", groupsInMessages() ? "On - group texts are in the Chats list" : "Off - group texts have their own Groups tab", "group", groupsInMessages, (v) => { setPref(GROUPS_IN_MSGS_KEY, v); groupsView = false; currentTab = "chats"; renderConversationList(); updateTabs(); }),
-      sw("Calls", callsTabShown() ? "Shown - Calls is on the main screen" : "Hidden on this page", "call", callsTabShown, (v) => { setPref("flip_relay_web_calls_tab", v); updateTabs(); }),
-    ];
+    case "screens": {
+      const rows = [sw("Show the bar", barShown() ? "On - the bar with Chats, Groups, Calls, Contacts and Voicemail" : "Off - no bar (the tabs are still reachable from the menus)", "tablet", barShown, (v) => { setPref(BAR_KEY, v); updateTabs(); })];
+      const order = webScreens();
+      for (const key of order) {
+        const r = sw(TAB_LABEL[key], screenHint(key), TAB_ICON[key], () => screenShown(key), (v) => { setScreenShown(key, v); updateTabs(); });
+        const knob = r.querySelector(".tl-switch");
+        const i = order.indexOf(key);
+        for (const [dir, icon, word] of [[-1, "arrowUp", "earlier"], [1, "arrowDown", "later"]]) {
+          const ar = document.createElement("button");
+          ar.className = "tl-arrow"; ar.type = "button"; ar.title = "Move " + TAB_LABEL[key] + " " + word; ar.innerHTML = svgIcon(icon);
+          const can = dir < 0 ? i > 0 : i < order.length - 1;
+          ar.disabled = !can;
+          ar.onclick = (e) => { e.stopPropagation(); moveScreen(key, dir); redraw(); };
+          r.insertBefore(ar, knob);
+        }
+        rows.push(r);
+      }
+      rows.push(sw("Show groups in Messages", groupsInMessages() ? "On - group texts are in the Chats list" : "Off - group texts have their own Groups tab", "group", groupsInMessages, (v) => { setPref(GROUPS_IN_MSGS_KEY, v); groupsView = false; currentTab = "chats"; renderConversationList(); updateTabs(); }));
+      return rows;
+    }
     case "layoutpage": return [
       tlRow({ icon: "tablet", title: "Layout", sub: (LAYOUT_LABELS[storedLayout()] || LAYOUT_LABELS.auto) + "  ·  side by side, or one screen at a time", onclick: async () => { clickOld("layout-btn"); } }),
       tlRow({ icon: "palette", title: "Theme", sub: { light: "Light", dark: "Dark" }[themeMode()] || "System default", onclick: async () => {
@@ -4744,6 +4849,56 @@ function toggleChatSearch() {
   draw(); apply(); i.focus();
 }
 
+// The dock on a page that opens over the list (Voicemail, Contacts)
+function tlPanelDock(tab, backBtn) {
+  const dock = document.querySelector("#screen-conversations .tl-dock").cloneNode(true);
+  for (const b of dock.querySelectorAll(".tl-dock-item")) {
+    b.classList.toggle("on", b.dataset.tab === tab);
+    b.onclick = () => { if (b.dataset.tab !== tab) { backBtn.click(); goTab(b.dataset.tab); } };
+  }
+  return dock;
+}
+
+// The Contacts tab, like Google Voice's: everyone the flip phone knows by name, A to Z. A web page cannot read a device's contacts.
+function webContacts() {
+  const byNumber = new Map(), seenNames = new Set(); // one row per person, even when a person has two numbers
+  const add = (number, name) => {
+    const n = normalizeNumber(number);
+    if (!n || isMulti(n) || !name || /^[\d+\s()-]+$/.test(name) || byNumber.has(n) || seenNames.has(name.toLowerCase())) return;
+    seenNames.add(name.toLowerCase());
+    byNumber.set(n, name);
+  };
+  for (const [k, e] of Object.entries(contactNameMap)) if (e && e.n) add(k, e.n);
+  for (const m of messages) if (m.contactName) add(m.number, nameOver(m.number, m.contactName));
+  for (const c of allCalls) if (c.contactName) add(c.number, nameOver(c.number, c.contactName));
+  return [...byNumber.entries()].map(([number, name]) => ({ number, name })).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+}
+function openContactsPanel() {
+  const p = openPanel("Contacts");
+  p.ov.classList.add("tl-vm", "tl-contacts");
+  const backBtn = p.ov.querySelector(".tl-panel-top button");
+  backBtn.style.display = "none";
+  p.ov.querySelector(".tl-panel-top").after(tlPanelDock("contacts", backBtn));
+  p.body.innerHTML = `<input class="tl-contacts-search" placeholder="Search contacts" autocomplete="off"><div class="tl-contacts-list"></div>`;
+  const q = p.body.querySelector("input"), list = p.body.querySelector(".tl-contacts-list");
+  const everyone = webContacts();
+  const draw = () => {
+    const s = q.value.trim().toLowerCase(), digits = s.replace(/\D/g, "");
+    const shown = everyone.filter((c) => !s || c.name.toLowerCase().includes(s) || (digits && c.number.includes(digits)));
+    list.innerHTML = shown.length ? "" : `<div class="tl-vm-empty">${s ? "No contacts match" : "No contacts yet. Names show up here as the flip phone sends them."}</div>`;
+    for (const c of shown) {
+      const row = document.createElement("div");
+      row.className = "tl-contact";
+      row.innerHTML = `${gmMiniAvatar(c.name, "gm-avatar")}<div class="nm"></div>`;
+      row.querySelector(".nm").textContent = c.name;
+      row.onclick = () => tlProfileCard(c.number, c.name);
+      list.appendChild(row);
+    }
+  };
+  q.oninput = draw;
+  draw();
+}
+
 // The red Message+ button: status of this page and the flip, and the way to Messages, Features and Settings
 function openTabletMenu() {
   const f = lastFlip || {};
@@ -4849,18 +5004,57 @@ function tlMessageMenu(m) {
   document.body.appendChild(dim);
 }
 
-// The chat's picture: big, with Message, Call and Info under it
-function tlProfileCard(number) {
+// A person's sheet, like Google Voice: it comes up from the bottom with the big picture, the name, the number and the buttons. A group lists everyone in it.
+function tlPrettyNumber(n) {
+  let d = String(n).replace(/\D/g, "");
+  if (d.length === 11 && d[0] === "1") d = d.slice(1);
+  return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : n;
+}
+function tlProfileCard(number, knownName) {
+  const group = isMulti(number);
+  const name = knownName || displayName(number) || number;
+  const members = group ? number.slice(2).split(",").filter(Boolean) : [];
   const dim = document.createElement("div");
   dim.className = "tl-dim tl-profile";
-  dim.innerHTML = `<div class="box"><div class="big">${gmAvatarHtml(number)}</div><div class="acts"></div></div>`;
+  dim.innerHTML = `<div class="box"><div class="big">${gmAvatarHtml(number)}</div><div class="sheet"><div class="t"></div><div class="s"></div><div class="acts"></div><div class="people"></div></div></div>`;
   const close = () => dim.remove();
-  dim.onclick = (e) => { if (e.target === dim) close(); };
+  dim.onclick = (e) => { if (e.target === dim || e.target.classList.contains("box")) close(); };
+  dim.querySelector(".t").textContent = name;
+  dim.querySelector(".s").textContent = group ? members.length + " people" : name !== number ? tlPrettyNumber(number) : "";
+  if (!group && nameKey(number)) {
+    const pen = document.createElement("button");
+    pen.className = "edit"; pen.title = "Edit name"; pen.innerHTML = svgIcon("edit");
+    pen.onclick = async () => {
+      const cur = name !== number ? name : "";
+      const t = await gmPrompt("", cur, cur ? "Edit name" : "Add a name", { positive: "Save" });
+      if (t === null || t === undefined) return;
+      await setContactName(number, t.trim());
+      close();
+      renderConversationList();
+      if (currentScreenName === "chat" && currentChatNumber) renderChat(currentChatNumber);
+    };
+    dim.querySelector(".sheet").appendChild(pen);
+  }
   const acts = dim.querySelector(".acts");
-  const add = (icon, title, fn) => { const b = document.createElement("button"); b.title = title; b.innerHTML = svgIcon(icon); b.onclick = () => { close(); fn(); }; acts.appendChild(b); };
-  add("chat", "Message", () => { if (currentChatNumber !== number) openChat(number); });
-  if (!isMulti(number)) add("call", "Call", () => { location.href = "tel:" + number; });
+  const add = (icon, title, fn) => { const b = document.createElement("button"); b.title = title; b.innerHTML = `<span class="circle">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = title; b.onclick = () => { close(); fn(); }; acts.appendChild(b); };
+  add("chat", "Message", () => { const panel = document.querySelector(".tl-contacts .tl-panel-top button"); if (panel) panel.click(); if (currentChatNumber !== number || currentScreenName !== "chat") openChat(number); });
+  if (!group) {
+    add("call", "Call", () => { location.href = "tel:" + number; });
+    add("reply", "Quick replies", () => quickReplySheet(number));
+  }
   add("info", "Info", () => showConversationLongPressMenu(number, null, true));
+  const people = dim.querySelector(".people");
+  if (members.length) { const hd = document.createElement("div"); hd.className = "hd"; hd.textContent = "People in this conversation"; people.appendChild(hd); }
+  for (const m of members) {
+    const who = displayName(m) || m;
+    const r = document.createElement("div");
+    r.className = "tl-contact";
+    r.innerHTML = `${gmAvatarHtml(m)}<div class="col"><div class="nm"></div><div class="no"></div></div>`;
+    r.querySelector(".nm").textContent = who;
+    r.querySelector(".no").textContent = who !== m ? tlPrettyNumber(m) : "";
+    r.onclick = () => { close(); tlProfileCard(m); };
+    people.appendChild(r);
+  }
   document.body.appendChild(dim);
 }
 
@@ -4919,6 +5113,7 @@ function callIconHtml(c) {
   return `<span style="color:${color};display:flex">${svgIcon(icon)}</span>`;
 }
 function callDetailInto(box, call) {
+  call.contactName = nameOver(call.number, call.contactName);
   const n = normalizeNumber(call.number), name = call.contactName || displayName(n) || call.number;
   const mine = allCalls.filter((c) => normalizeNumber(c.number) === n).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   const inN = mine.filter((c) => c.type === "incoming").length, outN = mine.filter((c) => c.type === "outgoing").length, talked = mine.reduce((t, c) => t + (c.duration || 0), 0);
@@ -4991,6 +5186,7 @@ function renderCallsList() {
     b.addEventListener("click", () => { callsTab = i; renderCallsList(); });
     bar.appendChild(b);
   });
+  for (const c of allCalls) c.contactName = nameOver(c.number, c.contactName);
   const isDeclined = (c) => c.type === "rejected" || c.type === "blocked";
   const shown = allCalls.filter((c) => callsTab === 0 || (callsTab === 1 && c.contactName) || (callsTab === 2 && !c.contactName) || (callsTab === 3 && (c.type === "missed" || isDeclined(c))) || (callsTab === 4 && c.type === "incoming") || (callsTab === 5 && c.type === "outgoing"));
   el("calls-empty-state").classList.toggle("hidden", shown.length > 0);
