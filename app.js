@@ -2552,7 +2552,7 @@ function openPhoneButtons() {
 // ---------- Settings laid out like the tablet: a list of sections (icon, title, what is inside); each opens its own page ----------
 const ICONS = {
   forum: "M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z",
-  contacts: "M20 0H4v2h16V0zM4 24h16v-2H4v2zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 2.75c1.24 0 2.25 1.01 2.25 2.25s-1.01 2.25-2.25 2.25S9.75 10.24 9.75 9 10.76 6.75 12 6.75zM17 17H7v-1.5c0-1.67 3.33-2.5 5-2.5s5 .83 5 2.5V17z",
+  contacts: "M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 2.75c1.24 0 2.25 1.01 2.25 2.25s-1.01 2.25-2.25 2.25S9.75 10.24 9.75 9 10.76 6.75 12 6.75zM17 17H7v-1.5c0-1.67 3.33-2.5 5-2.5s5 .83 5 2.5V17z",
   arrowUp: "M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z",
   arrowDown: "M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z",
   people: "M16.67 13.13C18.04 14.06 19 15.32 19 17v3h4v-3c0-2.18-3.57-3.47-6.33-3.87zM15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4c-.47 0-.91.1-1.33.24C14.5 5.27 15 6.58 15 8s-.5 2.73-1.33 3.76c.42.14.86.24 1.33.24zM9 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 16.29 6.3 15 9 15s5.8 1.29 6 2v1z",
@@ -2774,9 +2774,18 @@ function openVoicemailPanel() {
   const top = p.ov.querySelector(".tl-panel-top");
   const refresh = document.createElement("button");
   refresh.className = "tl-chat-btn"; refresh.title = "Refresh"; refresh.innerHTML = svgIcon("sync"); refresh.style.color = "var(--gm-blue)"; refresh.style.marginLeft = "auto";
+  const vmSearchBtn = tlSearchButton(() => { const q = p.body.querySelector(".tl-vm-search"); q.hidden = !q.hidden; if (q.hidden) { q.value = ""; q.oninput(); } else q.focus(); });
+  vmSearchBtn.style.marginLeft = "auto"; refresh.style.marginLeft = "0";
+  top.appendChild(vmSearchBtn);
   top.appendChild(refresh);
+  top.appendChild(tlMenuButton());
   top.after(tlPanelDock("voicemail", backBtn));
-  p.body.innerHTML = `<div class="tl-vm-count"></div><div data-x="list" class="tl-vm-empty">Loading...</div>`;
+  p.body.innerHTML = `<input class="tl-vm-search" placeholder="Search voicemails: a name, number or date" autocomplete="off" hidden><div class="tl-vm-count"></div><div data-x="list" class="tl-vm-empty">Loading...</div>`;
+  p.body.querySelector(".tl-vm-search").oninput = function () {
+    const q = this.value.trim().toLowerCase();
+    for (const row of p.body.querySelectorAll(".tl-vm-row")) row.hidden = !!q && !q.split(/\s+/).every((t) => !t || (row.dataset.s || "").includes(t));
+    for (const g of p.body.querySelectorAll(".tl-vm-group")) { const h = g.previousElementSibling; const any = [...g.children].some((r) => !r.hidden); g.hidden = !any; if (h && h.classList.contains("tl-day")) h.hidden = !any; }
+  };
   const list = p.body.querySelector('[data-x="list"]');
   refresh.onclick = async () => {
     try {
@@ -2788,11 +2797,12 @@ function openVoicemailPanel() {
   let audio = null;
   p.onClose(() => { if (audio) audio.pause(); });
   const rowFor = (id, v, saved) => {
-    const who = chosenName(normalizeNumber(v.from)) || v.contactName || displayName(normalizeNumber(v.from)) || v.from || "Unknown";
+    const who = v.contactName || displayName(normalizeNumber(v.from)) || v.from || "Unknown";
     const when = new Date(v.timestamp || 0).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " \u2022 " + clockOf(v.durationSec || 0);
     const n = normalizeNumber(v.from);
     const c = document.createElement("div");
     c.className = "tl-vm-row" + (!saved && !v.read ? " new" : "");
+    c.dataset.s = [who, v.from || "", String(v.from || "").replace(/\D/g, ""), when, new Date(v.timestamp || 0).toDateString(), (!saved && !v.read) ? "new unread" : "older heard"].join(" ").toLowerCase();
     c.innerHTML = `<div class="line">${gmAvatarHtml(n || v.from)}<div class="col"><div class="nm"></div><div class="dt">${svgIcon("voicemail")}<span></span></div></div><button class="tl-chat-btn" title="Play">${svgIcon("playOutline")}</button></div>`;
     c.querySelector(".nm").textContent = who;
     c.querySelector(".dt span").textContent = when;
@@ -3309,8 +3319,6 @@ function displayName(number) {
     if (groupNames[number]) return groupNames[number];
     return number.slice(2).split(",").filter(Boolean).map((n) => displayName(n)).join(", ");
   }
-  const chosen = chosenName(number);
-  if (chosen) return chosen;
   const withName = messages.find((m) => m.number === number && m.contactName);
   return (withName && withName.contactName) || number;
 }
@@ -3755,6 +3763,23 @@ if ("serviceWorker" in navigator) {
 // ---------- swipe sideways between Conversations, Group texts and Calls (a setting, off by default) ----------
 const SWIPE_KEY = "flip_relay_web_swipe";
 function swipeOn() { try { return localStorage.getItem(SWIPE_KEY) === "1"; } catch (e) { return false; } }
+function currentTabKey() {
+  const pan = document.querySelector(".tl-panel.tl-vm");
+  if (pan) return pan.classList.contains("tl-contacts") ? "contacts" : "voicemail";
+  if (currentScreenName === "calls") return "calls";
+  if (currentScreenName === "conversations") return groupsView ? "groups" : "chats";
+  return null;
+}
+function swipeTo(dx) {
+  const cur = currentTabKey();
+  if (!cur) return;
+  const shown = webScreens().filter((k) => k === cur || screenShown(k));
+  const i = shown.indexOf(cur), j = dx < 0 ? i + 1 : i - 1;
+  if (i < 0 || j < 0 || j >= shown.length) return;
+  const pan = document.querySelector(".tl-panel.tl-vm");
+  if (pan) pan.querySelector(".tl-panel-top button").click();
+  goTab(shown[j]);
+}
 (function setupSwipe() {
   let x0 = null, y0 = null;
   document.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
@@ -3763,12 +3788,10 @@ function swipeOn() { try { return localStorage.getItem(SWIPE_KEY) === "1"; } cat
     const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
     x0 = null;
     if (Math.abs(dx) < 110 || Math.abs(dx) < Math.abs(dy) * 2) return;
-    if (currentScreenName === "conversations" && !selectionMode && !conversationSelectionMode) {
-      if (dx < 0) { if (!groupsView && !groupsHidden()) { groupsView = true; renderConversationList(); } else onCallsClick(); }
-      else if (groupsView) { groupsView = false; renderConversationList(); }
-    } else if (currentScreenName === "calls" && dx > 0 && callsTab === 0) {
-      showScreen("conversations");
-    }
+    if (selectionMode || conversationSelectionMode) return;
+    if (currentScreenName === "calls" && callsTab !== 0) return;
+    if (e.target && e.target.closest && e.target.closest("#calls-tabs, input, textarea")) return;
+    swipeTo(dx);
   });
 })();
 
@@ -4282,6 +4305,12 @@ function tlRow(o) {
   if (o.onclick) { r.dataset.click = "1"; r.onclick = o.onclick; }
   return r;
 }
+// ---------- display size: your own zoom for this page (like the tablet's DPI), saved on this device ----------
+const ZOOM_KEY = "flip_relay_web_zoom";
+function zoomPct() { try { const v = parseInt(localStorage.getItem(ZOOM_KEY) || "100", 10); return v >= 50 && v <= 250 ? v : 100; } catch (e) { return 100; } }
+function applyZoom() { document.documentElement.style.zoom = String(zoomPct() / 100); }
+applyZoom();
+
 // ---------- the screens of the bar: Chats, Groups, Calls, Contacts, Voicemail (show, hide, order, and the bar itself) ----------
 const TAB_LABEL = { chats: "Chats", groups: "Groups", calls: "Calls", contacts: "Contacts", voicemail: "Voicemail" };
 const TAB_ICON = { chats: "forum", groups: "group", calls: "call", contacts: "contacts", voicemail: "voicemail" };
@@ -4294,12 +4323,51 @@ function webScreens() {
   for (const k of all) if (!out.includes(k)) out.push(k);
   return out;
 }
-function moveScreen(key, delta) {
-  const o = webScreens(), i = o.indexOf(key), j = i + delta;
-  if (i < 0 || j < 0 || j >= o.length) return;
-  o.splice(i, 1); o.splice(j, 0, key);
+function saveScreenOrder(o) {
   try { localStorage.setItem(SCREEN_ORDER_KEY, JSON.stringify(o)); } catch (e) { /* storage blocked */ }
   addTabBars(); updateTabs();
+}
+// Rearrange the bar: hold a screen and drag it where you want it
+function openRearrangePanel() {
+  const p = openPanel("Rearrange the bar");
+  p.body.innerHTML = `<p class="settings-hint">Hold a screen and drag it to a new place. This is also the order you swipe through them.</p><div class="tl-drag-list"></div>`;
+  const list = p.body.querySelector(".tl-drag-list");
+  for (const key of webScreens()) {
+    const r = document.createElement("div");
+    r.className = "tl-drag-row"; r.dataset.key = key;
+    r.innerHTML = `<span class="ic">${svgIcon(TAB_ICON[key])}</span><span class="nm"></span><span class="grip">\u2261</span>`;
+    r.querySelector(".nm").textContent = TAB_LABEL[key];
+    if (!screenShown(key)) r.classList.add("off");
+    list.appendChild(r);
+  }
+  let drag = null, timer = null, startY = 0;
+  const keys = () => [...list.children].map((c) => c.dataset.key);
+  list.addEventListener("pointerdown", (e) => {
+    const row = e.target.closest(".tl-drag-row");
+    if (!row) return;
+    startY = e.clientY;
+    const id = e.pointerId;
+    timer = setTimeout(() => { drag = row; row.classList.add("dragging"); try { row.setPointerCapture(id); } catch (x) { /* ok */ } }, e.pointerType === "mouse" ? 80 : 300);
+  });
+  list.addEventListener("pointermove", (e) => {
+    if (!drag) { if (timer && Math.abs(e.clientY - startY) > 10) { clearTimeout(timer); timer = null; } return; }
+    e.preventDefault();
+    for (const other of [...list.children]) {
+      if (other === drag) continue;
+      const r = other.getBoundingClientRect();
+      if (e.clientY > r.top && e.clientY < r.bottom) {
+        const down = [...list.children].indexOf(drag) < [...list.children].indexOf(other);
+        list.insertBefore(drag, down ? other.nextSibling : other);
+        break;
+      }
+    }
+  });
+  const end = () => {
+    clearTimeout(timer); timer = null;
+    if (drag) { drag.classList.remove("dragging"); drag = null; saveScreenOrder(keys()); }
+  };
+  list.addEventListener("pointerup", end);
+  list.addEventListener("pointercancel", end);
 }
 function prefOn(key, dflt) { try { const v = localStorage.getItem(key); return v === null ? dflt : v !== "0"; } catch (e) { return dflt; } }
 function screenShown(key) {
@@ -4326,40 +4394,6 @@ function screenHint(key) {
   return on ? "Shown - your conversations" : "Hidden - not in the bar (the page still opens on it)";
 }
 
-// ---------- names: a name given here, on the tablet or on the flip phone is the same everywhere ----------
-let contactNameMap = {};
-try { contactNameMap = JSON.parse(localStorage.getItem("flip_relay_web_contact_names") || "{}") || {}; } catch (e) { /* storage blocked */ }
-function nameKey(number) {
-  if (!number || /^[gm]:/.test(String(number))) return null;
-  let d = String(number).replace(/\D/g, "");
-  if (d.length === 11 && d[0] === "1") d = d.slice(1);
-  return d.length >= 7 ? d : null;
-}
-function chosenName(number) { const k = nameKey(number), e = k && contactNameMap[k]; return e && e.n ? e.n : null; }
-function nameOver(number, fallback) { return chosenName(number) || fallback; }
-async function loadContactNames() {
-  if (!roomId || document.hidden) return;
-  try {
-    const r = await fetch(roomUrl("contactNames"));
-    if (!r.ok) return;
-    const o = (await r.json()) || {};
-    if (JSON.stringify(o) === JSON.stringify(contactNameMap)) return;
-    contactNameMap = o;
-    try { localStorage.setItem("flip_relay_web_contact_names", JSON.stringify(o)); } catch (e) { /* storage blocked */ }
-    if (typeof renderConversationList === "function") renderConversationList();
-    if (typeof currentChatNumber !== "undefined" && currentChatNumber && currentScreenName === "chat") renderChat(currentChatNumber);
-  } catch (e) { /* offline: the saved names stay */ }
-}
-async function setContactName(number, name) {
-  const k = nameKey(number);
-  if (!k) return;
-  const entry = { n: name, at: Date.now(), by: "web" };
-  contactNameMap[k] = entry;
-  try { localStorage.setItem("flip_relay_web_contact_names", JSON.stringify(contactNameMap)); } catch (e) { /* storage blocked */ }
-  try { await fetch(roomUrl("contactNames/" + k), { method: "PUT", body: JSON.stringify(entry) }); } catch (e) { /* the saved name is shown here; the next edit tries again */ }
-}
-setInterval(loadContactNames, 30000);
-setTimeout(loadContactNames, 3000);
 
 function setPref(key, on, onVal, offVal) { try { localStorage.setItem(key, on ? (onVal || "1") : (offVal || "0")); } catch (e) { /* storage blocked */ } }
 function clickOld(id) { const b = document.getElementById(id); if (b) b.click(); }
@@ -4398,25 +4432,24 @@ function tlRowsFor(key) {
     ];
     case "screens": {
       const rows = [sw("Show the bar", barShown() ? "On - the bar with Chats, Groups, Calls, Contacts and Voicemail" : "Off - no bar (the tabs are still reachable from the menus)", "tablet", barShown, (v) => { setPref(BAR_KEY, v); updateTabs(); })];
-      const order = webScreens();
-      for (const key of order) {
+      rows.push(tlRow({ icon: "tablet", title: "Rearrange the bar", sub: "Hold a screen and drag it where you want it (the swipe follows)", onclick: openRearrangePanel }));
+      for (const key of webScreens()) {
         const r = sw(TAB_LABEL[key], screenHint(key), TAB_ICON[key], () => screenShown(key), (v) => { setScreenShown(key, v); updateTabs(); });
-        const knob = r.querySelector(".tl-switch");
-        const i = order.indexOf(key);
-        for (const [dir, icon, word] of [[-1, "arrowUp", "earlier"], [1, "arrowDown", "later"]]) {
-          const ar = document.createElement("button");
-          ar.className = "tl-arrow"; ar.type = "button"; ar.title = "Move " + TAB_LABEL[key] + " " + word; ar.innerHTML = svgIcon(icon);
-          const can = dir < 0 ? i > 0 : i < order.length - 1;
-          ar.disabled = !can;
-          ar.onclick = (e) => { e.stopPropagation(); moveScreen(key, dir); redraw(); };
-          r.insertBefore(ar, knob);
-        }
         rows.push(r);
       }
       rows.push(sw("Show groups in Messages", groupsInMessages() ? "On - group texts are in the Chats list" : "Off - group texts have their own Groups tab", "group", groupsInMessages, (v) => { setPref(GROUPS_IN_MSGS_KEY, v); groupsView = false; currentTab = "chats"; renderConversationList(); updateTabs(); }));
       return rows;
     }
     case "layoutpage": return [
+      ...(zoomPct() !== 100 ? [tlRow({ icon: "restart", title: "Reset display size to default", sub: "Back to 100%", onclick: () => { try { localStorage.removeItem(ZOOM_KEY); } catch (e) { /* storage blocked */ } applyZoom(); redraw(); } })] : []),
+      tlRow({ icon: "tablet", title: "Display size", sub: zoomPct() + "%  ·  tap to type your own (50 to 250, 100 is normal)", onclick: async () => {
+        const t = await gmPrompt("", String(zoomPct()), "Display size in percent", { positive: "Apply" });
+        if (t === null || t === undefined) return;
+        const v = parseInt(String(t).trim() || "100", 10);
+        if (!(v >= 50 && v <= 250)) { gmNotice("Type a number from 50 to 250."); return; }
+        try { localStorage.setItem(ZOOM_KEY, String(v)); } catch (e) { /* storage blocked */ }
+        applyZoom(); redraw();
+      } }),
       tlRow({ icon: "tablet", title: "Layout", sub: (LAYOUT_LABELS[storedLayout()] || LAYOUT_LABELS.auto) + "  ·  side by side, or one screen at a time", onclick: async () => { clickOld("layout-btn"); } }),
       tlRow({ icon: "palette", title: "Theme", sub: { light: "Light", dark: "Dark" }[themeMode()] || "System default", onclick: async () => {
         const m = await showActionSheet("Theme", [{ label: "System default", value: "system" }, { label: "Light", value: "light" }, { label: "Dark", value: "dark" }]);
@@ -4691,6 +4724,19 @@ function setupTabletChrome() {
     gear.addEventListener("click", (e) => { e.stopImmediatePropagation(); openTabletMenu(); }, { capture: true });
   }
   setupSelectionBar();
+  const callsTop = document.querySelector("#screen-calls .topbar");
+  if (callsTop && !callsTop.querySelector(".tl-menu-btn")) {
+    const rf = document.getElementById("calls-refresh-btn");
+    const sb = tlSearchButton(() => {
+      if (!document.getElementById("calls-search")) renderCallsList();
+      const box = document.getElementById("calls-search");
+      box.hidden = !box.hidden;
+      if (box.hidden) { box.value = ""; callsQuery = ""; renderCallsList(); } else box.focus();
+    });
+    sb.style.marginLeft = "auto";
+    if (rf) rf.before(sb); else callsTop.appendChild(sb);
+    callsTop.appendChild(tlMenuButton());
+  }
   for (const b of document.querySelectorAll("#screen-calls .topbar button")) {
     if (b.textContent.trim() === "\u21bb" || b.textContent.trim() === "↻") { b.innerHTML = svgIcon("sync"); b.classList.add("tl-chat-btn"); b.style.color = "var(--gm-blue)"; b.style.marginLeft = "auto"; }
   }
@@ -4868,9 +4914,8 @@ function webContacts() {
     seenNames.add(name.toLowerCase());
     byNumber.set(n, name);
   };
-  for (const [k, e] of Object.entries(contactNameMap)) if (e && e.n) add(k, e.n);
-  for (const m of messages) if (m.contactName) add(m.number, nameOver(m.number, m.contactName));
-  for (const c of allCalls) if (c.contactName) add(c.number, nameOver(c.number, c.contactName));
+  for (const m of messages) if (m.contactName) add(m.number, m.contactName);
+  for (const c of allCalls) if (c.contactName) add(c.number, c.contactName);
   return [...byNumber.entries()].map(([number, name]) => ({ number, name })).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
 }
 function openContactsPanel() {
@@ -4878,8 +4923,14 @@ function openContactsPanel() {
   p.ov.classList.add("tl-vm", "tl-contacts");
   const backBtn = p.ov.querySelector(".tl-panel-top button");
   backBtn.style.display = "none";
-  p.ov.querySelector(".tl-panel-top").after(tlPanelDock("contacts", backBtn));
-  p.body.innerHTML = `<input class="tl-contacts-search" placeholder="Search contacts" autocomplete="off"><div class="tl-contacts-list"></div>`;
+  const cTop = p.ov.querySelector(".tl-panel-top");
+  const cSearch = () => p.body.querySelector(".tl-contacts-search");
+  const cb = tlSearchButton(() => { const q = cSearch(); q.hidden = !q.hidden; if (q.hidden) { q.value = ""; q.oninput(); } else q.focus(); });
+  cb.style.marginLeft = "auto";
+  cTop.appendChild(cb);
+  cTop.appendChild(tlMenuButton());
+  cTop.after(tlPanelDock("contacts", backBtn));
+  p.body.innerHTML = `<input class="tl-contacts-search" placeholder="Search contacts" autocomplete="off" hidden><div class="tl-contacts-list"></div>`;
   const q = p.body.querySelector("input"), list = p.body.querySelector(".tl-contacts-list");
   const everyone = webContacts();
   const draw = () => {
@@ -4897,6 +4948,22 @@ function openContactsPanel() {
   };
   q.oninput = draw;
   draw();
+}
+
+function tlSearchButton(toggle) {
+  const b = document.createElement("button");
+  b.className = "tl-chat-btn tl-search-btn"; b.title = "Search"; b.type = "button";
+  b.innerHTML = svgIcon("search");
+  b.onclick = toggle;
+  return b;
+}
+
+function tlMenuButton() {
+  const b = document.createElement("button");
+  b.className = "tl-chat-btn tl-menu-btn"; b.title = "Message+ menu";
+  b.innerHTML = '<img src="app-icon.png" alt="Message+ menu">';
+  b.onclick = () => openTabletMenu();
+  return b;
 }
 
 // The red Message+ button: status of this page and the flip, and the way to Messages, Features and Settings
@@ -5021,20 +5088,6 @@ function tlProfileCard(number, knownName) {
   dim.onclick = (e) => { if (e.target === dim || e.target.classList.contains("box")) close(); };
   dim.querySelector(".t").textContent = name;
   dim.querySelector(".s").textContent = group ? members.length + " people" : name !== number ? tlPrettyNumber(number) : "";
-  if (!group && nameKey(number)) {
-    const pen = document.createElement("button");
-    pen.className = "edit"; pen.title = "Edit name"; pen.innerHTML = svgIcon("edit");
-    pen.onclick = async () => {
-      const cur = name !== number ? name : "";
-      const t = await gmPrompt("", cur, cur ? "Edit name" : "Add a name", { positive: "Save" });
-      if (t === null || t === undefined) return;
-      await setContactName(number, t.trim());
-      close();
-      renderConversationList();
-      if (currentScreenName === "chat" && currentChatNumber) renderChat(currentChatNumber);
-    };
-    dim.querySelector(".sheet").appendChild(pen);
-  }
   const acts = dim.querySelector(".acts");
   const add = (icon, title, fn) => { const b = document.createElement("button"); b.title = title; b.innerHTML = `<span class="circle">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = title; b.onclick = () => { close(); fn(); }; acts.appendChild(b); };
   add("chat", "Message", () => { const panel = document.querySelector(".tl-contacts .tl-panel-top button"); if (panel) panel.click(); if (currentChatNumber !== number || currentScreenName !== "chat") openChat(number); });
@@ -5104,6 +5157,17 @@ function callDay(ts) {
   return days === 0 ? "Today" : days === 1 ? "Yesterday" : d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
 }
 let selectedCallKey = null;
+let callsQuery = "";
+// every word typed must be found in the call's name, number, kind (Missed, Received, Dialed) or date (Oct 28, Tuesday, 3:15 PM)
+function callMatches(c) {
+  if (!callsQuery) return true;
+  const d = new Date(c.timestamp || 0);
+  const kind = c.type === "missed" ? "missed" : c.type === "outgoing" ? "dialed outgoing called" : c.type === "incoming" ? "received answered incoming" : "declined rejected blocked";
+  const hay = [c.contactName || "", c.number || "", String(c.number || "").replace(/\D/g, ""), tlPrettyNumber(c.number || ""), kind,
+    d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" }), d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }),
+    d.toLocaleDateString(), d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }), callDay(c.timestamp || 0)].join(" ").toLowerCase();
+  return callsQuery.split(/\s+/).every((t) => !t || hay.includes(t));
+}
 function callWords(c) { return c.type === "missed" ? "Missed call" : c.type === "rejected" || c.type === "blocked" ? "Declined call" : c.type === "outgoing" ? "Dialed call" : "Received call"; }
 function callKey(c) { return (c.timestamp || 0) + "|" + c.number; }
 function callIconHtml(c) {
@@ -5113,7 +5177,6 @@ function callIconHtml(c) {
   return `<span style="color:${color};display:flex">${svgIcon(icon)}</span>`;
 }
 function callDetailInto(box, call) {
-  call.contactName = nameOver(call.number, call.contactName);
   const n = normalizeNumber(call.number), name = call.contactName || displayName(n) || call.number;
   const mine = allCalls.filter((c) => normalizeNumber(c.number) === n).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   const inN = mine.filter((c) => c.type === "incoming").length, outN = mine.filter((c) => c.type === "outgoing").length, talked = mine.reduce((t, c) => t + (c.duration || 0), 0);
@@ -5177,6 +5240,13 @@ function renderCallsList() {
     wrap.append(left, detail);
   }
   list.innerHTML = "";
+  let box = document.getElementById("calls-search");
+  if (!box) {
+    box = document.createElement("input");
+    box.id = "calls-search"; box.placeholder = "Search calls: a name, number, date or Missed"; box.autocomplete = "off"; box.hidden = !callsQuery;
+    box.oninput = () => { callsQuery = box.value.trim().toLowerCase(); renderCallsList(); };
+    document.getElementById("calls-tabs").before(box);
+  }
   const bar = document.getElementById("calls-tabs");
   bar.innerHTML = "";
   [["All", 0], ["Missed", 3], ["Received", 4], ["Dialed", 5], ["Contacts", 1], ["Not contacts", 2]].forEach(([label, i]) => {
@@ -5186,9 +5256,8 @@ function renderCallsList() {
     b.addEventListener("click", () => { callsTab = i; renderCallsList(); });
     bar.appendChild(b);
   });
-  for (const c of allCalls) c.contactName = nameOver(c.number, c.contactName);
   const isDeclined = (c) => c.type === "rejected" || c.type === "blocked";
-  const shown = allCalls.filter((c) => callsTab === 0 || (callsTab === 1 && c.contactName) || (callsTab === 2 && !c.contactName) || (callsTab === 3 && (c.type === "missed" || isDeclined(c))) || (callsTab === 4 && c.type === "incoming") || (callsTab === 5 && c.type === "outgoing"));
+  const shown = allCalls.filter(callMatches).filter((c) => callsTab === 0 || (callsTab === 1 && c.contactName) || (callsTab === 2 && !c.contactName) || (callsTab === 3 && (c.type === "missed" || isDeclined(c))) || (callsTab === 4 && c.type === "incoming") || (callsTab === 5 && c.type === "outgoing"));
   el("calls-empty-state").classList.toggle("hidden", shown.length > 0);
   let last = "";
   for (const call of shown) {
