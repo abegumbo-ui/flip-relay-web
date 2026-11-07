@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "ee527e67b4d593708e5c146069f07834fd4cc8a8",
-    "publishedAt": "2026-11-06T21:49:33Z",
-    "build": 664,
-    "notes": "Swiping follows the order of the bar, and Contacts swipes too. Settings > Screens and the bar > Rearrange the bar: hold a screen and drag it where you want it.\nThe Message+ menu circle is on every main screen, so Settings is never far. The bar switch now hides the bar on every screen.\nSettings > Layout: Display size (DPI), type your own. Calls has a search box for a name, number, date or Missed.\nA person's card: numbers are centred, the pencil opens the real contact editor, and Quick replies are only on Calls. The Contacts icon lost its two bars."
+    "sha": "f01c7aa4e5092c39ed632cc706bdc5b8019b39bd",
+    "publishedAt": "2026-11-07T22:54:10Z",
+    "build": 665,
+    "notes": "The Message+ circle at the top now stays still when you swipe between screens, like the bar at the bottom, and opens the same card everywhere (the flip phone's connection and battery too).\nCalls, Contacts and Voicemail: a search icon at the top shows the search box, tap it again to hide it.\nDisplay size (DPI): there is now a Reset to default, and the 50-50 split and the tablet or phone layout follow the size you chose.\nCalls split screen works whenever it is switched on. The two Call and Message settings now say clearly what each one does."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
