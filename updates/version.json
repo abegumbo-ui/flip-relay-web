@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "f01c7aa4e5092c39ed632cc706bdc5b8019b39bd",
-    "publishedAt": "2026-11-07T22:54:10Z",
-    "build": 665,
-    "notes": "The Message+ circle at the top now stays still when you swipe between screens, like the bar at the bottom, and opens the same card everywhere (the flip phone's connection and battery too).\nCalls, Contacts and Voicemail: a search icon at the top shows the search box, tap it again to hide it.\nDisplay size (DPI): there is now a Reset to default, and the 50-50 split and the tablet or phone layout follow the size you chose.\nCalls split screen works whenever it is switched on. The two Call and Message settings now say clearly what each one does."
+    "sha": "3f6d94ca77283f8d5b6d60c60dc60024a87a6b2a",
+    "publishedAt": "2026-11-07T22:59:07Z",
+    "build": 666,
+    "notes": "The Message+ circle at the top now stays still when you swipe between screens, like the bar at the bottom, and opens the same card everywhere (the flip phone's connection and battery too).\nCalls, Contacts and Voicemail: a search icon at the top shows the search box, tap it again to hide it.\nDisplay size (DPI): there is now a Reset to default, and Chats, Groups and Calls split exactly 50-50 (or the size you chose in Resize screens) at any size.\nCalls split screen works whenever it is switched on. The two Call and Message settings now say clearly what each one does."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
