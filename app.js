@@ -1283,11 +1283,28 @@ async function openQrScanner() {
   tick();
 }
 
+// What this browser saved from an earlier visit (its database sign-in, the room keys, "already joined") can be stale: for example the room removed that sign-in.
+// Then a perfectly good new code is refused here while a private window, which starts empty, works. This forgets all of it.
+function resetWebIdentity() {
+  try {
+    localStorage.removeItem("flip_relay_web_fbauth");
+    for (const k of Object.keys(localStorage)) if (k.startsWith("flip_relay_web_joined_") || k.startsWith("flip_relay_web_roomkey_")) localStorage.removeItem(k);
+  } catch (e) { /* storage blocked */ }
+  fbRefresh = null; fbUid = null; DATABASE_SECRET = "";
+  joinedThisLoad.clear();
+  if (fbTimer) { clearInterval(fbTimer); fbTimer = null; }
+}
+
 async function onConnectClick() {
   const typed = el("code-input").value;
   if (!parsePairingText(typed).key) { el("pairing-error").textContent = "Type the 16-character code from the flip phone's Pairing Code screen."; return; }
   el("pairing-error").textContent = "Checking the code...";
-  const room = await resolvePairing(typed);
+  let room = await resolvePairing(typed);
+  if (!room && !pairWhy.startsWith("signin")) { // refused: start from nothing (like a private window) and try once more with the same code
+    el("pairing-error").textContent = "Checking the code again from a clean start...";
+    resetWebIdentity();
+    room = await resolvePairing(typed);
+  }
   if (!room) {
     const e = el("pairing-error");
     if (pairWhy.startsWith("signin")) e.textContent = "This browser could not sign in to the database (" + pairWhy.slice(7) + "). Check the internet connection, turn off a content blocker or private mode for this site, and try again.";
