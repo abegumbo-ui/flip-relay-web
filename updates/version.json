@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "ed7b89272e95c878cdec652b09a6f78129e43ddd",
-    "publishedAt": "2026-11-08T12:10:47Z",
-    "build": 693,
-    "notes": "Fixed: the greeting could stay on the screen instead of the title coming back (for example when the screen turned on and the app opened at nearly the same moment). The title now always goes back to Message+ (or the screen's own name), also when you leave the screen or the screen turns off while the greeting is showing."
+    "sha": "f5079e1a05f4754bef940d4993d005cc54227e3e",
+    "publishedAt": "2026-11-08T12:57:39Z",
+    "build": 694,
+    "notes": "New: Settings > Messages features > Scheduled messages. It lists every message waiting to be sent, from every conversation and every device, and you can cancel any of them there. Scheduled messages are kept in the cloud, not on the device that scheduled them: the flip phone sends each one at its time, so it still goes if the tablet that scheduled it is off or lost. The web page and the Windows app have the same list (Settings > Messages features)."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",

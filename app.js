@@ -3385,6 +3385,51 @@ async function cancelScheduled(messageId) {
   if (currentChatNumber) renderChat(currentChatNumber);
 }
 
+// Every message waiting to be sent, from any conversation and any device: kept in the cloud (Firebase), not on the device that scheduled it.
+// The flip phone checks for due ones and sends them, so they still go if the device that scheduled them is off or lost.
+function scheduledList() {
+  return messages.filter((m) => m.direction === "scheduled").sort((a, b) => (a.sendAt || 0) - (b.sendAt || 0));
+}
+function openScheduledPanel() {
+  const p = openPanel("Scheduled messages");
+  const note = document.createElement("div");
+  note.className = "settings-hint";
+  note.style.cssText = "padding:4px 20px 12px";
+  p.body.appendChild(note);
+  const box = document.createElement("div");
+  p.body.appendChild(box);
+  const fmt = (t) => new Date(t).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const render = () => {
+    if (!p.alive()) return;
+    const up = !!(lastFlip && lastFlip.connected);
+    note.textContent = "Each one is kept in the cloud, not on the device that scheduled it. The flip phone sends it at its time, so it still goes if the device that scheduled it is off or lost. "
+      + (up ? "The flip phone is connected now." : "The flip phone is not reachable right now: they go out as soon as it is back, so some may be late.");
+    box.innerHTML = "";
+    const list = scheduledList();
+    if (!list.length) {
+      const none = document.createElement("div");
+      none.className = "settings-hint";
+      none.style.cssText = "padding:40px 20px;text-align:center";
+      none.textContent = "Nothing is waiting to be sent. Schedule a message from a chat: press and hold the send button.";
+      box.appendChild(none);
+      return;
+    }
+    for (const m of list) {
+      const overdue = (m.sendAt || 0) < Date.now();
+      const row = tlRow({
+        icon: "snooze",
+        title: "To " + displayName(m.number),
+        sub: (m.body || "(a picture or attachment)") + "  ·  " + (overdue ? "waiting for the flip phone since " : "sends ") + fmt(m.sendAt) + "  ·  tap to cancel",
+        onclick: async () => { await cancelScheduled(m.id); render(); },
+      });
+      box.appendChild(row);
+    }
+  };
+  render();
+  const timer = setInterval(render, 3000); // another device may add or cancel one meanwhile
+  p.onClose(() => clearInterval(timer));
+}
+
 // ---------- rendering ----------
 
 function conversationsByNumber() {
@@ -4623,6 +4668,7 @@ function tlRowsFor(key) {
       return [
         sw("Undo send", "A message waits 5 seconds with an Undo button before it goes out", "undo", undoSendOn, (v) => setPref(UNDO_KEY, v, "on", "off")),
         busy,
+        tlRow({ icon: "snooze", title: "Scheduled messages", sub: scheduledList().length ? scheduledList().length + " waiting to be sent. Kept in the cloud: see and cancel them from any device" : "Nothing waiting. Scheduled messages are kept in the cloud: see and cancel them from any device", onclick: openScheduledPanel }),
         tlRow({ icon: "reply", title: "Automatic replies", sub: "A message for one person: when they text, when you decline their call, when you miss it", onclick: openAutoRepliesPanel }),
         tlRow({ icon: "reply", title: "Needs a reply", sub: "Conversations whose last message is waiting for you", onclick: showNeedsReply }),
         tlRow({ icon: "reply", title: "Quick replies", sub: "The ready-made texts under each call: " + quickReplies().length + " saved", onclick: manageQuickReplies }),
