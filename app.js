@@ -1434,8 +1434,9 @@ function showScreen(name) {
   // tablet layout: with no conversation open, the right side shows a hint instead of an empty chat
   const showHint = tablet && currentChatNumber == null;
   const ph = document.getElementById("chat-placeholder");
-  if (ph) ph.style.display = showHint ? "flex" : "none";
+  if (ph) { ph.style.display = showHint ? "flex" : "none"; ph.textContent = "Choose a chat"; }
   el("message-list").style.display = showHint ? "none" : "";
+  document.body.classList.toggle("no-chat", showHint); // no chat open: no header and no message box on the right
   applyLayout();
 }
 
@@ -3488,6 +3489,11 @@ let currentTab = "chats";
 function goTab(key) {
   if (key === "voicemail") { openVoicemailPanel(); return; } // opens over the list; Back returns to the tab you were on
   if (key === "contacts") { openContactsPanel(); return; }
+  const before = currentTabKey();
+  if (before && before !== key && currentChatNumber != null) { // another tab: the chat that was open on the right goes away
+    currentChatNumber = null;
+    closeChatSearch();
+  }
   currentTab = key;
   if (key === "calls") { onCallsClick(); updateTabs(); return; }
   groupsView = key === "groups";
@@ -3780,7 +3786,7 @@ function currentTabKey() {
   const pan = document.querySelector(".tl-panel.tl-vm");
   if (pan) return pan.classList.contains("tl-contacts") ? "contacts" : "voicemail";
   if (currentScreenName === "calls") return "calls";
-  if (currentScreenName === "conversations") return groupsView ? "groups" : "chats";
+  if (currentScreenName === "conversations" || currentScreenName === "chat") return groupsView ? "groups" : "chats";
   return null;
 }
 function swipeTo(dx) {
@@ -4425,6 +4431,10 @@ const TL_SECTIONS = [
 ];
 const TL_MAIN = ["layout", "notifications", "privacy", "phone", "help"];
 let settingsFromDrawer = null;
+// Voicemail, Contacts and the other pages that open over the screen would hide Settings underneath them: close them first
+function closeOpenPanels() {
+  for (const pn of [...document.querySelectorAll(".tl-panel")]) { const back = pn.querySelector(".tl-panel-top button"); if (back) back.click(); else pn.remove(); }
+}
 function openSettingsFromDrawer(key) { settingsFromDrawer = key; onSettingsClick(); if (key) openSettingsSection(key); }
 function tlSettingsBack() {
   const k = settingsSectionOpen;
@@ -5039,7 +5049,7 @@ function openTabletMenu() {
     const b = document.createElement("button");
     b.innerHTML = `<span class="ic">${svgIcon(icon)}</span><span></span>`;
     b.lastElementChild.textContent = label;
-    b.onclick = () => { close(); openSettingsFromDrawer(key); };
+    b.onclick = () => { close(); closeOpenPanels(); openSettingsFromDrawer(key); };
     items.appendChild(b);
   }
   document.body.appendChild(dim);

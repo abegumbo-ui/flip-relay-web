@@ -459,4 +459,8 @@ body.gm .gm-cluster .gm-mini2 { left: 40%; top: 40%; z-index: 1; }
 #tl-rec button.ok { background: var(--gm-blue); color: #fff; }
 @keyframes tlpulse { 50% { opacity: .25; } }
 
+/* tablet mode with no chat chosen: just the hint, no header, no message box */
+body.gm-tablet.no-chat #screen-chat > .topbar, body.gm-tablet.no-chat #screen-chat .composer, body.gm-tablet.no-chat #tl-chat-search, body.gm-tablet.no-chat #tl-chat-gallery, body.gm-tablet.no-chat #tl-rec { display: none !important; }
+body.gm-tablet #chat-placeholder { font-size: 16px; }
+
 [hidden] { display: none !important; }
