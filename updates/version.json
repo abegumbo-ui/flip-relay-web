@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "63cbd0a7ef2bcef734c400e0dc54927b344d7adb",
-    "publishedAt": "2026-11-08T07:36:55Z",
-    "build": 692,
-    "notes": "Group pictures: the circles never overlap, like Google Messages (two on a diagonal, three in a triangle, four or more in a 2 by 2 grid).\nA group's card has a search button for the people (type a name or a number), and you can drag its top (the picture, the name or the N people line) up to the top of the screen to see more people without scrolling; drag it back down to shrink it, or pull it far down to close it."
+    "sha": "ed7b89272e95c878cdec652b09a6f78129e43ddd",
+    "publishedAt": "2026-11-08T12:10:47Z",
+    "build": 693,
+    "notes": "Fixed: the greeting could stay on the screen instead of the title coming back (for example when the screen turned on and the app opened at nearly the same moment). The title now always goes back to Message+ (or the screen's own name), also when you leave the screen or the screen turns off while the greeting is showing."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
