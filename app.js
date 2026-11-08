@@ -3623,9 +3623,41 @@ async function scheduleAll(rawBody, items) {
     gmNotice("Could not schedule that: " + (e && e.message ? e.message : e));
   }
 }
-async function postScheduledText(to, body, sendAt) {
-  await fetch(roomUrl("messages/scheduled"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to, body, sendAt }) });
+async function postScheduledJson(path, obj) {
+  const r = await fetch(roomUrl(path), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj) });
+  if (!r.ok) throw new Error("the cloud refused it (HTTP " + r.status + ")");
+  let key = null;
+  try { key = (await r.json()).name; } catch (e) { /* no key back */ }
+  if (key && upsertScheduled(key, obj)) { // on the screen at once
+    saveCache();
+    if (currentChatNumber) renderChat(currentChatNumber);
+  }
+  return key;
 }
+async function postScheduledText(to, body, sendAt) {
+  await postScheduledJson("messages/scheduled", { to, body, sendAt });
+}
+// the waiting messages, straight from the cloud: used after every change and every minute, so one never "shows up after a restart"
+async function refreshScheduled() {
+  if (!roomId) return;
+  try {
+    const got = {};
+    for (const path of ["messages/scheduled", "messages/scheduledMms"]) {
+      const r = await fetch(roomUrl(path));
+      if (!r.ok) return; // not reachable now: leave what is shown
+      const d = await r.json();
+      if (d && typeof d === "object") Object.assign(got, d);
+    }
+    let changed = false;
+    for (const key of Object.keys(got)) if (upsertScheduled(key, got[key])) changed = true;
+    const before = messages.length;
+    messages = messages.filter((m) => m.direction !== "scheduled" || got[m.id]);
+    if (messages.length !== before) changed = true;
+    if (changed) { saveCache(); renderConversationList(); if (currentChatNumber) renderChat(currentChatNumber); }
+  } catch (e) { /* offline: the next try */ }
+}
+setInterval(() => { if (!document.hidden) refreshScheduled(); }, 45000);
+setTimeout(refreshScheduled, 3000);
 async function postScheduledMedia(to, body, item, sendAt) {
   const timestamp = Date.now();
   let imageUrl = null, imagePath = null, attachmentType = null, attachmentUrl = null;
@@ -3639,17 +3671,13 @@ async function postScheduledMedia(to, body, item, sendAt) {
     const ext = item.kind === "video" ? (item.file.name.split(".").pop() || "mp4") : item.kind === "audio" ? "amr" : "vcf";
     attachmentUrl = await uploadToStorage(item.file, `attachments/${roomId}/${timestamp}-${randHex16()}.${ext}`);
   }
-  await fetch(roomUrl("messages/scheduledMms"), {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ to, body: body || null, imageUrl, imagePath, attachmentType, attachmentUrl, attachmentName, timestamp, sendAt }),
-  });
+  await postScheduledJson("messages/scheduledMms", { to, body: body || null, imageUrl, imagePath, attachmentType, attachmentUrl, attachmentName, timestamp, sendAt });
 }
 // moves a waiting message to a new text and/or time: the new one is filed first, then the old one removed
 async function repostScheduled(m, newBody, newSendAt) {
   const mms = !!(m.imageUrl || m.attachmentUrl);
   if (mms) {
-    await fetch(roomUrl("messages/scheduledMms"), { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: m.number, body: newBody || null, imageUrl: m.imageUrl, imagePath: m.imagePath, attachmentType: m.attachmentKind, attachmentUrl: m.attachmentUrl, attachmentName: m.attachmentName, timestamp: Date.now(), sendAt: newSendAt }) });
+    await postScheduledJson("messages/scheduledMms", { to: m.number, body: newBody || null, imageUrl: m.imageUrl, imagePath: m.imagePath, attachmentType: m.attachmentKind, attachmentUrl: m.attachmentUrl, attachmentName: m.attachmentName, timestamp: Date.now(), sendAt: newSendAt });
   } else {
     await postScheduledText(m.number, newBody, newSendAt);
   }
@@ -3660,7 +3688,8 @@ async function deleteScheduledNow(id) {
   messages = messages.filter((x) => !(x.direction === "scheduled" && x.id === id));
   saveCache();
   if (currentChatNumber) renderChat(currentChatNumber); // gone from the screen at once; the cloud copy follows
-  await Promise.all(["messages/scheduled/", "messages/scheduledMms/"].map((path) => fetch(roomUrl(path + id), { method: "DELETE" }).catch(() => { /* offline: the stream shows it again */ })));
+  await Promise.all(["messages/scheduled/", "messages/scheduledMms/"].map((path) => fetch(roomUrl(path + id), { method: "DELETE" }).catch(() => { /* offline: the next check shows it again */ })));
+  refreshScheduled();
 }
 async function sendScheduledNow(m) {
   const ts = Date.now();

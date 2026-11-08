@@ -498,7 +498,7 @@ body.gm #gm-settings-btn .tl-initial { width: 32px; height: 32px; }
 #sched-chip .x { border: 0; background: none; color: #3A4A7A; padding: 10px; cursor: pointer; display: flex; }
 #send-btn.later { background: #4A5C8C !important; color: #fff !important; }
 #send-btn.later { padding: 0 !important; }
-#send-btn.later svg { width: 56px; height: 56px; }
+body.gm #send-btn.later svg, #send-btn.later svg { width: 56px; height: 56px; }
 #sched-section { display: flex; flex-direction: column; align-items: flex-end; padding: 0 8px 0 0; max-height: 42vh; overflow-y: auto; flex: none; }
 #sched-section.hidden { display: none; }
 #sched-section .sched-item { position: relative; display: flex; justify-content: flex-end; width: 100%; padding: 6px 8px 24px 72px; box-sizing: border-box; }
@@ -539,3 +539,7 @@ body.theme-dark .g-dialog .g-cancel { color: #B6C4F5; }
 .g-sheet .g-srow:hover { background: rgba(0,0,0,.06); }
 body.theme-dark .g-sheet { background: #2B2930; color: #E6E0E9; }
 body.theme-dark .g-sheet .g-sub { color: #CAC4D0; }
+
+/* the time chip sits on top of the message box: the composer wraps and the chip takes the first row, as wide as the box */
+.composer { flex-wrap: wrap; }
+.composer #sched-chip { order: -1; flex: 0 0 100%; box-sizing: border-box; margin: 0; border-right: 76px solid transparent; background-clip: padding-box; }
