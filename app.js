@@ -4333,7 +4333,7 @@ applyZoom();
 
 // ---------- the screens of the bar: Chats, Groups, Calls, Contacts, Voicemail (show, hide, order, and the bar itself) ----------
 const TAB_LABEL = { chats: "Chats", groups: "Groups", calls: "Calls", contacts: "Contacts", voicemail: "Voicemail" };
-const TAB_ICON = { chats: "forum", groups: "group", calls: "call", contacts: "contacts", voicemail: "voicemail" };
+const TAB_ICON = { chats: "chat", groups: "forum", calls: "call", contacts: "group", voicemail: "voicemail" };
 const SCREEN_ORDER_KEY = "flip_relay_web_screen_order", BAR_KEY = "flip_relay_web_bar", CONTACTS_TAB_KEY = "flip_relay_web_contacts_tab", CHATS_TAB_KEY = "flip_relay_web_chats_tab";
 function webScreens() {
   const all = Object.keys(TAB_LABEL);
