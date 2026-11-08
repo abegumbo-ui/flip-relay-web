@@ -2712,8 +2712,19 @@ const ICONS = {
   video: "M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z",
   dialpad: "M12 19c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM6 1c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12-8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
 };
+// Google Messages' send button picture: an outlined triangle with a thin wedge, "SMS"/"MMS" under it, a clock when it will wait. label "" = just the plane (the badge)
+function sendSvg(size, clock, label) {
+  const L = clock ? 25 : 35.5, T = clock ? 20 : 28.5, B = clock ? 43 : 57.5, X = clock ? 62 : 84, Y = clock ? 31.5 : 43, half = clock ? 2.2 : 3, end = L + 0.55 * (X - L);
+  const sw = clock ? 3.3 : 3.7, view = label ? "0 0 100 100" : "18 12 64 64";
+  let s = `<svg viewBox="${view}" width="${size}" height="${size}" aria-hidden="true" style="flex:none"><defs><mask id="sm-cut"><rect width="100" height="100" fill="#fff"/>${clock ? '<circle cx="64" cy="47" r="14.5" fill="#000"/>' : ""}</mask></defs>`;
+  s += `<g mask="url(#sm-cut)"><path d="M${L},${T} L${X},${Y} L${L},${B} Z" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linejoin="miter" stroke-miterlimit="10"/><path d="M${L},${Y - half} L${end},${Y} L${L},${Y + half} Z" fill="currentColor"/></g>`;
+  if (clock) s += '<circle cx="64" cy="47" r="12" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M64,40.8 L64,47 L68.5,50.3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>';
+  if (label) s += `<text x="50" y="73.5" text-anchor="middle" font-size="13.5" font-weight="500" fill="currentColor" font-family="Roboto,Arial,sans-serif">${label}</text>`;
+  return s + "</svg>";
+}
 function svgIcon(name, size) {
-  if (name === "sendSchedule") {
+  if (name === "sendSchedule") return sendSvg(size || 24, true, "");
+  if (name === "sendScheduleOLD") {
     const z = size || 24;
     return `<svg viewBox="0 0 24 24" width="${z}" height="${z}" aria-hidden="true" style="flex:none"><defs><mask id="sm-cut"><rect width="24" height="24" fill="#fff"/><circle cx="17.8" cy="16.8" r="5.6" fill="#000"/></mask></defs><g mask="url(#sm-cut)"><path transform="translate(.2 .6) scale(.82)" fill="currentColor" d="M4.01,6.03l7.51,3.22 -7.52,-1 0.01,-2.22m7.5,8.72L4,17.97v-2.22l7.51,-1M2.01,3L2,10l15,2 -15,2 0.01,7L23,12 2.01,3z"/></g><circle cx="17.8" cy="16.8" r="4.1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M17.8,14.5v2.5l1.7,1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`;
   }
@@ -3623,11 +3634,11 @@ async function repostScheduled(m, newBody, newSendAt) {
   await deleteScheduledNow(m.id);
 }
 async function deleteScheduledNow(id) {
-  for (const path of ["messages/scheduled/", "messages/scheduledMms/"]) { try { await fetch(roomUrl(path + id), { method: "DELETE" }); } catch (e) { /* offline: the stream shows it again */ } }
+  seenScheduledKeys.add(id); // a late stream event must not put it back
   messages = messages.filter((x) => !(x.direction === "scheduled" && x.id === id));
-  seenScheduledKeys.delete(id);
   saveCache();
-  if (currentChatNumber) renderChat(currentChatNumber);
+  if (currentChatNumber) renderChat(currentChatNumber); // gone from the screen at once; the cloud copy follows
+  await Promise.all(["messages/scheduled/", "messages/scheduledMms/"].map((path) => fetch(roomUrl(path + id), { method: "DELETE" }).catch(() => { /* offline: the stream shows it again */ })));
 }
 async function sendScheduledNow(m) {
   await fetch(roomUrl("messages/outgoing"), { method: "POST", headers: { "Content-Type": "application/json" },
@@ -5226,8 +5237,11 @@ function updateSendIcon() {
   const hasIt = input.value.trim().length > 0 || !!editingScheduled || (typeof stagedAttachments !== "undefined" && stagedAttachments.length > 0) || !!pendingAttachmentFile;
   const later = hasIt && !!scheduledAt;
   const want = later ? "sendSchedule" : hasIt ? "send" : "micWave";
-  send.classList.toggle("later", hasIt); // something to send: the dark indigo circle with the outlined plane, like Google Messages
-  if (send.dataset.icon !== want) { send.dataset.icon = want; send.innerHTML = svgIcon(want, 26); send.title = later ? "Schedule send" : hasIt ? "Send (hold to schedule)" : "Voice message: hold and talk, or click"; }
+  const hasMedia = (typeof stagedAttachments !== "undefined" && stagedAttachments.length > 0) || !!pendingAttachmentFile;
+  const label = hasMedia ? "MMS" : "SMS";
+  send.classList.toggle("later", hasIt); // something to send: the dark indigo circle, like Google Messages
+  const sig = hasIt ? want + label : want;
+  if (send.dataset.sig !== sig) { send.dataset.sig = sig; send.dataset.icon = want; send.innerHTML = hasIt ? sendSvg(56, later, label) : svgIcon(want, 26); send.title = later ? "Schedule send" : hasIt ? "Send (hold to schedule)" : "Voice message: hold and talk, or click"; }
 }
 async function attachFrom(pick) {
   const live = pick === "camera";
@@ -5861,9 +5875,14 @@ async function holdToRecord() {
   await startVoiceRecording();
   if (released) attachNow(); // let go while the microphone was still starting
 }
-let voiceRec = null;
+let voiceRec = null, voiceStarting = false;
 async function startVoiceRecording() {
-  if (voiceRec || !currentChatNumber) return;
+  if (voiceRec || voiceStarting || !currentChatNumber) return; // already recording, or the microphone is still starting
+  voiceStarting = true;
+  try { await startVoiceRecordingNow(); } finally { voiceStarting = false; }
+}
+async function startVoiceRecordingNow() {
+  document.querySelectorAll("#tl-rec").forEach((n) => n.remove()); // never more than one recording bar
   try { await loadAmrLib(); } catch (e) { gmNotice("Voice recording could not start: " + e.message); return; }
   if (!window.BenzAMRRecorder.isRecordSupported()) { gmNotice("This browser cannot record sound."); return; }
   const r = new window.BenzAMRRecorder();

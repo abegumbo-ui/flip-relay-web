@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "19b0837b72ec4f1038e42f93c5e57cec41c311d4",
-    "publishedAt": "2026-11-08T19:45:44Z",
-    "build": 698,
-    "notes": "The send button now looks like Google Messages: a dark indigo circle with an outlined paper plane (send later adds the clock).\nScheduled messages sit and space like Google's, and 24-hour times show like 8:00."
+    "sha": "a8996fccc5115ef7ecdc8000e8327d381f5e9d2c",
+    "publishedAt": "2026-11-08T20:14:58Z",
+    "build": 699,
+    "notes": "The send button is now drawn exactly like Google Messages: outlined triangle, SMS or MMS under it, and a clock when it will wait.\nSend now on a scheduled message shows the message in the chat right away, and Delete stays deleted.\nThe list of waiting messages scrolls instead of cutting off the chat."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
