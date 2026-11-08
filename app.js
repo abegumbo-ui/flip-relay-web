@@ -4486,7 +4486,8 @@ function tlRowsFor(key) {
       tlRow({ icon: "archive", title: "Archived", sub: "Conversations you put away", onclick: () => clickOld("archived-btn") }),
       tlRow({ icon: "trash", title: "Trash", sub: "Chats deleted in the last 30 days", onclick: () => openSettingsSection("trash") }),
       tlRow({ icon: "call", title: "Default calling app", sub: defaultCallApp() === "ask" ? "Ask every time" : (CALL_APPS.find((a) => a.id === defaultCallApp()) || {}).label, onclick: async () => {
-        const c = await showActionSheet("Default calling app", [{ label: "Ask every time", value: "ask" }, ...CALL_APPS.map((a) => ({ label: a.label, value: a.id }))]);
+        const apps = await installedApps();
+        const c = await showActionSheet("Default calling app", [{ label: "Ask every time", value: "ask" }, ...CALL_APPS.filter((a) => a.show(apps)).map((a) => ({ label: a.label, value: a.id }))]);
         if (c) { try { if (c === "ask") localStorage.removeItem(CALL_APP_KEY); else localStorage.setItem(CALL_APP_KEY, c); } catch (e) { /* storage blocked */ } redraw(); }
       } }),
       tlRow({ icon: "save", title: "Backup and restore", sub: "Save this page's settings to a file, or set it up again from one", onclick: async () => {
@@ -4542,7 +4543,7 @@ function tlRowsFor(key) {
     case "help": return [
       tlRow({ icon: "restart", title: "Restart the app", sub: "Reloads the page, if something does not update", onclick: () => location.reload() }),
       tlRow({ icon: "info", title: "Crash log", sub: "Flip phone and tablets: why one closed by itself, if it ever did", onclick: openCrashLog }),
-      ...(window.flipDesktop ? (window.flipDesktop.version ? [] : [tlRow({ icon: "update", title: "Update the Windows app", sub: "A newer Message+ for Windows is out: voicemail plays inside the app, you can pick WhatsApp or Skype to call with. Download and run it, it replaces this one", onclick: () => window.open("https://github.com/avrohomgolo-coder/flip-relay-web/releases/latest", "_blank") })])
+      ...(window.flipDesktop ? (window.flipDesktop.version && parseFloat(window.flipDesktop.version) >= 1.2 ? [] : [tlRow({ icon: "update", title: "Update the Windows app", sub: "A newer Message+ for Windows is out: the Call list only offers the apps this computer really has. Download and run it, it replaces this one", onclick: () => window.open("https://github.com/avrohomgolo-coder/flip-relay-web/releases/latest", "_blank") })])
         : [tlRow({ icon: "tablet", title: "Desktop app for Windows", sub: "Its own window, starts with Windows, and notifications even with the window closed", onclick: () => window.open("https://github.com/avrohomgolo-coder/flip-relay-web/releases/latest", "_blank") })]),
       tlRow({ icon: "update", title: "Version", sub: "The web app is always the newest version; it updates by itself when it reloads" }),
     ];
@@ -4827,8 +4828,10 @@ function tlChatChrome(number) {
   box.innerHTML = "";
   const btn = (icon, t, fn) => { const b = document.createElement("button"); b.className = "tl-chat-btn"; b.title = t; b.innerHTML = svgIcon(icon); b.onclick = fn; box.appendChild(b); };
   btn("search", "Search conversation", () => toggleChatSearch());
-  // nobody calls from a computer: the call button offers the quick replies (holding it does the same on the tablet)
-  if (!isMulti(number)) btn("call", "Quick replies", () => quickReplySheet(number));
+  if (!isMulti(number)) {
+    btn("call", "Call (hold or right click for quick replies)", () => callNumber(number, displayName(number)));
+    attachLongPress(box.lastElementChild, () => quickReplySheet(number));
+  }
   closeChatSearch();
 }
 async function quickReplySheet(number) {
@@ -4987,15 +4990,24 @@ function tlSearchButton(toggle) {
 }
 
 // ---------- Call: which app to call with (Settings > Messages > Default calling app) ----------
+// Only apps this computer really has are offered. The Windows app can tell (version 1.2+); a plain browser cannot, so it offers the web-friendly ones.
 const CALL_APP_KEY = "flip_relay_web_call_app";
+const WA_ICON = "M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z";
 function e164(n) { let d = String(n).replace(/\D/g, ""); if (d.length === 10) d = "1" + d; return "+" + d; }
 const CALL_APPS = [
-  { id: "phone", label: "Phone (this computer's calling app)", url: (n) => "tel:" + e164(n) },
-  { id: "whatsapp", label: "WhatsApp", url: (n) => "whatsapp://send?phone=" + e164(n).slice(1) },
-  { id: "skype", label: "Skype", url: (n) => "skype:" + e164(n) + "?call" },
-  { id: "teams", label: "Microsoft Teams", url: (n) => "msteams://teams.microsoft.com/l/call/0/0?users=4:" + e164(n) },
-  { id: "voice", label: "Google Voice (opens in your browser)", url: (n) => "https://voice.google.com/u/0/calls?a=nc," + encodeURIComponent(e164(n)) },
+  { id: "phone", label: "Phone app", sub: "This computer's own calling app", color: "#0b57d0", icon: "call", show: (a) => !a || a.tel, url: (n) => "tel:" + e164(n) },
+  { id: "whatsapp", label: "WhatsApp", sub: "Opens the chat with them: tap its call button. No app? It opens in your browser instead", color: "#25D366", svg: WA_ICON, show: () => true,
+    url: (n, a) => (a && a.whatsapp ? "whatsapp://send?phone=" + e164(n).slice(1) : "https://wa.me/" + e164(n).slice(1)) },
+  { id: "voice", label: "Google Voice", sub: "Opens in your browser", color: "#1a73e8", icon: "call", show: () => true, url: (n) => "https://voice.google.com/u/0/calls?a=nc," + encodeURIComponent(e164(n)) },
+  { id: "skype", label: "Skype", sub: "Installed on this computer", color: "#00aff0", letter: "S", show: (a) => !!(a && a.skype), url: (n) => "skype:" + e164(n) + "?call" },
+  { id: "teams", label: "Microsoft Teams", sub: "Installed on this computer", color: "#5b5fc7", letter: "T", show: (a) => !!(a && a.teams), url: (n) => "msteams://teams.microsoft.com/l/call/0/0?users=4:" + e164(n) },
 ];
+let installedAppsCache = null;
+async function installedApps() {
+  if (installedAppsCache) return installedAppsCache;
+  if (window.flipDesktop && typeof window.flipDesktop.apps === "function") { try { installedAppsCache = await window.flipDesktop.apps(); } catch (e) { installedAppsCache = null; } }
+  return installedAppsCache;
+}
 function defaultCallApp() { try { const v = localStorage.getItem(CALL_APP_KEY); return CALL_APPS.some((a) => a.id === v) ? v : "ask"; } catch (e) { return "ask"; } }
 function openAppLink(url) {
   if (window.flipDesktop) { window.open(url, "_blank"); return; } // the Windows app hands it to the right program
@@ -5003,19 +5015,52 @@ function openAppLink(url) {
   a.href = url; a.rel = "noopener"; if (/^https?:/i.test(url)) a.target = "_blank";
   document.body.appendChild(a); a.click(); a.remove();
 }
+function callAppIcon(app) {
+  const inner = app.svg ? `<svg viewBox="0 0 24 24" fill="#fff"><path d="${app.svg}"/></svg>` : app.icon ? svgIcon(app.icon) : `<b>${app.letter || ""}</b>`;
+  return `<span class="tl-callapp-ic" style="background:${app.color}">${inner}</span>`;
+}
+// the list of apps, each with its icon; resolves with the chosen id (or "copy"), or null
+function callAppSheet(title, apps) {
+  return new Promise((resolve) => {
+    const dim = document.createElement("div");
+    dim.className = "tl-dim";
+    dim.innerHTML = '<div class="tl-dialog tl-callapps"><h3></h3><div class="list"></div><div class="btns"><button type="button">Cancel</button></div></div>';
+    dim.querySelector("h3").textContent = title;
+    const done = (v) => { dim.remove(); resolve(v); };
+    dim.onclick = (e) => { if (e.target === dim) done(null); };
+    dim.querySelector(".btns button").onclick = () => done(null);
+    const list = dim.querySelector(".list");
+    for (const app of apps) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tl-callapp";
+      b.innerHTML = callAppIcon(app) + '<span class="col"><span class="t"></span><span class="s"></span></span>';
+      b.querySelector(".t").textContent = app.label;
+      b.querySelector(".s").textContent = app.sub || "";
+      b.onclick = () => done(app.id);
+      list.appendChild(b);
+    }
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "tl-callapp";
+    c.innerHTML = '<span class="tl-callapp-ic" style="background:#74777f">' + svgIcon("copy") + '</span><span class="col"><span class="t">Copy the number</span><span class="s"></span></span>';
+    c.onclick = () => done("copy");
+    list.appendChild(c);
+    document.body.appendChild(dim);
+  });
+}
 async function callNumber(number, name) {
   const n = normalizeNumber(number) || number;
   if (!n) return;
+  const apps = await installedApps();
+  const usable = CALL_APPS.filter((a) => a.show(apps));
   let id = defaultCallApp();
+  if (id !== "ask" && !usable.some((a) => a.id === id)) id = "ask"; // the chosen app is not on this computer
   if (id === "ask") {
-    const opts = CALL_APPS.map((a) => ({ label: a.label, value: a.id }));
-    opts.push({ label: "Copy the number", value: "copy" });
-    id = await showActionSheet("Call " + (name || tlPrettyNumber(n)) + " with", opts);
+    id = await callAppSheet("Call " + (name || tlPrettyNumber(n)), usable);
     if (!id) return;
   }
   if (id === "copy") { try { await navigator.clipboard.writeText(tlPrettyNumber(n)); tlToast("Number copied"); } catch (e) { gmNotice(tlPrettyNumber(n)); } return; }
   const app = CALL_APPS.find((a) => a.id === id);
-  if (app) openAppLink(app.url(n));
+  if (app) openAppLink(app.url(n, apps));
 }
 
 function tlMenuButton() {

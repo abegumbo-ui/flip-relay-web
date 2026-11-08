@@ -463,4 +463,15 @@ body.gm .gm-cluster .gm-mini2 { left: 40%; top: 40%; z-index: 1; }
 body.gm-tablet.no-chat #screen-chat > .topbar, body.gm-tablet.no-chat #screen-chat .composer, body.gm-tablet.no-chat #tl-chat-search, body.gm-tablet.no-chat #tl-chat-gallery, body.gm-tablet.no-chat #tl-rec { display: none !important; }
 body.gm-tablet #chat-placeholder { font-size: 16px; }
 
+/* the Call list: each app with its icon */
+.tl-dialog.tl-callapps { width: 380px; }
+.tl-callapps .list { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; }
+.tl-callapp { display: flex; align-items: center; gap: 14px; width: 100%; box-sizing: border-box; padding: 10px 8px; border: 0; border-radius: 18px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.tl-callapp:hover { background: rgba(127,127,127,.12); }
+.tl-callapp-ic { width: 40px; height: 40px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; }
+.tl-callapp-ic svg { width: 24px; height: 24px; fill: #fff; }
+.tl-callapp .col { display: flex; flex-direction: column; min-width: 0; }
+.tl-callapp .t { font-size: 15px; }
+.tl-callapp .s { font-size: 12px; color: var(--gm-soft, #45464f); }
+
 [hidden] { display: none !important; }
