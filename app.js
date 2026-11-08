@@ -446,8 +446,9 @@ function init() {
   let suppressNextSendClick = false;
   attachLongPress(el("send-btn"), () => {
     suppressNextSendClick = true;
+    if (el("send-btn").dataset.icon === "micWave") { holdToRecord(); return; } // nothing to send: holding the round button records
     onScheduleButtonClick();
-  });
+  }, { ms: 350, rightClick: false });
   el("send-btn").addEventListener("click", () => {
     if (suppressNextSendClick) {
       suppressNextSendClick = false;
@@ -2208,34 +2209,40 @@ function deletePending(messageId) {
 // which fights with this on a touchscreen and doesn't exist for touch at
 // all in older browsers.
 const LONG_PRESS_MS = 500;
-function attachLongPress(el, onLongPress) {
-  let timer = null;
-  let firedOrCancelled = false;
-  const start = () => {
-    firedOrCancelled = false;
+function attachLongPress(el, onLongPress, opts) {
+  const o = opts || {};
+  let timer = null, done = true, x0 = 0, y0 = 0;
+  const cancel = () => { done = true; clearTimeout(timer); };
+  const point = (e) => (e.touches && e.touches[0]) || e;
+  const start = (e) => {
+    if (e.type === "mousedown" && e.button !== 0) return; // a right click is handled by "contextmenu" below
+    const pt = point(e);
+    x0 = pt.clientX; y0 = pt.clientY;
+    done = false;
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (!firedOrCancelled) {
-        firedOrCancelled = true;
-        onLongPress();
-      }
-    }, LONG_PRESS_MS);
+    timer = setTimeout(() => { if (!done) { done = true; onLongPress(); } }, o.ms || LONG_PRESS_MS);
   };
-  const cancel = () => {
-    firedOrCancelled = true;
-    clearTimeout(timer);
+  // a hand always shakes a little: only a real move (more than 12 px) means it is a drag or a scroll, not a hold
+  const move = (e) => {
+    if (done) return;
+    const pt = point(e);
+    if (Math.abs(pt.clientX - x0) > 12 || Math.abs(pt.clientY - y0) > 12) cancel();
   };
   el.addEventListener("touchstart", start, { passive: true });
-  el.addEventListener("touchmove", cancel, { passive: true });
+  el.addEventListener("touchmove", move, { passive: true });
   el.addEventListener("touchend", cancel);
   el.addEventListener("touchcancel", cancel);
   el.addEventListener("mousedown", start);
-  el.addEventListener("mousemove", cancel);
+  el.addEventListener("mousemove", move);
   el.addEventListener("mouseup", cancel);
   el.addEventListener("mouseleave", cancel);
-  // Suppresses the browser's own long-press context menu / text-selection
-  // callout so it doesn't pop up alongside the action sheet.
-  el.addEventListener("contextmenu", (e) => e.preventDefault());
+  // Right click does the same as a long press (the browser's own menu would only get in the way)
+  el.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    if (o.rightClick === false) return;
+    cancel();
+    onLongPress();
+  });
 }
 
 async function onMessageLongPress(m) {
@@ -4779,7 +4786,7 @@ function updateSendIcon() {
   if (!send || !input) return;
   const hasIt = input.value.trim().length > 0 || (typeof stagedAttachments !== "undefined" && stagedAttachments.length > 0) || !!pendingAttachmentFile;
   const want = hasIt ? "send" : "micWave";
-  if (send.dataset.icon !== want) { send.dataset.icon = want; send.innerHTML = svgIcon(want, 26); send.title = hasIt ? "Send (hold to schedule)" : "Record a voice message"; }
+  if (send.dataset.icon !== want) { send.dataset.icon = want; send.innerHTML = svgIcon(want, 26); send.title = hasIt ? "Send (hold to schedule)" : "Voice message: hold and talk, or click"; }
 }
 async function attachFrom(pick) {
   const live = pick === "camera";
@@ -5202,6 +5209,16 @@ class AmrAudio extends EventTarget {
 function makeAudio(url) { return isAmrUrl(url) ? new AmrAudio(url) : new Audio(url); }
 
 // ---------- recording a voice message (AMR, the same as the tablet's) ----------
+// Hold the round button, talk, let go: the recording is attached. (A plain click starts it and shows Cancel / Attach instead.)
+async function holdToRecord() {
+  let released = false;
+  const events = ["mouseup", "touchend", "touchcancel", "pointerup"];
+  const attachNow = () => { const ok = document.querySelector("#tl-rec .ok"); if (ok) ok.click(); };
+  const stop = () => { released = true; for (const ev of events) window.removeEventListener(ev, stop); attachNow(); };
+  for (const ev of events) window.addEventListener(ev, stop);
+  await startVoiceRecording();
+  if (released) attachNow(); // let go while the microphone was still starting
+}
 let voiceRec = null;
 async function startVoiceRecording() {
   if (voiceRec || !currentChatNumber) return;
