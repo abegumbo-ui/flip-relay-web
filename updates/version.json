@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "13b5a2a55c7e89a2620d64485150257d71f05666",
-    "publishedAt": "2026-11-08T05:32:57Z",
-    "build": 690,
-    "notes": "Leaving a screen (swipe, dock or the icons at the top) closes its search box, so it is not still open when you come back.\nSwiping now fades from one screen to the next instead of sliding under the round picture.\nCalls: each call has a WhatsApp button beside Message and Call (it opens their chat). \"Take the small buttons off each row\" now removes Call, Message and WhatsApp."
+    "sha": "412738b491163d3599229b812f9da152459b076c",
+    "publishedAt": "2026-11-08T07:26:59Z",
+    "build": 691,
+    "notes": "Group pictures now look like Google Messages: two people are two circles on a diagonal, three people are a triangle, and four or more are a 2 by 2 grid."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",

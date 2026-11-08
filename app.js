@@ -1405,10 +1405,10 @@ function gmMiniAvatar(name, cls) {
   return '<div class="gm-avatar ' + cls + '" style="background:linear-gradient(135deg,' + pair[0] + "," + pair[1] + ')">' + escapeHtml(name[0].toUpperCase()) + "</div>";
 }
 
-// A group's picture: up to three small letter circles in a triangle, like Google Messages.
+// A group's picture, like Google Messages: two people = two circles on a diagonal, three = a triangle, four or more = a 2 x 2 grid (the first four).
 function gmClusterHtml(key) {
-  const names = key.slice(2).split(",").filter(Boolean).slice(0, 3).map((n) => displayName(n));
-  return '<div class="gm-avatar gm-cluster">' + names.map((nm, i) => gmMiniAvatar(nm, "gm-mini gm-mini" + i)).join("") + "</div>";
+  const names = key.slice(2).split(",").filter(Boolean).slice(0, 4).map((n) => displayName(n));
+  return '<div class="gm-avatar gm-cluster gm-n' + names.length + '">' + names.map((nm, i) => gmMiniAvatar(nm, "gm-mini gm-mini" + i)).join("") + "</div>";
 }
 
 function gmAvatarHtml(number) {

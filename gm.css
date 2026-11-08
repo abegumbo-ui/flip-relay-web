@@ -167,6 +167,13 @@ body.gm .gm-time.gm-only, body.gm .gm-sep.gm-only { display: block; }
 .gm-cluster .gm-mini0 { left: 20%; top: 0; }
 .gm-cluster .gm-mini1 { left: 0; bottom: 0; }
 .gm-cluster .gm-mini2 { right: 0; bottom: 0; }
+.gm-cluster.gm-n2 .gm-mini0 { left: 0; top: 0; bottom: auto; }
+.gm-cluster.gm-n2 .gm-mini1 { left: 40%; top: 40%; right: auto; bottom: auto; }
+.gm-cluster.gm-n4 .gm-mini { width: 50%; height: 50%; }
+.gm-cluster.gm-n4 .gm-mini0 { left: 0; top: 0; bottom: auto; }
+.gm-cluster.gm-n4 .gm-mini1 { left: 50%; top: 0; bottom: auto; right: auto; }
+.gm-cluster.gm-n4 .gm-mini2 { left: 0; top: 50%; bottom: auto; right: auto; }
+.gm-cluster.gm-n4 .gm-mini3 { left: 50%; top: 50%; bottom: auto; right: auto; }
 .gm-sender { display: flex; align-items: center; gap: 6px; margin: 8px 12px 2px 12px; font-size: 12px; font-weight: 600; }
 .gm-sender .gm-sender-avatar { width: 20px; height: 20px; font-size: 11px; flex: none; }
 .bubble-row.indent { margin-left: 26px; }
