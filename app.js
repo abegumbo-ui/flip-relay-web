@@ -3517,7 +3517,15 @@ function filteredConversations() {
   return convos;
 }
 
+function setConversationTitle() {
+  const h = document.querySelector("#screen-conversations .topbar h2");
+  if (!h) return;
+  const want = groupsView && !groupsInMessages() ? "Groups" : "Message+";
+  if (h.dataset.greetBusy) h.dataset.greetNormal = want; // the greeting is playing: it will put this one back
+  else h.textContent = want;
+}
 function renderConversationList() {
+  setConversationTitle();
   const list = el("conversation-list");
   const convos = filteredConversations();
   list.innerHTML = "";
@@ -4333,7 +4341,7 @@ function applyZoom() { document.documentElement.style.zoom = String(zoomPct() / 
 applyZoom();
 
 // ---------- the screens of the bar: Chats, Groups, Calls, Contacts, Voicemail (show, hide, order, and the bar itself) ----------
-const TAB_LABEL = { chats: "Chats", groups: "Groups", calls: "Calls", contacts: "Contacts", voicemail: "Voicemail" };
+const TAB_LABEL = { chats: "Chats", groups: "Groups", contacts: "Contacts", calls: "Calls", voicemail: "Voicemail" };
 const TAB_ICON = { chats: "chat", groups: "forum", calls: "call", contacts: "group", voicemail: "voicemail" };
 const SCREEN_ORDER_KEY = "flip_relay_web_screen_order", BAR_KEY = "flip_relay_web_bar", CONTACTS_TAB_KEY = "flip_relay_web_contacts_tab", CHATS_TAB_KEY = "flip_relay_web_chats_tab";
 function webScreens() {
@@ -4459,6 +4467,12 @@ function tlRowsFor(key) {
       const rows = [sw("Show the bar", barShown() ? "On - the bar with Chats, Groups, Calls, Contacts and Voicemail" : "Off - no bar (the tabs are still reachable from the menus)", "tablet", barShown, (v) => { setPref(BAR_KEY, v); updateTabs(); })];
       rows.push(tlRow({ icon: "tablet", title: "Rearrange the bar", sub: "Hold a screen and drag it where you want it (the swipe follows)", onclick: openRearrangePanel }));
       for (const key of webScreens()) {
+        if (key === "groups" && groupsInMessages()) {
+          const g = tlRow({ title: TAB_LABEL[key], sub: 'Groups are shown in Messages. First turn off "Show groups in Messages" below', icon: TAB_ICON[key], switchOn: false, onclick: () => gmNotice('First turn off "Show groups in Messages".') });
+          g.style.opacity = "0.45";
+          rows.push(g);
+          continue;
+        }
         const r = sw(TAB_LABEL[key], screenHint(key), TAB_ICON[key], () => screenShown(key), (v) => { setScreenShown(key, v); updateTabs(); });
         rows.push(r);
       }
@@ -5144,8 +5158,9 @@ let greetRun = 0;
 async function greetPlay(h, main) {
   if (!h || !document.body.contains(h) || !h.animate) return;
   const my = ++greetRun;
-  const normal = h.dataset.greetNormal || h.textContent;
+  const normal = h.dataset.greetBusy ? h.dataset.greetNormal : h.textContent; // a newer play on the same title keeps the real title, not the greeting
   h.dataset.greetNormal = normal;
+  h.dataset.greetBusy = "1";
   if (h.parentElement) h.parentElement.style.overflow = "hidden";
   const fs0 = h.style.fontSize;
   const fit = () => { // a long message gets smaller instead of being cut off
@@ -5172,7 +5187,12 @@ async function greetPlay(h, main) {
     }
     await swap(normal);
   } finally {
-    if (my === greetRun) { h.getAnimations().forEach((a) => a.cancel()); h.style.fontSize = fs0; h.style.whiteSpace = ""; if (h.textContent !== normal) h.textContent = normal; }
+    if (my === greetRun) {
+      h.getAnimations().forEach((a) => a.cancel()); h.style.fontSize = fs0; h.style.whiteSpace = "";
+      const back = h.dataset.greetNormal || normal;
+      if (h.textContent !== back) h.textContent = back;
+      delete h.dataset.greetBusy;
+    }
   }
 }
 // the title of whatever is showing: an open panel (Voicemail, Contacts, ...), the Calls screen, or Chats
