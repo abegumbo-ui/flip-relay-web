@@ -5374,6 +5374,7 @@ function openTabletMenu() {
     items.appendChild(b);
   }
   document.body.appendChild(dim);
+  greetPlay(dim.querySelector('.head .t'), false); // the greeting plays in the card where it says Message+, like the tablet
 }
 
 // Selection bar on the list: pin, mute, archive, delete, more
