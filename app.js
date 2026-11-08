@@ -4166,12 +4166,28 @@ function opts_cancel() { return [{ label: "Cancel", value: false }]; }
 async function lockAskCode(title) {
   const st = lockStored();
   if (!st) return true;
-  return lockCard({
+  const r = await lockCard({
     title: title || "Enter your code",
     fields: ["Code"],
     okLabel: "Unlock",
+    extra: (title || "Enter your code") === "Enter your code" ? [{ label: "Forgot the code?", value: "forgot" }] : [], // only on the screen shown when the page opens
     validate: async (v) => ((await lockHash(v[0], st.salt)) === st.hash ? "" : "Wrong code"),
   });
+  if (r === "forgot") {
+    // The code only lives in this browser and cannot be read back. The way out is to forget it together with this page's pairing; nothing is lost on the flip phone.
+    if (confirm("Forgot the code?\n\nThis removes the code and also disconnects this page from the flip phone (it forgets its pairing and saved settings). Nothing is lost on the phone: you pair again with a new QR code.\n\nContinue?")) {
+      try {
+        localStorage.removeItem(LOCK_KEY);
+        localStorage.removeItem(LOCK_SKIP_KEY);
+        localStorage.removeItem(ROOM_KEY);
+        for (const k of Object.keys(localStorage)) if (k.startsWith("flip_relay_web_")) localStorage.removeItem(k);
+      } catch (e) { /* storage blocked */ }
+      location.reload();
+      return new Promise(() => { }); // the page is reloading
+    }
+    return lockAskCode(title);
+  }
+  return r;
 }
 
 // Runs before the app starts: set-up offer on the first open, then the code on every open.
