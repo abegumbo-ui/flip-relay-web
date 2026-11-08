@@ -1124,54 +1124,35 @@ async function screenRoom({ room, label }) {
   ]));
   root.appendChild(bg);
 
-  // the opening greeting: the messages the tablet (and later the web page) show when the app opens. The first one that fits the moment is used, so the order is the priority.
+  // the opening greeting: a name and one message for each moment; the tablet picks the one that fits when the app opens
   {
-    const DEFAULT_GREETINGS = [
-      { when: "shabbos", text: "Gut Voch, {name}", effect: "fireworks" },
-      { when: "yomtov", text: "Gut Yom Tov, {name}", effect: "fireworks" },
-      { when: "morning", text: "Good morning, {name}" },
-      { when: "afternoon", text: "Good afternoon, {name}" },
-      { when: "evening", text: "Good evening, {name}" },
-      { when: "night", text: "Up late, {name}?" },
+    const MOMENTS = [
+      ["shabbos", "Shabbos", "Gut Voch, {name}", "fireworks"],
+      ["yomtov", "Yom Tov", "Gut Yom Tov, {name}", "fireworks"],
+      ["morning", "Morning", "Good morning, {name}"],
+      ["afternoon", "Afternoon", "Good afternoon, {name}"],
+      ["evening", "Evening", "Good evening, {name}"],
+      ["night", "Late night", "Up late, {name}?"],
     ];
-    const saved = await dbq(`rooms/${room}/greetings`);
-    let list = saved && Array.isArray(saved.messages) ? saved.messages.map((m) => ({ ...m })) : DEFAULT_GREETINGS.map((m) => ({ ...m }));
-    const top = document.createElement("div");
-    top.style.cssText = "display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:8px 0";
-    top.innerHTML = `<label style="display:flex;gap:8px;align-items:center"><input id="g-on" type="checkbox"${saved && saved.on ? " checked" : ""}> Show the greeting when the app opens</label>` +
-      `<input id="g-name" type="text" style="flex:1 1 200px;min-width:160px" placeholder="Name to greet, like Abe" value="${esc((saved && saved.name) || "")}">`;
-    const gg = group("Opening greeting messages");
-    gg.add(item({ icon: "info", title: saved ? "Using your list" : "Using the built-in list", sub: "Shown when the app opens (and your first letter in the purple circle at the top). The first message that fits the moment wins, so put the special ones (Shabbos, Yom Tov) at the top. {name} is replaced by the name typed here. Press Save: the tablet picks it up the next time the app is opened." }));
+    const saved = (await dbq(`rooms/${room}/greetings`)) || {};
+    const have = {};
+    (Array.isArray(saved.messages) ? saved.messages : []).forEach((m) => { if (m && m.when && !have[m.when]) have[m.when] = m.text || ""; });
+    const gg = group("Greeting when the app opens");
     const box = document.createElement("div");
-    const opt = (v, label, cur) => `<option value="${v}"${v === cur ? " selected" : ""}>${label}</option>`;
-    const draw = () => {
-      box.innerHTML = "";
-      list.forEach((m, i) => {
-        const row = document.createElement("div");
-        row.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;padding:12px;border-radius:16px;background:var(--high)";
-        row.innerHTML =
-          `<input type="text" style="flex:1 1 220px;min-width:180px" placeholder="Message" value="${esc(m.text || "")}">` +
-          `<select data-k="when">${[["always", "Any time"], ["shabbos", "Shabbos"], ["yomtov", "Yom Tov"], ["morning", "Morning"], ["afternoon", "Afternoon"], ["evening", "Evening"], ["night", "Late night"]].map(([v, l]) => opt(v, l, m.when || "always")).join("")}</select>` +
-          `<select data-k="day">${[["", "Any day"], ["sun", "Sunday"], ["mon", "Monday"], ["tue", "Tuesday"], ["wed", "Wednesday"], ["thu", "Thursday"], ["fri", "Friday"], ["sat", "Saturday"]].map(([v, l]) => opt(v, l, m.day || "")).join("")}</select>` +
-          `<input data-k="date" type="text" style="width:96px" placeholder="MM-DD" value="${esc(m.date || "")}" title="A date every year, like 12-25">` +
-          `<select data-k="effect">${[["", "No effect"], ["fireworks", "Fireworks"]].map(([v, l]) => opt(v, l, m.effect || "")).join("")}</select>` +
-          `<label style="display:flex;gap:6px;align-items:center"><input data-k="on" type="checkbox"${m.on === false ? "" : " checked"}> On</label>`;
-        const up = document.createElement("button"); up.className = "ghost"; up.textContent = "Up"; up.onclick = () => { if (i > 0) { [list[i - 1], list[i]] = [list[i], list[i - 1]]; draw(); } };
-        const down = document.createElement("button"); down.className = "ghost"; down.textContent = "Down"; down.onclick = () => { if (i < list.length - 1) { [list[i + 1], list[i]] = [list[i], list[i + 1]]; draw(); } };
-        const del = document.createElement("button"); del.className = "ghost"; del.textContent = "Delete"; del.onclick = () => { list.splice(i, 1); draw(); };
-        row.append(up, down, del);
-        row.querySelector("input[type=text]").oninput = (e) => { m.text = e.target.value; };
-        row.querySelectorAll("[data-k]").forEach((el) => { el.onchange = el.oninput = () => { const k = el.dataset.k; const v = el.type === "checkbox" ? el.checked : el.value.trim(); if (k === "on") m.on = v; else if (v === "" || v === false) delete m[k]; else m[k] = v; }; });
-        box.appendChild(row);
-      });
-    };
-    draw();
-    gg.add(top);
+    box.style.cssText = "display:grid;gap:10px;margin:8px 0";
+    box.innerHTML =
+      `<label style="display:flex;gap:8px;align-items:center"><input id="g-on" type="checkbox"${saved.on ? " checked" : ""}> Show it</label>` +
+      `<input id="g-name" type="text" placeholder="Your name, like Abe" value="${esc(saved.name || "")}">` +
+      MOMENTS.map(([k, label, def]) => `<label style="display:grid;gap:4px"><span class="meta">${label}</span><input data-when="${k}" type="text" value="${esc(k in have ? have[k] : def)}"></label>`).join("") +
+      `<span class="meta">{name} becomes the name above.</span>`;
     gg.add(box);
     gg.add(actions([
-      { label: "Add a message", cls: "ghost", onclick: () => { list.push({ when: "always", text: "Hello, {name}" }); draw(); } },
-      { label: "Save", onclick: async () => { const clean = list.filter((m) => (m.text || "").trim()); await db("PUT", `rooms/${room}/greetings`, { on: top.querySelector("#g-on").checked, name: top.querySelector("#g-name").value.trim(), messages: clean, at: Date.now() }); render(); } },
-      ...(saved ? [{ label: "Go back to the built-in list", cls: "ghost", onclick: async () => { if (confirm("Delete your list and use the built-in messages?")) { await db("DELETE", `rooms/${room}/greetings`); render(); } } }] : []),
+      { label: "Save", onclick: async () => {
+        const messages = [];
+        MOMENTS.forEach(([k, , , effect]) => { const t = box.querySelector(`[data-when="${k}"]`).value.trim(); if (t) messages.push(effect ? { when: k, text: t, effect } : { when: k, text: t }); });
+        await db("PUT", `rooms/${room}/greetings`, { on: box.querySelector("#g-on").checked, name: box.querySelector("#g-name").value.trim(), messages, at: Date.now() });
+        render();
+      } },
     ]));
     root.appendChild(gg);
   }
