@@ -477,4 +477,8 @@ body.gm-tablet #chat-placeholder { font-size: 16px; }
 .tl-profile .acts .wa .circle { background: #25D366; color: #fff; }
 .tl-profile .acts .wa:hover .circle { background: #1ebe5b; }
 
+.tl-call-detail .acts .wa .circle { background: #25D366; color: #fff; }
+.tl-call-detail .acts .wa:hover .circle { background: #1ebe5b; }
+.tl-profile .acts, .tl-call-detail .acts { overflow-x: auto; scrollbar-width: none; justify-content: safe center; }
+
 [hidden] { display: none !important; }

@@ -5392,11 +5392,12 @@ function callDetailInto(box, call) {
   box.querySelector(".nm").textContent = name;
   box.querySelector(".no").textContent = call.number;
   const acts = box.querySelector(".acts");
-  const act = (icon, label, fn) => { const b = document.createElement("button"); b.innerHTML = `<span class="circle">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = label; b.onclick = fn; acts.appendChild(b); };
+  const act = (icon, label, fn, cls) => { const b = document.createElement("button"); if (cls) b.className = cls; b.innerHTML = `<span class="circle">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = label; b.onclick = fn; acts.appendChild(b); };
   if (n) {
     act("call", "Call", () => { callNumber(n, name); });
     act("chat", "Message", () => openChat(n));
     act("reply", "Quick replies", () => quickReplySheet(n));
+    act("whatsapp", "WhatsApp", () => openWhatsAppChat(n), "wa");
   }
   const hist = box.querySelector(".hist");
   let day = "", card = null;
