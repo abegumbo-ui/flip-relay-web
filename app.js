@@ -397,6 +397,7 @@ function init() {
   }
 
   el("connect-btn").addEventListener("click", onConnectClick);
+  el("scan-btn").addEventListener("click", openQrScanner);
   el("code-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") onConnectClick();
   });
@@ -1208,15 +1209,78 @@ function parsePairingText(raw) {
   const compact = s.replace(/[-\s]/g, "");
   return compact.length === 16 || compact.length === 12 ? { room: null, key: compact } : { room: compact, key: null };
 }
+let pairWhy = ""; // why the last pairing attempt failed: "signin", "norroom" (code not known: used, expired or mistyped) or "join"
 async function resolvePairing(raw) {
+  pairWhy = "";
   const p = parsePairingText(raw);
   if (!p.key) return null;
-  if (!fbUid) await fbSignIn();
+  if (!fbUid) { try { await fbSignIn(); } catch (e) { pairWhy = "signin:" + (e && e.message ? e.message : e); return null; } }
   const room = p.room || await rootRead("keyIndex/" + await sha256Hex16(p.key));
-  if (typeof room !== "string" || !room) return null;
+  if (typeof room !== "string" || !room) { pairWhy = "noroom"; return null; }
   try { localStorage.setItem(roomKeyStore(room), p.key); } catch (e) { /* storage blocked */ }
   try { localStorage.removeItem("flip_relay_web_joined_" + room); } catch (e) { /* storage blocked */ }
-  return (await joinRoomWeb(room)) ? room : null; // joining only works with the right key
+  const joined = await joinRoomWeb(room); // joining only works with the right key
+  if (!joined) pairWhy = "join";
+  return joined ? room : null;
+}
+
+// ---------- Pairing by scanning the QR code with the camera ----------
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    const sc = document.createElement("script");
+    sc.src = src;
+    sc.onload = resolve;
+    sc.onerror = () => reject(new Error("could not load " + src));
+    document.head.appendChild(sc);
+  });
+}
+async function openQrScanner() {
+  const err = el("pairing-error");
+  err.textContent = "";
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { err.textContent = "This browser cannot use the camera on this page. Type the code instead."; return; }
+  const ov = document.createElement("div");
+  ov.className = "qr-scan";
+  ov.innerHTML = '<video playsinline muted></video><div class="qr-frame"></div><div class="qr-hint">Point the camera at the QR code on the flip phone<br>(Settings &gt; Flip Relay Settings &gt; Pairing Code)</div><button type="button" class="btn-primary qr-close">Cancel</button>';
+  document.body.appendChild(ov);
+  const video = ov.querySelector("video");
+  let stream = null, alive = true;
+  const stop = () => { alive = false; try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch (e) { /* already stopped */ } ov.remove(); };
+  ov.querySelector(".qr-close").onclick = stop;
+  try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }); }
+  catch (e) { stop(); err.textContent = "The camera was not allowed, or there is none. Allow the camera for this site and try again, or type the code."; return; }
+  if (!alive) { try { stream.getTracks().forEach((t) => t.stop()); } catch (e) { /* closed meanwhile */ } return; }
+  video.srcObject = stream;
+  try { await video.play(); } catch (e) { /* it starts anyway on most browsers */ }
+  let detector = null;
+  if ("BarcodeDetector" in window) { try { detector = new BarcodeDetector({ formats: ["qr_code"] }); } catch (e) { detector = null; } }
+  if (!detector && !window.jsQR) {
+    try { await loadScriptOnce("vendor/jsQR.js"); } catch (e) { stop(); err.textContent = "The QR reader could not load. Type the code instead."; return; }
+  }
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const hint = ov.querySelector(".qr-hint");
+  const tick = async () => {
+    if (!alive) return;
+    try {
+      if (video.videoWidth) {
+        let text = null;
+        if (detector) { const codes = await detector.detect(video); if (codes.length) text = codes[0].rawValue; }
+        else {
+          canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
+          const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const r = window.jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+          if (r) text = r.data;
+        }
+        if (text) {
+          if (/^FR1:/i.test(text.trim())) { const t = text.trim(); stop(); el("code-input").value = t; await onConnectClick(); return; }
+          hint.textContent = "That is not the flip phone's pairing QR code. Keep looking for the one on its Pairing Code screen.";
+        }
+      }
+    } catch (e) { /* keep looking */ }
+    setTimeout(tick, 150);
+  };
+  tick();
 }
 
 async function onConnectClick() {
@@ -1224,7 +1288,13 @@ async function onConnectClick() {
   if (!parsePairingText(typed).key) { el("pairing-error").textContent = "Type the 16-character code from the flip phone's Pairing Code screen."; return; }
   el("pairing-error").textContent = "Checking the code...";
   const room = await resolvePairing(typed);
-  if (!room) { el("pairing-error").textContent = "That 16-character code is not right. Check it against the flip phone's Pairing Code screen."; return; }
+  if (!room) {
+    const e = el("pairing-error");
+    if (pairWhy.startsWith("signin")) e.textContent = "This browser could not sign in to the database (" + pairWhy.slice(7) + "). Check the internet connection, turn off a content blocker or private mode for this site, and try again.";
+    else if (pairWhy === "join") e.textContent = "The code was found but this browser was refused when joining. Make a new QR code on the flip phone (Settings > Flip Relay Settings > Pairing Code) and scan it with the button above.";
+    else e.textContent = "That code is not known. A pairing code works only once and for 10 minutes, and O and 0 or I and 1 are easy to mix up when typing. Make a new one on the flip phone (Settings > Flip Relay Settings > Pairing Code) and tap Scan the QR code.";
+    return;
+  }
   el("code-input").value = room;
   const code = el("code-input").value.trim().toUpperCase();
   if (code.length < 4) {

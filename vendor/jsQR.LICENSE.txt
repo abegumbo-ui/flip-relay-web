@@ -1,0 +1,3 @@
+jsQR 1.4.0 (https://github.com/cozmo/jsQR), Apache License 2.0, Copyright Cosmo Wolfe.
+Used to read the pairing QR code with the camera on browsers that have no built-in QR reader.
+License text: https://www.apache.org/licenses/LICENSE-2.0

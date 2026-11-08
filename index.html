@@ -21,9 +21,10 @@
 
       <div id="pairing-form">
         <p>On the flip phone open Settings &gt; Flip Relay Settings &gt; Pairing Code. Type the 16-character code shown under the QR code. The code works once and for 10 minutes.</p>
-        <input id="code-input" maxlength="40" autocapitalize="characters" autocomplete="off"
+        <input id="code-input" maxlength="40" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false"
                inputmode="text" placeholder="XXXX-XXXX-XXXX-XXXX" />
         <button id="connect-btn" class="btn-primary">Connect</button>
+        <button id="scan-btn" class="btn-primary" type="button" style="margin-top:10px">Scan the QR code</button>
         <div id="pairing-error"></div>
       </div>
 
