@@ -3688,7 +3688,9 @@ async function deleteScheduledNow(id) {
   messages = messages.filter((x) => !(x.direction === "scheduled" && x.id === id));
   saveCache();
   if (currentChatNumber) renderChat(currentChatNumber); // gone from the screen at once; the cloud copy follows
-  await Promise.all(["messages/scheduled/", "messages/scheduledMms/"].map((path) => fetch(roomUrl(path + id), { method: "DELETE" }).catch(() => { /* offline: the next check shows it again */ })));
+  const results = await Promise.all(["messages/scheduled/", "messages/scheduledMms/"].map((path) => fetch(roomUrl(path + id), { method: "DELETE" }).then((r) => r.status).catch(() => 0)));
+  const bad = results.find((s) => s === 0 || s >= 300); // a delete the cloud refused would come back after a restart: say so now
+  if (bad !== undefined && typeof tlToast === "function") tlToast(bad === 0 ? "Could not reach the cloud to delete it: it will come back. Try again." : "The cloud refused the delete (HTTP " + bad + "): it will come back.");
   refreshScheduled();
 }
 async function sendScheduledNow(m) {
