@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "5998b707d611656058f417f9d1410f33da11a0d6",
-    "publishedAt": "2026-11-08T05:09:41Z",
-    "build": 688,
-    "notes": "The bar now starts as Chats, Groups, Contacts, Calls, Voicemail (Calls and Voicemail together at the end). If you already rearranged your bar, it stays as you set it.\nSwiping between Calls and Voicemail: the refresh and settings icons stay where they are.\nVoicemail's refresh icon now always turns a full turn.\nThe Groups screen says Groups. While \"Show groups in Messages\" is on, the Groups option in Settings is off and grayed out, and tells you to turn that off first."
+    "sha": "13b5a2a55c7e89a2620d64485150257d71f05666",
+    "publishedAt": "2026-11-08T05:32:57Z",
+    "build": 690,
+    "notes": "Leaving a screen (swipe, dock or the icons at the top) closes its search box, so it is not still open when you come back.\nSwiping now fades from one screen to the next instead of sliding under the round picture.\nCalls: each call has a WhatsApp button beside Message and Call (it opens their chat). \"Take the small buttons off each row\" now removes Call, Message and WhatsApp."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
