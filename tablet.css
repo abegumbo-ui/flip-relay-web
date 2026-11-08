@@ -443,4 +443,20 @@ body.gm-tablet #tl-calls-left { flex: 0 0 min(50%, 480px); width: min(50%, 480px
 body.gm-tablet #tl-call-detail { position: absolute; left: min(50%, 480px); right: 8px; top: 8px; bottom: 8px; margin: 0; }
 body.gm-tablet .tl-vm .tl-panel-top, body.gm-tablet .tl-vm > .tl-dock, body.gm-tablet .tl-vm .tl-panel-body { width: min(50%, 480px); max-width: none; margin-left: 0; margin-right: 0; box-sizing: border-box; }
 
+/* a group's picture, like the tablet's: up to three small circles, the first on top */
+body.gm .gm-cluster { position: relative; background: none !important; }
+body.gm .gm-cluster .gm-mini { position: absolute; width: 60% !important; height: 60% !important; margin: 0 !important; border: 0 !important; font-size: .6em !important; line-height: 1 !important; }
+body.gm .gm-cluster .gm-mini svg { width: 60% !important; height: 60% !important; }
+body.gm .gm-cluster .gm-mini0 { left: 20%; top: 0; z-index: 3; }
+body.gm .gm-cluster .gm-mini1 { left: 0; top: 40%; z-index: 2; }
+body.gm .gm-cluster .gm-mini2 { left: 40%; top: 40%; z-index: 1; }
+/* recording a voice message */
+#tl-rec { flex: none; display: flex; align-items: center; gap: 12px; margin: 0 8px; padding: 8px 12px 8px 16px; border-radius: 28px; background: var(--gm-high); color: var(--gm-ink); font-size: 12.8px; }
+#tl-rec .dot { width: 10px; height: 10px; border-radius: 50%; background: #e53935; animation: tlpulse 1s infinite; }
+#tl-rec .t { font-variant-numeric: tabular-nums; min-width: 34px; }
+#tl-rec .msg { flex: 1; min-width: 0; color: var(--gm-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#tl-rec button { border: 0; border-radius: 20px; padding: 8px 16px; font: inherit; cursor: pointer; background: none; color: var(--gm-blue); }
+#tl-rec button.ok { background: var(--gm-blue); color: #fff; }
+@keyframes tlpulse { 50% { opacity: .25; } }
+
 [hidden] { display: none !important; }

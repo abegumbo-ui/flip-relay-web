@@ -1121,7 +1121,7 @@ function setPendingAttachment(file, kind, name) {
     el("attachment-thumb").classList.add("hidden");
     el("attachment-label").textContent = kind === "video"
         ? "🎥 Video attached"
-        : "👤 " + (name || "Contact");
+        : kind === "audio" ? "🎤 Voice message attached" : "👤 " + (name || "Contact");
     el("attachment-label").classList.remove("hidden");
   }
   if (stagedAttachments.length) { // more than one: show how many (the X takes them all off again)
@@ -2054,7 +2054,7 @@ async function onSendClick() {
   const rawBody = input.value.trim();
   const items = stagedAttachments.slice();
   if (pendingAttachmentFile) items.push({ file: pendingAttachmentFile, kind: pendingAttachmentKind, name: pendingAttachmentName });
-  if (!rawBody && !items.length) return;
+  if (!rawBody && !items.length) { startVoiceRecording(); return; } // nothing to send: the round button records a voice message
   if (!currentChatNumber) return;
   stagedAttachments = [];
   input.value = "";
@@ -2085,7 +2085,7 @@ async function sendOne(rawBody, file, kind, attachmentName) {
   // Same marker convention the tablet app's ChatActivity uses for its own
   // local echo, so upsertSent()'s dedup match (which compares body text)
   // lines up with what the phone actually confirms back as "sent".
-  const label = kind === "video" ? "🎥 Video" : kind === "contact" ? "👤 " + (attachmentName || "Contact") : null;
+  const label = kind === "video" ? "🎥 Video" : kind === "audio" ? "🎤 Voice message" : kind === "contact" ? "👤 " + (attachmentName || "Contact") : null;
   const body = label ? (label + (rawBody ? ": " + rawBody : "")) : rawBody;
 
   // Shown immediately from the local file, before the upload even starts --
@@ -2100,7 +2100,7 @@ async function sendOne(rawBody, file, kind, attachmentName) {
     contactName: null,
     body,
     imageUrl: localImageUrl,
-    attachmentUrl: null,
+    attachmentUrl: kind === "audio" ? (() => { const u = URL.createObjectURL(file); amrBlobUrls.add(u); return u; })() : null,
     attachmentKind: kind === "photo" ? null : kind,
     attachmentName,
     timestamp,
@@ -2125,10 +2125,10 @@ async function sendOne(rawBody, file, kind, attachmentName) {
       imagePath = `attachments/${roomId}/${timestamp}-${randHex16()}.jpg`;
       imageUrl = await uploadToStorage(await compressImage(file), imagePath);
       msg.uploadUrl = imageUrl;
-    } else if (kind === "video" || kind === "contact") {
+    } else if (kind === "video" || kind === "contact" || kind === "audio") {
       if (file.size > 60 * 1024 * 1024) throw new Error("Attachment too large");
-      attachmentType = kind === "video" ? "video" : "vcard";
-      const ext = kind === "video" ? (file.name.split(".").pop() || "mp4") : "vcf";
+      attachmentType = kind === "video" ? "video" : kind === "audio" ? "audio" : "vcard";
+      const ext = kind === "video" ? (file.name.split(".").pop() || "mp4") : kind === "audio" ? "amr" : "vcf";
       const path = `attachments/${roomId}/${timestamp}-${randHex16()}.${ext}`;
       attachmentUrl = await uploadToStorage(file, path);
       msg.uploadUrl = attachmentUrl;
@@ -2818,11 +2818,11 @@ function openVoicemailPanel() {
         <button class="act" data-a="call">${svgIcon("call")}<span>Voice call</span></button><button class="act" data-a="msg">${svgIcon("chat")}<span>Send a message</span></button>`;
       c.appendChild(more);
       c.querySelector(".line > button").style.display = "none";
-      const a = audio = new Audio(v.url || "");
+      const a = audio = makeAudio(v.url || "");
       const playBtn = more.querySelector(".play"), fill = more.querySelector(".bar b"), now = more.querySelector(".times span");
       let heard = false;
       playBtn.onclick = () => {
-        if (a.paused) a.play().catch(() => tlToast("This voicemail can't play here. Download it to play it on this computer."));
+        if (a.paused) a.play().catch(() => tlToast("This voicemail could not be loaded here. Update the Message+ Windows app (Settings > Help), or use the download button."));
         else a.pause();
       };
       a.onplay = () => {
@@ -2833,10 +2833,11 @@ function openVoicemailPanel() {
       a.ontimeupdate = () => { const d = a.duration || v.durationSec || 1; fill.style.width = Math.min(100, a.currentTime / d * 100) + "%"; now.textContent = Math.floor(a.currentTime / 60) + ":" + String(Math.floor(a.currentTime % 60)).padStart(2, "0"); };
       more.querySelector(".bar").onclick = (e) => { const r = e.currentTarget.getBoundingClientRect(); if (a.duration) a.currentTime = (e.clientX - r.left) / r.width * a.duration; };
       const speeds = [1, 1.5, 2, 0.75];
+      if (a instanceof AmrAudio) more.querySelector(".spd").style.display = "none"; // the speed control needs a normal audio file
       more.querySelector(".spd").onclick = (e) => { const i = (speeds.indexOf(a.playbackRate) + 1) % speeds.length; a.playbackRate = speeds[i]; e.currentTarget.textContent = speeds[i].toFixed(speeds[i] === 0.75 ? 2 : 1) + "\u00d7"; };
       more.querySelector('[data-a="dl"]').onclick = () => { if (v.url) window.open(v.url, "_blank"); };
       more.querySelector('[data-a="share"]').onclick = async () => { try { if (navigator.share) await navigator.share({ title: "Voicemail from " + who, url: v.url }); else { await navigator.clipboard.writeText(v.url); tlToast("Link copied"); } } catch (e) { /* cancelled */ } };
-      more.querySelector('[data-a="call"]').onclick = () => { if (n) location.href = "tel:" + n; };
+      more.querySelector('[data-a="call"]').onclick = () => { if (n) callNumber(n, who); };
       more.querySelector('[data-a="msg"]').onclick = () => { if (n) { backBtn.click(); openChat(n); } };
       more.querySelector('[data-a="del"]').onclick = async () => {
         if (!await gmConfirm(saved ? "Delete this saved voicemail?" : "Delete this voicemail? It is deleted on the phone too.")) return;
@@ -3531,6 +3532,11 @@ function renderConversationList() {
       </div>
       ${unread && unreadCount > 0 ? `<div class="unread-badge">${unreadCount > 999 ? "999+" : unreadCount}</div>` : ""}
     `;
+    const listAv = item.querySelector(".gm-avatar");
+    if (listAv && !selected && !conversationSelectionMode) { // tap the picture: that person's (or group's) card, like on the tablet
+      listAv.style.cursor = "pointer";
+      listAv.addEventListener("click", (e) => { e.stopPropagation(); tlProfileCard(number); });
+    }
     item.addEventListener("click", () => {
       if (conversationSelectionMode) toggleConversationSelection(number);
       else openChat(number);
@@ -4462,6 +4468,10 @@ function tlRowsFor(key) {
       tlRow({ icon: "doneAll", title: "Mark all as read", sub: "Every conversation, here and on the flip phone", onclick: () => clickOld("mark-all-read-btn") }),
       tlRow({ icon: "archive", title: "Archived", sub: "Conversations you put away", onclick: () => clickOld("archived-btn") }),
       tlRow({ icon: "trash", title: "Trash", sub: "Chats deleted in the last 30 days", onclick: () => openSettingsSection("trash") }),
+      tlRow({ icon: "call", title: "Default calling app", sub: defaultCallApp() === "ask" ? "Ask every time" : (CALL_APPS.find((a) => a.id === defaultCallApp()) || {}).label, onclick: async () => {
+        const c = await showActionSheet("Default calling app", [{ label: "Ask every time", value: "ask" }, ...CALL_APPS.map((a) => ({ label: a.label, value: a.id }))]);
+        if (c) { try { if (c === "ask") localStorage.removeItem(CALL_APP_KEY); else localStorage.setItem(CALL_APP_KEY, c); } catch (e) { /* storage blocked */ } redraw(); }
+      } }),
       tlRow({ icon: "save", title: "Backup and restore", sub: "Save this page's settings to a file, or set it up again from one", onclick: async () => {
         const c = await showActionSheet("Backup and restore", [{ label: "Save to a file", value: "s" }, { label: "Restore from a file", value: "r" }]);
         if (c === "s") clickOld("backup-save-btn"); else if (c === "r") clickOld("backup-restore-btn");
@@ -4515,7 +4525,8 @@ function tlRowsFor(key) {
     case "help": return [
       tlRow({ icon: "restart", title: "Restart the app", sub: "Reloads the page, if something does not update", onclick: () => location.reload() }),
       tlRow({ icon: "info", title: "Crash log", sub: "Flip phone and tablets: why one closed by itself, if it ever did", onclick: openCrashLog }),
-      ...(window.flipDesktop ? [] : [tlRow({ icon: "tablet", title: "Desktop app for Windows", sub: "Its own window, starts with Windows, and notifications even with the window closed", onclick: () => window.open("https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/desktop-1.0.0/Message-Plus-Setup-1.0.0.exe", "_blank") })]),
+      ...(window.flipDesktop ? (window.flipDesktop.version ? [] : [tlRow({ icon: "update", title: "Update the Windows app", sub: "A newer Message+ for Windows is out: voicemail plays inside the app, you can pick WhatsApp or Skype to call with. Download and run it, it replaces this one", onclick: () => window.open("https://github.com/avrohomgolo-coder/flip-relay-web/releases/latest", "_blank") })])
+        : [tlRow({ icon: "tablet", title: "Desktop app for Windows", sub: "Its own window, starts with Windows, and notifications even with the window closed", onclick: () => window.open("https://github.com/avrohomgolo-coder/flip-relay-web/releases/latest", "_blank") })]),
       tlRow({ icon: "update", title: "Version", sub: "The web app is always the newest version; it updates by itself when it reloads" }),
     ];
   }
@@ -4768,7 +4779,7 @@ function updateSendIcon() {
   if (!send || !input) return;
   const hasIt = input.value.trim().length > 0 || (typeof stagedAttachments !== "undefined" && stagedAttachments.length > 0) || !!pendingAttachmentFile;
   const want = hasIt ? "send" : "micWave";
-  if (send.dataset.icon !== want) { send.dataset.icon = want; send.innerHTML = svgIcon(want, 26); send.title = hasIt ? "Send (hold to schedule)" : "Voice messages are recorded on the tablet"; }
+  if (send.dataset.icon !== want) { send.dataset.icon = want; send.innerHTML = svgIcon(want, 26); send.title = hasIt ? "Send (hold to schedule)" : "Record a voice message"; }
 }
 async function attachFrom(pick) {
   const live = pick === "camera";
@@ -4958,6 +4969,38 @@ function tlSearchButton(toggle) {
   return b;
 }
 
+// ---------- Call: which app to call with (Settings > Messages > Default calling app) ----------
+const CALL_APP_KEY = "flip_relay_web_call_app";
+function e164(n) { let d = String(n).replace(/\D/g, ""); if (d.length === 10) d = "1" + d; return "+" + d; }
+const CALL_APPS = [
+  { id: "phone", label: "Phone (this computer's calling app)", url: (n) => "tel:" + e164(n) },
+  { id: "whatsapp", label: "WhatsApp", url: (n) => "whatsapp://send?phone=" + e164(n).slice(1) },
+  { id: "skype", label: "Skype", url: (n) => "skype:" + e164(n) + "?call" },
+  { id: "teams", label: "Microsoft Teams", url: (n) => "msteams://teams.microsoft.com/l/call/0/0?users=4:" + e164(n) },
+  { id: "voice", label: "Google Voice (opens in your browser)", url: (n) => "https://voice.google.com/u/0/calls?a=nc," + encodeURIComponent(e164(n)) },
+];
+function defaultCallApp() { try { const v = localStorage.getItem(CALL_APP_KEY); return CALL_APPS.some((a) => a.id === v) ? v : "ask"; } catch (e) { return "ask"; } }
+function openAppLink(url) {
+  if (window.flipDesktop) { window.open(url, "_blank"); return; } // the Windows app hands it to the right program
+  const a = document.createElement("a");
+  a.href = url; a.rel = "noopener"; if (/^https?:/i.test(url)) a.target = "_blank";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function callNumber(number, name) {
+  const n = normalizeNumber(number) || number;
+  if (!n) return;
+  let id = defaultCallApp();
+  if (id === "ask") {
+    const opts = CALL_APPS.map((a) => ({ label: a.label, value: a.id }));
+    opts.push({ label: "Copy the number", value: "copy" });
+    id = await showActionSheet("Call " + (name || tlPrettyNumber(n)) + " with", opts);
+    if (!id) return;
+  }
+  if (id === "copy") { try { await navigator.clipboard.writeText(tlPrettyNumber(n)); tlToast("Number copied"); } catch (e) { gmNotice(tlPrettyNumber(n)); } return; }
+  const app = CALL_APPS.find((a) => a.id === id);
+  if (app) openAppLink(app.url(n));
+}
+
 function tlMenuButton() {
   const b = document.createElement("button");
   b.className = "tl-chat-btn tl-menu-btn"; b.title = "Message+ menu";
@@ -5092,7 +5135,7 @@ function tlProfileCard(number, knownName) {
   const add = (icon, title, fn) => { const b = document.createElement("button"); b.title = title; b.innerHTML = `<span class="circle">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = title; b.onclick = () => { close(); fn(); }; acts.appendChild(b); };
   add("chat", "Message", () => { const panel = document.querySelector(".tl-contacts .tl-panel-top button"); if (panel) panel.click(); if (currentChatNumber !== number || currentScreenName !== "chat") openChat(number); });
   if (!group) {
-    add("call", "Call", () => { location.href = "tel:" + number; });
+    add("call", "Call", () => { callNumber(number, name); });
     add("reply", "Quick replies", () => quickReplySheet(number));
   }
   add("info", "Info", () => showConversationLongPressMenu(number, null, true));
@@ -5115,6 +5158,82 @@ function tlProfileCard(number, knownName) {
 const PLAY_SVG = () => svgIcon("play"), PAUSE_SVG = () => svgIcon("pause");
 let tlVoicePlaying = null;
 function clockOf(sec) { const s = Math.max(0, Math.round(sec || 0)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
+// AMR (the flip phone's voicemail and voice messages) is not something a browser plays by itself: the bundled decoder (vendor/BenzAMRRecorder.min.js,
+// MIT) turns it into sound inside the page. Nothing is downloaded or converted by hand.
+const amrBlobUrls = new Set();
+let amrLibPromise = null;
+function loadAmrLib() {
+  if (window.BenzAMRRecorder) return Promise.resolve();
+  if (!amrLibPromise) amrLibPromise = new Promise((res, rej) => {
+    const sc = document.createElement("script");
+    sc.src = "vendor/BenzAMRRecorder.min.js";
+    sc.onload = () => res();
+    sc.onerror = () => { amrLibPromise = null; rej(new Error("the sound decoder did not load")); };
+    document.head.appendChild(sc);
+  });
+  return amrLibPromise;
+}
+function isAmrUrl(u) { return amrBlobUrls.has(u) || /\.amr(\?|#|$)/i.test(String(u || "")); }
+class AmrAudio extends EventTarget {
+  constructor(url) { super(); this.url = url; this.rec = null; this.paused = true; this.playbackRate = 1; this._init = null; this._timer = null; }
+  get duration() { try { return this.rec ? this.rec.getDuration() : NaN; } catch (e) { return NaN; } }
+  get currentTime() { try { return this.rec ? this.rec.getCurrentPosition() : 0; } catch (e) { return 0; } }
+  set currentTime(t) { try { if (this.rec) this.rec.setPosition(t); } catch (e) { /* not ready yet */ } }
+  _tick(on) { clearInterval(this._timer); if (on) this._timer = setInterval(() => { if (this.ontimeupdate) this.ontimeupdate(); }, 200); }
+  _load() {
+    if (this._init) return this._init;
+    this._init = loadAmrLib().then(async () => {
+      const r = new window.BenzAMRRecorder();
+      const started = () => { this.paused = false; this._tick(true); if (this.onplay) this.onplay(); };
+      r.onPlay(started);
+      r.onResume(started);
+      r.onPause(() => { this.paused = true; this._tick(false); if (this.onpause) this.onpause(); });
+      r.onStop(() => { this.paused = true; this._tick(false); });
+      r.onEnded(() => { this.paused = true; this._tick(false); if (this.onended) this.onended(); });
+      await r.initWithUrl(this.url);
+      this.rec = r;
+      if (this.onloadedmetadata) this.onloadedmetadata();
+    }).catch((e) => { this._init = null; if (this.onerror) this.onerror(e); throw e; });
+    return this._init;
+  }
+  play() { return this._load().then(() => { if (this.rec.isPaused()) this.rec.resume(); else this.rec.play(); }); }
+  pause() { if (this.rec) this.rec.pause(); }
+}
+function makeAudio(url) { return isAmrUrl(url) ? new AmrAudio(url) : new Audio(url); }
+
+// ---------- recording a voice message (AMR, the same as the tablet's) ----------
+let voiceRec = null;
+async function startVoiceRecording() {
+  if (voiceRec || !currentChatNumber) return;
+  try { await loadAmrLib(); } catch (e) { gmNotice("Voice recording could not start: " + e.message); return; }
+  if (!window.BenzAMRRecorder.isRecordSupported()) { gmNotice("This browser cannot record sound."); return; }
+  const r = new window.BenzAMRRecorder();
+  try { await r.initWithRecord(); } catch (e) { gmNotice("Allow the microphone to record a voice message."); return; }
+  r.startRecord();
+  voiceRec = r;
+  const t0 = Date.now();
+  const bar = document.createElement("div");
+  bar.id = "tl-rec";
+  bar.innerHTML = '<span class="dot"></span><span class="t">0:00</span><span class="msg">Recording a voice message</span><button class="x" type="button">Cancel</button><button class="ok" type="button">Attach</button>';
+  (document.querySelector("#screen-chat .composer") || el("compose-input")).before(bar);
+  const timer = setInterval(() => {
+    const sec = Math.floor((Date.now() - t0) / 1000);
+    bar.querySelector(".t").textContent = Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+    if (sec >= 180) bar.querySelector(".ok").click(); // three minutes is plenty
+  }, 300);
+  const end = () => { clearInterval(timer); bar.remove(); voiceRec = null; try { r.destroy(); } catch (e) { /* already gone */ } };
+  bar.querySelector(".x").onclick = () => { try { r.cancelRecord(); } catch (e) { /* nothing recorded */ } end(); };
+  bar.querySelector(".ok").onclick = async () => {
+    try {
+      await r.finishRecord();
+      const blob = r.getBlob();
+      if (blob && blob.size > 200) setPendingAttachment(new File([blob], "voice.amr", { type: "audio/amr" }), "audio", "Voice message");
+      else gmNotice("Nothing was recorded.");
+    } catch (e) { gmNotice("The recording did not work."); }
+    end();
+  };
+}
+
 function tlVoiceHtml() {
   return `<div class="tl-voice"><button class="tl-voice-play" type="button" title="Play">${PLAY_SVG()}</button><div class="tl-voice-track"><div class="tl-voice-fill"></div></div><span class="tl-voice-time">00:00</span></div>`;
 }
@@ -5125,7 +5244,7 @@ function wireVoice(root, url, onFirstPlay) {
   let a = null, started = false;
   const make = () => {
     if (a) return a;
-    a = new Audio(url);
+    a = makeAudio(url);
     a.preload = "metadata";
     a.onloadedmetadata = () => { if (isFinite(a.duration)) time.textContent = clockOf(a.duration); };
     a.ontimeupdate = () => { if (a.duration) { fill.style.width = (100 * a.currentTime / a.duration) + "%"; time.textContent = clockOf(a.currentTime); } };
@@ -5196,7 +5315,7 @@ function callDetailInto(box, call) {
   const acts = box.querySelector(".acts");
   const act = (icon, label, fn) => { const b = document.createElement("button"); b.innerHTML = `<span class="circle">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = label; b.onclick = fn; acts.appendChild(b); };
   if (n) {
-    act("call", "Call", () => { location.href = "tel:" + n; });
+    act("call", "Call", () => { callNumber(n, name); });
     act("chat", "Message", () => openChat(n));
     act("reply", "Quick replies", () => quickReplySheet(n));
   }
@@ -5273,7 +5392,7 @@ function renderCallsList() {
     row.querySelector(".nm").textContent = call.contactName || call.number;
     row.querySelector(".dt > span:last-child").textContent = detail;
     if (n) {
-      for (const [icon, t, fn] of [["chat", "Message", () => openChat(n)], ["call", "Call", () => { location.href = "tel:" + n; }]]) {
+      for (const [icon, t, fn] of [["chat", "Message", () => openChat(n)], ["call", "Call", () => { callNumber(n, call.contactName || call.number); }]]) {
         const b = document.createElement("button");
         b.className = "tl-call-btn"; b.title = t; b.innerHTML = svgIcon(icon);
         b.addEventListener("click", (e) => { e.stopPropagation(); fn(); });
