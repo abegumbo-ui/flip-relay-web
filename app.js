@@ -3587,9 +3587,10 @@ function googleSheet(title, sub, rows) {
     card.innerHTML = '<div class="g-title"></div><div class="g-sub"></div><div style="height:24px"></div>';
     card.firstChild.textContent = title;
     card.children[1].textContent = sub;
+    const openedAt = Date.now();
     const done = (v) => { dim.remove(); resolve(v); };
-    for (const r of rows) { const b = document.createElement("button"); b.type = "button"; b.className = "g-srow"; b.textContent = r.label; b.onclick = () => done(r.value); card.appendChild(b); }
-    dim.onclick = (e) => { if (e.target === dim) done(null); };
+    for (const r of rows) { const b = document.createElement("button"); b.type = "button"; b.className = "g-srow"; b.textContent = r.label; b.onclick = () => { if (Date.now() - openedAt > 250) done(r.value); }; card.appendChild(b); }
+    dim.onclick = (e) => { if (e.target === dim && Date.now() - openedAt > 500) done(null); };
     dim.appendChild(card);
     document.body.appendChild(dim);
   });
@@ -3662,14 +3663,28 @@ async function deleteScheduledNow(id) {
   await Promise.all(["messages/scheduled/", "messages/scheduledMms/"].map((path) => fetch(roomUrl(path + id), { method: "DELETE" }).catch(() => { /* offline: the stream shows it again */ })));
 }
 async function sendScheduledNow(m) {
+  const ts = Date.now();
+  messages.push({ id: "local-" + ts + "-" + randHex16().slice(0, 6), direction: "out", number: m.number, contactName: null, body: m.body || "", imageUrl: m.imageUrl || null, attachmentUrl: m.attachmentUrl || null,
+    attachmentKind: m.attachmentKind || null, attachmentName: m.attachmentName || null, uploadUrl: m.imageUrl || m.attachmentUrl || null, source: "web", timestamp: ts }); // shows at once as "Sending..." like any message sent now
+  await deleteScheduledNow(m.id); // also redraws the chat
+  if (typeof tlToast === "function") tlToast("Sending now");
   await fetch(roomUrl("messages/outgoing"), { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ to: m.number, body: m.body || null, imageUrl: m.imageUrl, imagePath: m.imagePath, attachmentType: m.attachmentKind, attachmentUrl: m.attachmentUrl, attachmentName: m.attachmentName, timestamp: Date.now() }) });
-  await deleteScheduledNow(m.id);
+    body: JSON.stringify({ to: m.number, body: m.body || null, imageUrl: m.imageUrl, imagePath: m.imagePath, attachmentType: m.attachmentKind, attachmentUrl: m.attachmentUrl, attachmentName: m.attachmentName, timestamp: ts }) });
 }
+let scheduledSheetOpen = false;
 async function scheduledOptions(m) {
-  const c = await googleSheet("Scheduled message", schedWhenText(m.sendAt), [
+  if (scheduledSheetOpen) return; // a double click is two clicks: only one sheet
+  scheduledSheetOpen = true;
+  let c;
+  try { c = await scheduledSheetChoice(m); } finally { scheduledSheetOpen = false; }
+  await scheduledAct(m, c);
+}
+function scheduledSheetChoice(m) {
+  return googleSheet("Scheduled message", schedWhenText(m.sendAt), [
     { label: "Update message", value: "update" }, { label: "Send now", value: "now" },
     { label: "Reschedule message", value: "move" }, { label: "Delete message", value: "delete" }]);
+}
+async function scheduledAct(m, c) {
   if (c === "update") {
     editingScheduled = m; // like Google Messages: the text goes back in the message box with its time on top; sending it replaces the waiting one
     const inp = el("compose-input");
