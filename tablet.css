@@ -491,4 +491,22 @@ body.gm #gm-settings-btn { border-radius: 50%; }
 body.gm #gm-settings-btn .tl-initial { width: 32px; height: 32px; }
 .tl-menu .head .tl-initial { width: 44px; height: 44px; font-size: 22px; flex: none; }
 
+/* scheduled messages (like Google Messages): the chip on the message box, the "send later" button, and the waiting messages under the chat */
+#sched-chip { display: flex; align-items: center; margin: 6px 76px 0 12px; padding: 2px 4px 2px 20px; border-radius: 24px 24px 0 0; background: #D9E2FF; color: #3A4A7A; font-size: 15px; }
+#sched-chip.hidden { display: none; }
+#sched-chip .t { flex: 1; cursor: pointer; }
+#sched-chip .x { border: 0; background: none; color: #3A4A7A; padding: 10px; cursor: pointer; display: flex; }
+#send-btn.later { background: #4A5C8C !important; color: #fff !important; }
+#sched-section { display: flex; flex-direction: column; align-items: flex-end; padding: 0 8px 0 0; }
+#sched-section.hidden { display: none; }
+#sched-section .sched-item { position: relative; display: flex; justify-content: flex-end; width: 100%; padding: 6px 16px 16px 72px; box-sizing: border-box; }
+#sched-section .sched-bubble { background: #4A5C8C; color: #fff; border-radius: 24px; padding: 12px 18px; font-size: 16px; cursor: pointer; max-width: 100%; word-break: break-word; }
+#sched-section .sched-text { font-style: italic; font-size: 17px; margin-top: 2px; }
+#sched-section .sched-when { font-size: 12px; opacity: .8; margin-top: 4px; }
+#sched-section .sched-badge { position: absolute; right: 10px; bottom: 0; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--bg, #fbf8ff); background: #4A5C8C; color: #fff; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+#sched-section .sched-head { border: 0; background: none; color: #4A5C8C; font-size: 16px; font-weight: 500; padding: 8px 24px 8px 16px; cursor: pointer; }
+body.theme-dark #sched-chip { background: #2B3552; color: #C5D0F5; }
+body.theme-dark #sched-chip .x, body.theme-dark #sched-section .sched-head { color: #C5D0F5; }
+body.theme-dark #sched-section .sched-bubble, body.theme-dark #sched-section .sched-badge, body.theme-dark #send-btn.later { background: #3A4A78 !important; }
+
 [hidden] { display: none !important; }

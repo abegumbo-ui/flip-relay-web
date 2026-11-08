@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "f5079e1a05f4754bef940d4993d005cc54227e3e",
-    "publishedAt": "2026-11-08T12:57:39Z",
-    "build": 694,
-    "notes": "New: Settings > Messages features > Scheduled messages. It lists every message waiting to be sent, from every conversation and every device, and you can cancel any of them there. Scheduled messages are kept in the cloud, not on the device that scheduled them: the flip phone sends each one at its time, so it still goes if the tablet that scheduled it is off or lost. The web page and the Windows app have the same list (Settings > Messages features)."
+    "sha": "5515cfeca2de1def6cb4404015f77962ee78e2d5",
+    "publishedAt": "2026-11-08T18:48:49Z",
+    "build": 695,
+    "notes": "You can now schedule pictures, videos, voice messages and contacts, not just text.\nNew look like Google Messages: pick a time and it shows above the message box with an X, and the send button turns into send-later.\nWaiting messages sit under the chat in \"Scheduled messages (N)\". Tap one to update it, send it now, reschedule it or delete it.\nScheduled pictures and voice messages need the flip's Message+ updated to the newest build."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26137927,
+    "versionName": "6.4.5-FR GOLOMBECK (build 173)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26137927/messageplus-26137927.apk",
+    "at": 1794163870445,
+    "notes": "Scheduled pictures, videos, voice messages and contacts now go out at their time, like scheduled texts."
+  },
+  "messageplus_previous": {
     "versionCode": 26132782,
     "versionName": "6.4.5-FR GOLOMBECK (build 172)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26132782/messageplus-26132782.apk",
     "at": 1793854862117,
     "notes": "The home-screen buttons now keep working even if Message+ is not the default texting app. Settings > Home Screen Shortcut has a switch to turn that off."
-  },
-  "messageplus_previous": {
-    "versionCode": 26132435,
-    "versionName": "6.4.5-FR GOLOMBECK (build 171)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26132435/messageplus-26132435.apk",
-    "at": 1793834259050,
-    "notes": "Voice messages and flip-phone videos now play everywhere: voice messages from flip phones (which no tablet or computer could play) and from other phones are turned into a normal audio file, and flip-phone videos into a normal video, before they go to the tablet."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",

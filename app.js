@@ -25,6 +25,7 @@ let seenScheduledKeys = new Set();
 let incomingStream = null;
 let sentStream = null;
 let scheduledStream = null;
+let scheduledMmsStream = null; // scheduled pictures, videos and voice messages (their own place in the cloud)
 let incomingConnected = false;
 let sentConnected = false;
 let scheduledConnected = false;
@@ -449,7 +450,7 @@ function init() {
   attachLongPress(el("send-btn"), () => {
     suppressNextSendClick = true;
     if (el("send-btn").dataset.icon === "micWave") { holdToRecord(); return; } // nothing to send: holding the round button records
-    onScheduleButtonClick();
+    openScheduleSheet((ms) => setScheduledAt(ms)); // pick a time: the message then waits for it
   }, { ms: 350, rightClick: false });
   el("send-btn").addEventListener("click", () => {
     if (suppressNextSendClick) {
@@ -1413,6 +1414,7 @@ async function onForgetClick() {
   if (incomingStream) incomingStream.close();
   if (sentStream) sentStream.close();
   if (scheduledStream) scheduledStream.close();
+  if (scheduledMmsStream) scheduledMmsStream.close();
   for (const t of trashStreams) t.close();
   trashStreams = [];
   if (phoneHeartbeatTimer) clearInterval(phoneHeartbeatTimer);
@@ -1562,6 +1564,12 @@ function startStreams() {
     seenScheduledKeys.delete(key);
     return messages.length !== before;
   }, (connected) => { scheduledConnected = connected; updateConnectionStatus(); });
+  scheduledMmsStream = openStream("messages/scheduledMms", upsertScheduled, (key) => {
+    const before = messages.length;
+    messages = messages.filter((m) => !(m.direction === "scheduled" && m.id === key));
+    seenScheduledKeys.delete(key);
+    return messages.length !== before;
+  }, () => { });
 
   startPhoneHeartbeatPoll();
   loadMuted();
@@ -2064,6 +2072,11 @@ function upsertScheduled(key, data) {
     body: data.body || "",
     timestamp: data.sendAt || Date.now(), // sorts/previews by when it WILL send
     sendAt: data.sendAt || Date.now(),
+    imageUrl: data.imageUrl || null,
+    imagePath: data.imagePath || null,
+    attachmentUrl: data.attachmentUrl || null,
+    attachmentKind: data.attachmentType || null,
+    attachmentName: data.attachmentName || null,
   });
   return true;
 }
@@ -2146,6 +2159,7 @@ async function onSendClick() {
   if (pendingAttachmentFile) items.push({ file: pendingAttachmentFile, kind: pendingAttachmentKind, name: pendingAttachmentName });
   if (!rawBody && !items.length) { startVoiceRecording(); return; } // nothing to send: the round button records a voice message
   if (!currentChatNumber) return;
+  if (scheduledAt) { await scheduleAll(rawBody, items); return; } // a time is chosen: it waits for it instead of going now
   stagedAttachments = [];
   input.value = "";
   clearAttachment();
@@ -2647,6 +2661,7 @@ function openPhoneButtons() {
 
 // ---------- Settings laid out like the tablet: a list of sections (icon, title, what is inside); each opens its own page ----------
 const ICONS = {
+  sendSchedule: "M2.07,18.38L18.44,11.36 2.07,4.34 2.06,9.8l11.7,1.56 -11.7,1.56z M12.25,13.2a5.25,5.25 0 1 0 10.5,0a5.25,5.25 0 1 0 -10.5,0z M13.95,13.2a3.55,3.55 0 1 1 7.1,0a3.55,3.55 0 1 1 -7.1,0z M16.75,10.9h1.5v2.2l1.4,0.85 -0.75,1.25 -2.15,-1.3z",
   whatsapp: "M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z",
   forum: "M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z",
   contacts: "M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 2.75c1.24 0 2.25 1.01 2.25 2.25s-1.01 2.25-2.25 2.25S9.75 10.24 9.75 9 10.76 6.75 12 6.75zM17 17H7v-1.5c0-1.67 3.33-2.5 5-2.5s5 .83 5 2.5V17z",
@@ -3376,8 +3391,9 @@ let callsTab = 0; // 0 = All, 1 = Contacts, 2 = Not contacts, 3 = Missed
 // there was previously no way to at all.
 async function cancelScheduled(messageId) {
   if (!await gmConfirm("Cancel this scheduled message? It won't be sent.")) return;
-  fetch(roomUrl("messages/scheduled/" + messageId), { method: "DELETE" })
-      .catch((e) => logDebug("Cancel scheduled failed: " + (e && e.stack ? e.stack : e)));
+  for (const path of ["messages/scheduled/", "messages/scheduledMms/"]) { // it is in one of the two; removing from the other is harmless
+    fetch(roomUrl(path + messageId), { method: "DELETE" }).catch((e) => logDebug("Cancel scheduled failed: " + (e && e.stack ? e.stack : e)));
+  }
   messages = messages.filter((m) => !(m.direction === "scheduled" && m.id === messageId));
   seenScheduledKeys.delete(messageId);
   saveCache();
@@ -3430,12 +3446,183 @@ function openScheduledPanel() {
   p.onClose(() => clearInterval(timer));
 }
 
+// ---------- Scheduled messages, like Google Messages ----------
+// Choosing a time puts a chip (the time, with an X) on top of the message box and turns the send button into "send later". The message, with any
+// picture, video or voice message, waits in the cloud: the flip phone sends it at its time, so it still goes if this page is closed. The waiting ones
+// are listed under the chat ("Scheduled messages (N)", open or closed); tap one to change its text, send it now, move it, or delete it.
+let scheduledAt = null;
+function schedWhenText(ms) {
+  const d = new Date(ms), now = new Date();
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const same = (a, b) => a.toDateString() === b.toDateString();
+  const tomorrow = new Date(now.getTime() + 86400000);
+  if (same(d, now)) return "Today at " + time;
+  if (same(d, tomorrow)) return "Tomorrow at " + time;
+  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + " at " + time;
+}
+function setScheduledAt(ms) {
+  scheduledAt = ms || null;
+  const chip = el("sched-chip");
+  if (chip) { chip.classList.toggle("hidden", !scheduledAt); if (scheduledAt) chip.querySelector(".t").textContent = schedWhenText(scheduledAt); }
+  updateSendIcon();
+}
+function pickDateTime(initialMs) {
+  return new Promise((resolve) => {
+    const dim = document.createElement("div");
+    dim.className = "tl-dim";
+    const card = document.createElement("div");
+    card.style.cssText = "background:var(--card,#fff);color:var(--ink,#1b1b1f);border-radius:24px;padding:20px;width:min(340px,92vw);display:flex;flex-direction:column;gap:14px";
+    const d = new Date(initialMs || Date.now() + 3600000);
+    d.setSeconds(0, 0);
+    card.innerHTML = '<div style="font-size:20px">Pick date and time</div><input type="datetime-local" style="font-size:16px;padding:10px;border-radius:12px;border:1px solid #c4c6d0"><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="c" style="border:0;background:none;color:#0b57d0;font-size:15px;padding:10px 14px">Cancel</button><button type="button" class="ok" style="border:0;background:none;color:#0b57d0;font-size:15px;padding:10px 14px">OK</button></div>';
+    const input = card.querySelector("input");
+    input.value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    const done = (v) => { dim.remove(); resolve(v); };
+    card.querySelector(".c").onclick = () => done(null);
+    card.querySelector(".ok").onclick = () => { const t = new Date(input.value).getTime(); done(isNaN(t) ? null : t); };
+    dim.onclick = (e) => { if (e.target === dim) done(null); };
+    dim.appendChild(card);
+    document.body.appendChild(dim);
+  });
+}
+// the four quick times, or any date and time; calls back with the time (milliseconds)
+async function openScheduleSheet(chosen) {
+  const at = (h, addDays) => { const t = new Date(); t.setDate(t.getDate() + (addDays || 0)); t.setHours(h, 0, 0, 0); return t.getTime(); };
+  const opts = [], now = Date.now();
+  const fmt = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (at(17) > now + 15 * 60000) opts.push({ label: "Later today, " + fmt(at(17)), value: at(17) });
+  if (at(21) > now + 15 * 60000) opts.push({ label: "Later tonight, " + fmt(at(21)), value: at(21) });
+  opts.push({ label: "Tomorrow, " + fmt(at(8, 1)), value: at(8, 1) });
+  opts.push({ label: "Pick date and time", value: "pick" });
+  const c = await showActionSheet("Schedule send (keep the flip phone on and connected)", opts);
+  if (c === undefined || c === null || c === false || c === "") return;
+  let ms = c;
+  if (c === "pick") { ms = await pickDateTime(); if (!ms) return; }
+  if (ms <= Date.now() + 30000) { gmNotice("That time has passed. Pick another time."); return; }
+  chosen(ms);
+}
+async function phoneCanScheduleMms() {
+  try { const r = await fetch(roomUrl("phoneCaps/scheduledMms")); return r.ok && String(await r.text()).includes("true"); } catch (e) { return false; }
+}
+async function scheduleAll(rawBody, items) {
+  const sendAt = scheduledAt;
+  if (!sendAt || sendAt <= Date.now() + 30000) { gmNotice("That time has passed. Pick another time."); openScheduleSheet((ms) => setScheduledAt(ms)); return; }
+  if (items.length && !(await phoneCanScheduleMms())) { // an older Message+ on the flip would send only the words
+    gmNotice("The flip phone needs the newest Message+ update to send scheduled pictures, videos and voice messages. Update it, then schedule again. Nothing was scheduled.");
+    return;
+  }
+  const to = currentChatNumber;
+  stagedAttachments = [];
+  el("compose-input").value = "";
+  clearAttachment();
+  setScheduledAt(null);
+  if (typeof tlToast === "function") tlToast("Scheduled for " + schedWhenText(sendAt));
+  try {
+    if (!items.length) { await postScheduledText(to, rawBody, sendAt); return; }
+    for (let i = 0; i < items.length; i++) await postScheduledMedia(to, i === items.length - 1 ? rawBody : "", items[i], sendAt);
+  } catch (e) {
+    console.error("schedule failed", e);
+    gmNotice("Could not schedule that: " + (e && e.message ? e.message : e));
+  }
+}
+async function postScheduledText(to, body, sendAt) {
+  await fetch(roomUrl("messages/scheduled"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to, body, sendAt }) });
+}
+async function postScheduledMedia(to, body, item, sendAt) {
+  const timestamp = Date.now();
+  let imageUrl = null, imagePath = null, attachmentType = null, attachmentUrl = null;
+  const attachmentName = item.name || null;
+  if (item.kind === "photo") {
+    imagePath = `attachments/${roomId}/${timestamp}-${randHex16()}.jpg`;
+    imageUrl = await uploadToStorage(await compressImage(item.file), imagePath);
+  } else {
+    if (item.file.size > 60 * 1024 * 1024) throw new Error("Attachment too large");
+    attachmentType = item.kind === "video" ? "video" : item.kind === "audio" ? "audio" : "vcard";
+    const ext = item.kind === "video" ? (item.file.name.split(".").pop() || "mp4") : item.kind === "audio" ? "amr" : "vcf";
+    attachmentUrl = await uploadToStorage(item.file, `attachments/${roomId}/${timestamp}-${randHex16()}.${ext}`);
+  }
+  await fetch(roomUrl("messages/scheduledMms"), {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ to, body: body || null, imageUrl, imagePath, attachmentType, attachmentUrl, attachmentName, timestamp, sendAt }),
+  });
+}
+// moves a waiting message to a new text and/or time: the new one is filed first, then the old one removed
+async function repostScheduled(m, newBody, newSendAt) {
+  const mms = !!(m.imageUrl || m.attachmentUrl);
+  if (mms) {
+    await fetch(roomUrl("messages/scheduledMms"), { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: m.number, body: newBody || null, imageUrl: m.imageUrl, imagePath: m.imagePath, attachmentType: m.attachmentKind, attachmentUrl: m.attachmentUrl, attachmentName: m.attachmentName, timestamp: Date.now(), sendAt: newSendAt }) });
+  } else {
+    await postScheduledText(m.number, newBody, newSendAt);
+  }
+  await deleteScheduledNow(m.id);
+}
+async function deleteScheduledNow(id) {
+  for (const path of ["messages/scheduled/", "messages/scheduledMms/"]) { try { await fetch(roomUrl(path + id), { method: "DELETE" }); } catch (e) { /* offline: the stream shows it again */ } }
+  messages = messages.filter((x) => !(x.direction === "scheduled" && x.id === id));
+  seenScheduledKeys.delete(id);
+  saveCache();
+  if (currentChatNumber) renderChat(currentChatNumber);
+}
+async function sendScheduledNow(m) {
+  await fetch(roomUrl("messages/outgoing"), { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ to: m.number, body: m.body || null, imageUrl: m.imageUrl, imagePath: m.imagePath, attachmentType: m.attachmentKind, attachmentUrl: m.attachmentUrl, attachmentName: m.attachmentName, timestamp: Date.now() }) });
+  await deleteScheduledNow(m.id);
+}
+async function scheduledOptions(m) {
+  const c = await showActionSheet("Scheduled message \u2014 " + schedWhenText(m.sendAt), [
+    { label: "Update message", value: "update" }, { label: "Send now", value: "now" },
+    { label: "Reschedule message", value: "move" }, { label: "Delete message", value: "delete" }]);
+  if (c === "update") {
+    const t = await gmPrompt("", m.body || "", "Update message", { positive: "Update" });
+    if (t === null || t === undefined) return;
+    if (!t.trim() && !(m.imageUrl || m.attachmentUrl)) { gmNotice("A message needs some text."); return; }
+    await repostScheduled(m, t.trim(), m.sendAt);
+  } else if (c === "now") {
+    await sendScheduledNow(m);
+  } else if (c === "move") {
+    openScheduleSheet((ms) => repostScheduled(m, m.body, ms));
+  } else if (c === "delete") {
+    if (await gmConfirm("It won't be sent, on any device.", "Delete this scheduled message?", "Delete")) await deleteScheduledNow(m.id);
+  }
+}
+function schedOpen(number) { try { return localStorage.getItem("flip_relay_web_sched_open_" + number) !== "0"; } catch (e) { return true; } }
+function renderScheduledSection(number) {
+  let box = el("sched-section");
+  if (!box) { box = document.createElement("div"); box.id = "sched-section"; el("message-list").after(box); }
+  box.innerHTML = "";
+  const waiting = messages.filter((m) => m.direction === "scheduled" && m.number === number).sort((a, b) => (a.sendAt || 0) - (b.sendAt || 0));
+  box.classList.toggle("hidden", !waiting.length);
+  if (!waiting.length) return;
+  const open = schedOpen(number);
+  if (open) {
+    for (const m of waiting) {
+      const holder = document.createElement("div");
+      holder.className = "sched-item";
+      const kind = m.imageUrl ? "Picture" : m.attachmentKind === "video" ? "Video" : m.attachmentKind === "audio" ? "Voice message" : m.attachmentKind ? "Contact" + (m.attachmentName ? ": " + m.attachmentName : "") : "";
+      holder.innerHTML = '<div class="sched-bubble"></div><button type="button" class="sched-badge" title="Scheduled message options">' + svgIcon("sendSchedule", 22) + "</button>";
+      const b = holder.querySelector(".sched-bubble");
+      if (kind) { const k = document.createElement("div"); k.textContent = kind; b.appendChild(k); }
+      if (m.body) { const t = document.createElement("div"); t.className = "sched-text"; t.textContent = m.body; b.appendChild(t); }
+      const w = document.createElement("div"); w.className = "sched-when"; w.textContent = schedWhenText(m.sendAt); b.appendChild(w);
+      b.onclick = holder.querySelector(".sched-badge").onclick = () => scheduledOptions(m);
+      box.appendChild(holder);
+    }
+  }
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "sched-head";
+  head.textContent = "Scheduled messages (" + waiting.length + ")   " + (open ? "\u25B2" : "\u25BC");
+  head.onclick = () => { try { localStorage.setItem("flip_relay_web_sched_open_" + number, open ? "0" : "1"); } catch (e) { /* storage blocked */ } renderScheduledSection(number); };
+  box.appendChild(head);
+}
+
 // ---------- rendering ----------
 
 function conversationsByNumber() {
   const byNumber = new Map();
   for (const m of messages) {
-    if (!m.number) continue;
+    if (!m.number || m.direction === "scheduled") continue; // a waiting message is not the conversation's last message
     const existing = byNumber.get(m.number);
     if (!existing || m.timestamp > existing.timestamp) {
       byNumber.set(m.number, m);
@@ -3758,9 +3945,10 @@ function openChat(number) {
 function renderChat(number) {
   const list = el("message-list");
   list.innerHTML = "";
+  renderScheduledSection(number);
   updateSelectionToolbar();
   const thread = messages
-    .filter((m) => m.number === number && (!chatSearchQ || String(m.body || "").toLowerCase().includes(chatSearchQ)))
+    .filter((m) => m.number === number && m.direction !== "scheduled" && (!chatSearchQ || String(m.body || "").toLowerCase().includes(chatSearchQ)))
     .sort((a, b) => a.timestamp - b.timestamp);
 
   // like the tablet: a new heading when an hour has passed or the day changed; messages in a run sit close with nearly square joining corners
@@ -4940,6 +5128,13 @@ function setupTabletChrome() {
   const bar = document.createElement("div");
   bar.className = "tl-bar";
   input.parentNode.insertBefore(bar, input);
+  const chip = document.createElement("div"); // the chosen time, on top of the message box (like Google Messages)
+  chip.id = "sched-chip";
+  chip.className = "hidden";
+  chip.innerHTML = '<span class="t"></span><button type="button" class="x" title="Do not schedule">' + svgIcon("close") + "</button>";
+  chip.querySelector(".t").onclick = () => openScheduleSheet((ms) => setScheduledAt(ms));
+  chip.querySelector(".x").onclick = () => setScheduledAt(null);
+  bar.parentNode.insertBefore(chip, bar);
   attach.innerHTML = svgIcon("attach");
   bar.append(attach, input);
   for (const [icon, title, fn] of [["person", "Contact", () => attachContact()], ["camera", "Camera", () => attachFrom("camera")], ["photo", "Gallery", () => attachFrom("gallery")]]) {
@@ -4962,8 +5157,10 @@ function updateSendIcon() {
   const send = el("send-btn"), input = el("compose-input");
   if (!send || !input) return;
   const hasIt = input.value.trim().length > 0 || (typeof stagedAttachments !== "undefined" && stagedAttachments.length > 0) || !!pendingAttachmentFile;
-  const want = hasIt ? "send" : "micWave";
-  if (send.dataset.icon !== want) { send.dataset.icon = want; send.innerHTML = svgIcon(want, 26); send.title = hasIt ? "Send (hold to schedule)" : "Voice message: hold and talk, or click"; }
+  const later = hasIt && !!scheduledAt;
+  const want = later ? "sendSchedule" : hasIt ? "send" : "micWave";
+  send.classList.toggle("later", later);
+  if (send.dataset.icon !== want) { send.dataset.icon = want; send.innerHTML = svgIcon(want, 26); send.title = later ? "Schedule send" : hasIt ? "Send (hold to schedule)" : "Voice message: hold and talk, or click"; }
 }
 async function attachFrom(pick) {
   const live = pick === "camera";
