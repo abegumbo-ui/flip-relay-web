@@ -2559,6 +2559,7 @@ function openPhoneButtons() {
 
 // ---------- Settings laid out like the tablet: a list of sections (icon, title, what is inside); each opens its own page ----------
 const ICONS = {
+  whatsapp: "M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z",
   forum: "M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z",
   contacts: "M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 2.75c1.24 0 2.25 1.01 2.25 2.25s-1.01 2.25-2.25 2.25S9.75 10.24 9.75 9 10.76 6.75 12 6.75zM17 17H7v-1.5c0-1.67 3.33-2.5 5-2.5s5 .83 5 2.5V17z",
   arrowUp: "M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z",
@@ -4989,15 +4990,21 @@ function tlSearchButton(toggle) {
   return b;
 }
 
+// ---------- WhatsApp: their chat (the app when it is installed, otherwise WhatsApp in the browser). WhatsApp has no link that starts a call. ----------
+async function openWhatsAppChat(number) {
+  const n = normalizeNumber(number) || number;
+  if (!n) return;
+  const apps = await installedApps();
+  const d = e164(n).slice(1);
+  openAppLink(apps && apps.whatsapp ? "whatsapp://send?phone=" + d : "https://wa.me/" + d);
+}
+
 // ---------- Call: which app to call with (Settings > Messages > Default calling app) ----------
 // Only apps this computer really has are offered. The Windows app can tell (version 1.2+); a plain browser cannot, so it offers the web-friendly ones.
 const CALL_APP_KEY = "flip_relay_web_call_app";
-const WA_ICON = "M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z";
 function e164(n) { let d = String(n).replace(/\D/g, ""); if (d.length === 10) d = "1" + d; return "+" + d; }
 const CALL_APPS = [
   { id: "phone", label: "Phone app", sub: "This computer's own calling app", color: "#0b57d0", icon: "call", show: (a) => !a || a.tel, url: (n) => "tel:" + e164(n) },
-  { id: "whatsapp", label: "WhatsApp", sub: "Opens the chat with them: tap its call button. No app? It opens in your browser instead", color: "#25D366", svg: WA_ICON, show: () => true,
-    url: (n, a) => (a && a.whatsapp ? "whatsapp://send?phone=" + e164(n).slice(1) : "https://wa.me/" + e164(n).slice(1)) },
   { id: "voice", label: "Google Voice", sub: "Opens in your browser", color: "#1a73e8", icon: "call", show: () => true, url: (n) => "https://voice.google.com/u/0/calls?a=nc," + encodeURIComponent(e164(n)) },
   { id: "skype", label: "Skype", sub: "Installed on this computer", color: "#00aff0", letter: "S", show: (a) => !!(a && a.skype), url: (n) => "skype:" + e164(n) + "?call" },
   { id: "teams", label: "Microsoft Teams", sub: "Installed on this computer", color: "#5b5fc7", letter: "T", show: (a) => !!(a && a.teams), url: (n) => "msteams://teams.microsoft.com/l/call/0/0?users=4:" + e164(n) },
@@ -5016,7 +5023,7 @@ function openAppLink(url) {
   document.body.appendChild(a); a.click(); a.remove();
 }
 function callAppIcon(app) {
-  const inner = app.svg ? `<svg viewBox="0 0 24 24" fill="#fff"><path d="${app.svg}"/></svg>` : app.icon ? svgIcon(app.icon) : `<b>${app.letter || ""}</b>`;
+  const inner = app.icon ? svgIcon(app.icon) : `<b>${app.letter || ""}</b>`;
   return `<span class="tl-callapp-ic" style="background:${app.color}">${inner}</span>`;
 }
 // the list of apps, each with its icon; resolves with the chosen id (or "copy"), or null
@@ -5194,11 +5201,11 @@ function tlProfileCard(number, knownName) {
   dim.querySelector(".t").textContent = name;
   dim.querySelector(".s").textContent = group ? members.length + " people" : name !== number ? tlPrettyNumber(number) : "";
   const acts = dim.querySelector(".acts");
-  const add = (icon, title, fn) => { const b = document.createElement("button"); b.title = title; b.innerHTML = `<span class="circle">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = title; b.onclick = () => { close(); fn(); }; acts.appendChild(b); };
+  const add = (icon, title, fn, cls) => { const b = document.createElement("button"); if (cls) b.className = cls; b.title = title; b.innerHTML = `<span class="circle">${svgIcon(icon)}</span><span></span>`; b.lastElementChild.textContent = title; b.onclick = () => { close(); fn(); }; acts.appendChild(b); };
   add("chat", "Message", () => { const panel = document.querySelector(".tl-contacts .tl-panel-top button"); if (panel) panel.click(); if (currentChatNumber !== number || currentScreenName !== "chat") openChat(number); });
   if (!group) {
     add("call", "Call", () => { callNumber(number, name); });
-    add("reply", "Quick replies", () => quickReplySheet(number));
+    add("whatsapp", "WhatsApp", () => { openWhatsAppChat(number); }, "wa");
   }
   add("info", "Info", () => showConversationLongPressMenu(number, null, true));
   const people = dim.querySelector(".people");
