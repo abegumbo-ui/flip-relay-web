@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "d8a786939d31d6bdea41c762a148d6a2e0871d61",
-    "publishedAt": "2026-11-08T04:41:58Z",
-    "build": 687,
-    "notes": "When you swipe between screens, the round picture and the search icon at the top now stay where they are while the rest of the screen slides.\nThe greeting hours are now: late night 1 am to 6:30 am, early morning 6:30 to 9, morning 9 to 12, afternoon 12 to 5, evening 5 pm to 1 am. The picture's color can be a fixed color, a new color every day, or three colors blended, set on the dashboard, and it updates on every screen at once.\nCalls details: Call, Message, Quick replies and WhatsApp all fit."
+    "sha": "5998b707d611656058f417f9d1410f33da11a0d6",
+    "publishedAt": "2026-11-08T05:09:41Z",
+    "build": 688,
+    "notes": "The bar now starts as Chats, Groups, Contacts, Calls, Voicemail (Calls and Voicemail together at the end). If you already rearranged your bar, it stays as you set it.\nSwiping between Calls and Voicemail: the refresh and settings icons stay where they are.\nVoicemail's refresh icon now always turns a full turn.\nThe Groups screen says Groups. While \"Show groups in Messages\" is on, the Groups option in Settings is off and grayed out, and tells you to turn that off first."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
