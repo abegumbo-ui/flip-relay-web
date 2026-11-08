@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "dca257b7c7d45ecbf3bff2e87584ba0e1cc18aea",
-    "publishedAt": "2026-11-08T00:34:48Z",
-    "build": 668,
-    "notes": "Call now has WhatsApp in its list: a WhatsApp voice call when WhatsApp has that person in your contacts, otherwise their chat in WhatsApp. If WhatsApp is not installed it opens the same chat in the browser.\nThe list is still Android's own, so it only shows apps this device really has, each with its own icon."
+    "sha": "5a8cc604f9dce1948fdea1d6e9ac6fdffcf950c1",
+    "publishedAt": "2026-11-08T00:57:21Z",
+    "build": 669,
+    "notes": "A person's card has a WhatsApp button next to Message, Call and Info: it opens their chat in WhatsApp, or in your browser if WhatsApp is not installed.\nCall is for calling: the list is Android's own and only shows apps this device really has. WhatsApp appears in it only when it can start a real voice call (the person is in your contacts with WhatsApp)."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
