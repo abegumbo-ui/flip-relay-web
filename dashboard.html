@@ -1141,7 +1141,8 @@ async function screenRoom({ room, label }) {
     const box = document.createElement("div");
     box.style.cssText = "display:grid;gap:10px;margin:8px 0";
     box.innerHTML =
-      `<label style="display:flex;gap:8px;align-items:center"><input id="g-on" type="checkbox"${saved.on ? " checked" : ""}> Show it</label>` +
+      `<label style="display:grid;gap:4px"><span class="meta"><b>Type a message to show right now</b> (any words; leave empty to use the usual ones)</span><input id="g-now" type="text" placeholder="For example: Mazel tov, Abe!" value="${esc(saved.now || "")}"></label>` +
+      `<label style="display:flex;gap:8px;align-items:center"><input id="g-on" type="checkbox"${saved.on === false ? "" : " checked"}> Show it</label>` +
       `<input id="g-name" type="text" placeholder="Your name, like Abe" value="${esc(saved.name || "")}">` +
       `<label style="display:grid;gap:4px"><span class="meta">How long it stays on the main screen (seconds)</span><input id="g-main" type="number" min="1" max="30" step="0.5" value="${saved.mainSeconds != null ? saved.mainSeconds : 2.4}"></label>` +
       `<label style="display:grid;gap:4px"><span class="meta">How long it stays when you tap the A (seconds)</span><input id="g-card" type="number" min="1" max="30" step="0.5" value="${saved.cardSeconds != null ? saved.cardSeconds : 2.4}"></label>` +
@@ -1152,7 +1153,7 @@ async function screenRoom({ room, label }) {
       { label: "Save", onclick: async () => {
         const messages = [];
         MOMENTS.forEach(([k, , , effect]) => { const t = box.querySelector(`[data-when="${k}"]`).value.trim(); if (t) messages.push(effect ? { when: k, text: t, effect } : { when: k, text: t }); });
-        await db("PUT", `rooms/${room}/greetings`, { on: box.querySelector("#g-on").checked, name: box.querySelector("#g-name").value.trim(), mainSeconds: Number(box.querySelector("#g-main").value) || 2.4, cardSeconds: Number(box.querySelector("#g-card").value) || 2.4, messages, at: Date.now() });
+        await db("PUT", `rooms/${room}/greetings`, { on: box.querySelector("#g-on").checked, now: box.querySelector("#g-now").value.trim(), name: box.querySelector("#g-name").value.trim(), mainSeconds: Number(box.querySelector("#g-main").value) || 2.4, cardSeconds: Number(box.querySelector("#g-card").value) || 2.4, messages, at: Date.now() });
         render();
       } },
     ]));
