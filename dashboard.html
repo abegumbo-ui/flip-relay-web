@@ -1124,36 +1124,64 @@ async function screenRoom({ room, label }) {
   ]));
   root.appendChild(bg);
 
-  // the opening greeting: a name and one message for each moment; the tablet picks the one that fits when the app opens
+  // the opening greeting: the name and colour of the round picture, four messages, and an optional message of your own for a while
   {
     const MOMENTS = [
-      ["shabbos", "Shabbos", "Gut Voch, {name}", "fireworks"],
-      ["yomtov", "Yom Tov", "Gut Yom Tov, {name}", "fireworks"],
       ["morning", "Morning", "Good morning, {name}"],
       ["afternoon", "Afternoon", "Good afternoon, {name}"],
       ["evening", "Evening", "Good evening, {name}"],
       ["night", "Late night", "Up late, {name}?"],
     ];
+    const COLORS = ["#7B4FD6", "#8E24AA", "#AD1457", "#E53935", "#F4511E", "#FB8C00", "#F9A825", "#7CB342", "#2E7D32", "#00897B", "#00ACC1", "#039BE5",
+      "#1E88E5", "#3949AB", "#5E35B1", "#6D4C41", "#546E7A", "#37474F", "#D81B60", "#C0CA33", "#26A69A", "#5C6BC0", "#EF6C00", "#455A64"];
     const saved = (await dbq(`rooms/${room}/greetings`)) || {};
     const have = {};
     (Array.isArray(saved.messages) ? saved.messages : []).forEach((m) => { if (m && m.when && !have[m.when]) have[m.when] = m.text || ""; });
+    let color = saved.color || "random";
     const gg = group("Greeting when the app opens");
     const box = document.createElement("div");
-    box.style.cssText = "display:grid;gap:10px;margin:8px 0";
+    box.style.cssText = "display:grid;gap:12px;margin:8px 0";
     box.innerHTML =
-      `<label style="display:grid;gap:4px"><span class="meta"><b>Type a message to show right now</b> (any words; leave empty to use the usual ones)</span><input id="g-now" type="text" placeholder="For example: Mazel tov, Abe!" value="${esc(saved.now || "")}"></label>` +
-      `<label style="display:flex;gap:8px;align-items:center"><input id="g-on" type="checkbox"${saved.on === false ? "" : " checked"}> Show it</label>` +
-      `<input id="g-name" type="text" placeholder="Your name, like Abe" value="${esc(saved.name || "")}">` +
-      `<label style="display:grid;gap:4px"><span class="meta">How long it stays on the main screen (seconds)</span><input id="g-main" type="number" min="1" max="30" step="0.5" value="${saved.mainSeconds != null ? saved.mainSeconds : 2.4}"></label>` +
-      `<label style="display:grid;gap:4px"><span class="meta">How long it stays when you tap the A (seconds)</span><input id="g-card" type="number" min="1" max="30" step="0.5" value="${saved.cardSeconds != null ? saved.cardSeconds : 2.4}"></label>` +
+      `<div id="g-prev" style="display:flex;gap:14px;align-items:center;padding:14px;border-radius:18px;background:var(--high)"><div id="g-dot" style="width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:600"></div><div><div class="meta">This is how it looks</div><div id="g-line" style="font-size:20px"></div></div></div>` +
+      `<label style="display:grid;gap:4px"><span class="meta">Name (its first letter goes in the circle)</span><input id="g-name" type="text" placeholder="Like Abe" value="${esc(saved.name || "")}"></label>` +
+      `<div><span class="meta">Color of the circle</span><div id="g-colors" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div></div>` +
       MOMENTS.map(([k, label, def]) => `<label style="display:grid;gap:4px"><span class="meta">${label}</span><input data-when="${k}" type="text" value="${esc(k in have ? have[k] : def)}"></label>`).join("") +
-      `<span class="meta">{name} becomes the name above.</span>`;
+      `<span class="meta">{name} becomes the name above.</span>` +
+      `<label style="display:grid;gap:4px"><span class="meta"><b>Your own message</b> (shows first, before the usual one. Leave empty for none)</span><input id="g-now" type="text" placeholder="For example: Mazel tov, Abe!" value="${esc(saved.now || "")}"></label>` +
+      `<div id="g-nowopts" style="display:grid;gap:12px"><label style="display:grid;gap:4px"><span class="meta">How long should it stay on the screen? (seconds)</span><input id="g-nows" type="number" min="1" max="30" step="0.5" value="${saved.nowSeconds != null ? saved.nowSeconds : 3}"></label>` +
+      `<label style="display:grid;gap:4px"><span class="meta">How many times should it show? (each time you open the app)</span><input id="g-nowt" type="number" min="1" max="100" step="1" value="${saved.nowTimes != null ? saved.nowTimes : 5}"></label></div>`;
+    const q = (id) => box.querySelector(id);
+    const swatches = q("#g-colors");
+    const paint = () => {
+      const name = q("#g-name").value.trim();
+      const dot = q("#g-dot");
+      dot.textContent = name ? name[0].toUpperCase() : "?";
+      dot.style.background = color === "random" ? "linear-gradient(135deg,#7B4FD6,#E53935,#FB8C00,#00ACC1)" : color;
+      const evening = (q('[data-when="evening"]').value || "").replace("{name}", name).replace(", ", name ? ", " : "");
+      const mine = q("#g-now").value.trim().replace("{name}", name);
+      q("#g-line").textContent = mine ? mine + "  →  " + evening : evening;
+      q("#g-nowopts").style.display = mine ? "grid" : "none"; // the time and the number of showings are asked once there is a message
+      swatches.querySelectorAll("button").forEach((b) => { b.style.outline = b.dataset.c === color ? "3px solid var(--ink,#fff)" : "none"; });
+    };
+    [...COLORS, "random"].forEach((c) => {
+      const b = document.createElement("button");
+      b.dataset.c = c;
+      b.title = c === "random" ? "Pick one for me" : c;
+      b.style.cssText = c === "random" ? "padding:0 14px;height:34px;border-radius:17px" : `width:34px;height:34px;border-radius:50%;padding:0;background:${c};border:none`;
+      if (c === "random") { b.className = "ghost"; b.textContent = "Random"; }
+      b.onclick = () => { color = c; paint(); };
+      swatches.appendChild(b);
+    });
+    box.addEventListener("input", paint);
     gg.add(box);
+    paint();
     gg.add(actions([
       { label: "Save", onclick: async () => {
         const messages = [];
-        MOMENTS.forEach(([k, , , effect]) => { const t = box.querySelector(`[data-when="${k}"]`).value.trim(); if (t) messages.push(effect ? { when: k, text: t, effect } : { when: k, text: t }); });
-        await db("PUT", `rooms/${room}/greetings`, { on: box.querySelector("#g-on").checked, now: box.querySelector("#g-now").value.trim(), name: box.querySelector("#g-name").value.trim(), mainSeconds: Number(box.querySelector("#g-main").value) || 2.4, cardSeconds: Number(box.querySelector("#g-card").value) || 2.4, messages, at: Date.now() });
+        MOMENTS.forEach(([k]) => { const t = box.querySelector(`[data-when="${k}"]`).value.trim(); if (t) messages.push({ when: k, text: t }); });
+        const now = q("#g-now").value.trim();
+        const nowAt = now && now === (saved.now || "") && saved.nowAt ? saved.nowAt : Date.now(); // a new message starts its count again
+        await db("PUT", `rooms/${room}/greetings`, { name: q("#g-name").value.trim(), color, now, nowSeconds: Number(q("#g-nows").value) || 3, nowTimes: Math.max(1, Math.round(Number(q("#g-nowt").value) || 5)), nowAt, messages, at: Date.now() });
         render();
       } },
     ]));
