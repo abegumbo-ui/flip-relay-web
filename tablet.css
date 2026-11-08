@@ -492,11 +492,12 @@ body.gm #gm-settings-btn .tl-initial { width: 32px; height: 32px; }
 .tl-menu .head .tl-initial { width: 44px; height: 44px; font-size: 22px; flex: none; }
 
 /* scheduled messages (like Google Messages): the chip on the message box, the "send later" button, and the waiting messages under the chat */
-#sched-chip { display: flex; align-items: center; margin: 6px 76px 0 12px; padding: 2px 4px 2px 20px; border-radius: 24px 24px 0 0; background: #D9E2FF; color: #3A4A7A; font-size: 15px; }
+#sched-chip { display: flex; align-items: center; margin: 6px 76px 0 12px; padding: 0 4px 0 16px; min-height: 48px; border-radius: 28px 28px 0 0; background: #D9E2FF; color: #3A4A7A; font-size: 14px; }
 #sched-chip.hidden { display: none; }
 #sched-chip .t { flex: 1; cursor: pointer; }
 #sched-chip .x { border: 0; background: none; color: #3A4A7A; padding: 10px; cursor: pointer; display: flex; }
 #send-btn.later { background: #4A5C8C !important; color: #fff !important; }
+#send-btn.later svg { width: 30px; height: 30px; }
 #sched-section { display: flex; flex-direction: column; align-items: flex-end; padding: 0 8px 0 0; }
 #sched-section.hidden { display: none; }
 #sched-section .sched-item { position: relative; display: flex; justify-content: flex-end; width: 100%; padding: 6px 16px 16px 72px; box-sizing: border-box; }
@@ -507,6 +508,21 @@ body.gm #gm-settings-btn .tl-initial { width: 32px; height: 32px; }
 #sched-section .sched-head { border: 0; background: none; color: #4A5C8C; font-size: 16px; font-weight: 500; padding: 8px 24px 8px 16px; cursor: pointer; }
 body.theme-dark #sched-chip { background: #2B3552; color: #C5D0F5; }
 body.theme-dark #sched-chip .x, body.theme-dark #sched-section .sched-head { color: #C5D0F5; }
-body.theme-dark #sched-section .sched-bubble, body.theme-dark #sched-section .sched-badge, body.theme-dark #send-btn.later { background: #3A4A78 !important; }
+body.theme-dark #sched-section .sched-bubble { background: #3A4A78 !important; }
 
 [hidden] { display: none !important; }
+
+/* Google Messages' centred dialog (Schedule send) */
+.g-dialog { background: #ECE6F0; color: #1D1B20; border-radius: 28px; width: min(320px, calc(100vw - 48px)); padding: 24px 0; box-sizing: border-box; font-family: inherit; }
+.g-dialog .g-title { font-size: 24px; line-height: 32px; padding: 0 24px; }
+.g-dialog .g-note { font-size: 14px; line-height: 20px; color: #49454F; padding: 16px 24px 0; }
+.g-dialog .g-line { height: 1px; background: #CAC4D0; }
+.g-dialog .g-row { display: flex; align-items: center; gap: 16px; width: 100%; height: 56px; padding: 0 24px; border: 0; background: none; color: inherit; font: inherit; font-size: 16px; text-align: left; cursor: pointer; }
+.g-dialog .g-row svg { color: #45464F; }
+.g-dialog .g-row:hover { background: rgba(0,0,0,.06); }
+.g-dialog .g-cancel { display: block; margin: 24px 24px 0 auto; height: 40px; padding: 0 12px; border: 0; background: none; color: #4A5C8C; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+body.theme-dark .g-dialog { background: #2B2930; color: #E6E0E9; }
+body.theme-dark .g-dialog .g-note { color: #CAC4D0; }
+body.theme-dark .g-dialog .g-line { background: #49454F; }
+body.theme-dark .g-dialog .g-row svg { color: #CAC4D0; }
+body.theme-dark .g-dialog .g-cancel { color: #B6C4F5; }

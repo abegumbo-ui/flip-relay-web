@@ -2157,7 +2157,7 @@ async function onSendClick() {
   const rawBody = input.value.trim();
   const items = stagedAttachments.slice();
   if (pendingAttachmentFile) items.push({ file: pendingAttachmentFile, kind: pendingAttachmentKind, name: pendingAttachmentName });
-  if (!rawBody && !items.length) { startVoiceRecording(); return; } // nothing to send: the round button records a voice message
+  if (!rawBody && !items.length && !editingScheduled) { startVoiceRecording(); return; } // nothing to send: the round button records a voice message
   if (!currentChatNumber) return;
   if (scheduledAt) { await scheduleAll(rawBody, items); return; } // a time is chosen: it waits for it instead of going now
   stagedAttachments = [];
@@ -2661,7 +2661,11 @@ function openPhoneButtons() {
 
 // ---------- Settings laid out like the tablet: a list of sections (icon, title, what is inside); each opens its own page ----------
 const ICONS = {
-  sendSchedule: "M2.07,18.38L18.44,11.36 2.07,4.34 2.06,9.8l11.7,1.56 -11.7,1.56z M12.25,13.2a5.25,5.25 0 1 0 10.5,0a5.25,5.25 0 1 0 -10.5,0z M13.95,13.2a3.55,3.55 0 1 1 7.1,0a3.55,3.55 0 1 1 -7.1,0z M16.75,10.9h1.5v2.2l1.4,0.85 -0.75,1.25 -2.15,-1.3z",
+  schedToday: "M20,8.69V4h-4.69L12,0.69 8.69,4H4v4.69L0.69,12 4,15.31V20h4.69L12,23.31 15.31,20H20v-4.69L23.31,12 20,8.69zM12,18c-3.31,0 -6,-2.69 -6,-6s2.69,-6 6,-6 6,2.69 6,6 -2.69,6 -6,6zM12,8v8c2.21,0 4,-1.79 4,-4s-1.79,-4 -4,-4z",
+  schedTonight: "M20,8.69V4h-4.69L12,0.69 8.69,4H4v4.69L0.69,12 4,15.31V20h4.69L12,23.31 15.31,20H20v-4.69L23.31,12 20,8.69zM12,18c-0.89,0 -1.74,-0.2 -2.5,-0.55C11.56,16.5 13,14.42 13,12s-1.44,-4.5 -3.5,-5.45C10.26,6.2 11.11,6 12,6c3.31,0 6,2.69 6,6s-2.69,6 -6,6z",
+  schedTomorrow: "M12,3c-4.97,0 -9,4.03 -9,9s4.03,9 9,9 9,-4.03 9,-9c0,-0.46 -0.04,-0.92 -0.1,-1.36 -0.98,1.37 -2.58,2.26 -4.4,2.26 -2.98,0 -5.4,-2.42 -5.4,-5.4 0,-1.81 0.89,-3.42 2.26,-4.4 -0.44,-0.06 -0.9,-0.1 -1.36,-0.1z",
+  schedPick: "M17,12h-5v5h5v-5zM16,1v2H8V1H6v2H5c-1.11,0 -1.99,0.9 -1.99,2L3,19c0,1.1 0.89,2 2,2h14c1.1,0 2,-0.9 2,-2V5c0,-1.1 -0.9,-2 -2,-2h-1V1h-2zM19,19H5V8h14v11z",
+  chipCancel: "M14.59,8L12,10.59 9.41,8 8,9.41 10.59,12 8,14.59 9.41,16 12,13.41 14.59,16 16,14.59 13.41,12 16,9.41 14.59,8zM12,2C6.47,2 2,6.47 2,12s4.47,10 10,10 10,-4.47 10,-10S17.53,2 12,2zM12,20c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8 8,3.59 8,8 -3.59,8 -8,8z",
   whatsapp: "M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z",
   forum: "M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z",
   contacts: "M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 2.75c1.24 0 2.25 1.01 2.25 2.25s-1.01 2.25-2.25 2.25S9.75 10.24 9.75 9 10.76 6.75 12 6.75zM17 17H7v-1.5c0-1.67 3.33-2.5 5-2.5s5 .83 5 2.5V17z",
@@ -2707,6 +2711,10 @@ const ICONS = {
   dialpad: "M12 19c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM6 1c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12-8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
 };
 function svgIcon(name, size) {
+  if (name === "sendSchedule") {
+    const z = size || 24;
+    return `<svg viewBox="0 0 24 24" width="${z}" height="${z}" aria-hidden="true" style="flex:none"><defs><mask id="sm-cut"><rect width="24" height="24" fill="#fff"/><circle cx="17.8" cy="16.8" r="5.6" fill="#000"/></mask></defs><g mask="url(#sm-cut)"><path transform="translate(.2 .6) scale(.82)" fill="currentColor" d="M4.01,6.03l7.51,3.22 -7.52,-1 0.01,-2.22m7.5,8.72L4,17.97v-2.22l7.51,-1M2.01,3L2,10l15,2 -15,2 0.01,7L23,12 2.01,3z"/></g><circle cx="17.8" cy="16.8" r="4.1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M17.8,14.5v2.5l1.7,1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+  }
   return `<svg viewBox="0 0 24 24" width="${size || 24}" height="${size || 24}" aria-hidden="true" style="flex:none;fill:currentColor"><path d="${ICONS[name] || ICONS.info}"/></svg>`;
 }
 function injectTabletStyles() {
@@ -3451,9 +3459,13 @@ function openScheduledPanel() {
 // picture, video or voice message, waits in the cloud: the flip phone sends it at its time, so it still goes if this page is closed. The waiting ones
 // are listed under the chat ("Scheduled messages (N)", open or closed); tap one to change its text, send it now, move it, or delete it.
 let scheduledAt = null;
+let editingScheduled = null; // a waiting message whose text is being changed in the message box
+function schedZone(ms) {
+  try { return (new Intl.DateTimeFormat("en-US", { timeZoneName: "short" }).formatToParts(new Date(ms)).find((p) => p.type === "timeZoneName") || {}).value || ""; } catch (e) { return ""; }
+}
 function schedWhenText(ms) {
   const d = new Date(ms), now = new Date();
-  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const time = d.toLocaleTimeString("en-US", d.getMinutes() === 0 ? { hour: "numeric" } : { hour: "numeric", minute: "2-digit" }) + " " + schedZone(ms);
   const same = (a, b) => a.toDateString() === b.toDateString();
   const tomorrow = new Date(now.getTime() + 86400000);
   if (same(d, now)) return "Today at " + time;
@@ -3462,6 +3474,7 @@ function schedWhenText(ms) {
 }
 function setScheduledAt(ms) {
   scheduledAt = ms || null;
+  if (!scheduledAt && editingScheduled) { editingScheduled = null; el("compose-input").value = ""; } // the X while changing a waiting message: leave it as it was
   const chip = el("sched-chip");
   if (chip) { chip.classList.toggle("hidden", !scheduledAt); if (scheduledAt) chip.querySelector(".t").textContent = schedWhenText(scheduledAt); }
   updateSendIcon();
@@ -3489,17 +3502,45 @@ function pickDateTime(initialMs) {
 async function openScheduleSheet(chosen) {
   const at = (h, addDays) => { const t = new Date(); t.setDate(t.getDate() + (addDays || 0)); t.setHours(h, 0, 0, 0); return t.getTime(); };
   const opts = [], now = Date.now();
-  const fmt = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  if (at(17) > now + 15 * 60000) opts.push({ label: "Later today, " + fmt(at(17)), value: at(17) });
-  if (at(21) > now + 15 * 60000) opts.push({ label: "Later tonight, " + fmt(at(21)), value: at(21) });
-  opts.push({ label: "Tomorrow, " + fmt(at(8, 1)), value: at(8, 1) });
-  opts.push({ label: "Pick date and time", value: "pick" });
-  const c = await showActionSheet("Schedule send (keep the flip phone on and connected)", opts);
+  const fmt = (ms) => new Date(ms).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  if (at(17) > now + 15 * 60000) opts.push({ label: "Later today, " + fmt(at(17)), value: at(17), icon: "schedToday" });
+  if (at(21) > now + 15 * 60000) opts.push({ label: "Later tonight, " + fmt(at(21)), value: at(21), icon: "schedTonight" });
+  opts.push({ label: "Tomorrow, " + fmt(at(8, 1)), value: at(8, 1), icon: "schedTomorrow" });
+  opts.push({ label: "Pick date and time", value: "pick", icon: "schedPick", line: true });
+  const c = await googleListDialog("Schedule send (" + schedZone(now) + ")", "To send, keep the flip phone on and connected", opts);
   if (c === undefined || c === null || c === false || c === "") return;
   let ms = c;
   if (c === "pick") { ms = await pickDateTime(); if (!ms) return; }
   if (ms <= Date.now() + 30000) { gmNotice("That time has passed. Pick another time."); return; }
   chosen(ms);
+}
+// Google Messages' centred dialog: big title, grey note, icon rows (a line above the one marked line) and Cancel; resolves with the row's value
+function googleListDialog(title, note, rows) {
+  return new Promise((resolve) => {
+    const dim = document.createElement("div");
+    dim.className = "tl-dim";
+    const card = document.createElement("div");
+    card.className = "g-dialog";
+    const head = document.createElement("div"); head.className = "g-title"; head.textContent = title; card.appendChild(head);
+    if (note) { const n = document.createElement("div"); n.className = "g-note"; n.textContent = note; card.appendChild(n); }
+    const gap = document.createElement("div"); gap.style.height = "24px"; card.appendChild(gap);
+    const done = (v) => { dim.remove(); resolve(v); };
+    for (const r of rows) {
+      if (r.line) { const ln = document.createElement("div"); ln.className = "g-line"; card.appendChild(ln); }
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "g-row";
+      b.innerHTML = (r.icon ? svgIcon(r.icon, 24) : '<span style="width:24px;flex:none"></span>') + "<span></span>";
+      b.lastChild.textContent = r.label;
+      b.onclick = () => done(r.value);
+      card.appendChild(b);
+    }
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "g-cancel"; c.textContent = "Cancel"; c.onclick = () => done(null);
+    card.appendChild(c);
+    dim.onclick = (e) => { if (e.target === dim) done(null); };
+    dim.appendChild(card);
+    document.body.appendChild(dim);
+  });
 }
 async function phoneCanScheduleMms() {
   try { const r = await fetch(roomUrl("phoneCaps/scheduledMms")); return r.ok && String(await r.text()).includes("true"); } catch (e) { return false; }
@@ -3512,14 +3553,18 @@ async function scheduleAll(rawBody, items) {
     return;
   }
   const to = currentChatNumber;
+  const editing = editingScheduled; // "Update message": what is in the box replaces this waiting message
   stagedAttachments = [];
   el("compose-input").value = "";
   clearAttachment();
+  editingScheduled = null;
   setScheduledAt(null);
   if (typeof tlToast === "function") tlToast("Scheduled for " + schedWhenText(sendAt));
   try {
+    if (editing && !items.length) { await repostScheduled(editing, rawBody, sendAt); return; } // keeps a picture or voice message it already had
     if (!items.length) { await postScheduledText(to, rawBody, sendAt); return; }
     for (let i = 0; i < items.length; i++) await postScheduledMedia(to, i === items.length - 1 ? rawBody : "", items[i], sendAt);
+    if (editing) await deleteScheduledNow(editing.id);
   } catch (e) {
     console.error("schedule failed", e);
     gmNotice("Could not schedule that: " + (e && e.message ? e.message : e));
@@ -3574,10 +3619,12 @@ async function scheduledOptions(m) {
     { label: "Update message", value: "update" }, { label: "Send now", value: "now" },
     { label: "Reschedule message", value: "move" }, { label: "Delete message", value: "delete" }]);
   if (c === "update") {
-    const t = await gmPrompt("", m.body || "", "Update message", { positive: "Update" });
-    if (t === null || t === undefined) return;
-    if (!t.trim() && !(m.imageUrl || m.attachmentUrl)) { gmNotice("A message needs some text."); return; }
-    await repostScheduled(m, t.trim(), m.sendAt);
+    editingScheduled = m; // like Google Messages: the text goes back in the message box with its time on top; sending it replaces the waiting one
+    const inp = el("compose-input");
+    inp.value = m.body || "";
+    setScheduledAt(m.sendAt);
+    inp.focus();
+    inp.dispatchEvent(new Event("input"));
   } else if (c === "now") {
     await sendScheduledNow(m);
   } else if (c === "move") {
@@ -3828,10 +3875,10 @@ function filteredConversations() {
   else if (!groupsInMessages()) convos = convos.filter((c) => isMulti(c.number) === groupsView); // groups only on their own tab
   const q = conversationSearchQuery.trim().toLowerCase();
   if (q) {
-    convos = convos.filter(({ number }) => {
-      const name = (displayName(number) || "").toLowerCase();
-      return name.includes(q) || number.includes(q);
-    });
+    const nameHit = ({ number }) => (displayName(number) || "").toLowerCase().includes(q);
+    const byName = convos.filter(nameHit);
+    const byNumber = convos.filter((c) => !nameHit(c) && c.number.includes(q));
+    convos = [...byName, ...byNumber]; // a contact with that name comes first
   }
   return convos;
 }
@@ -5131,7 +5178,7 @@ function setupTabletChrome() {
   const chip = document.createElement("div"); // the chosen time, on top of the message box (like Google Messages)
   chip.id = "sched-chip";
   chip.className = "hidden";
-  chip.innerHTML = '<span class="t"></span><button type="button" class="x" title="Do not schedule">' + svgIcon("close") + "</button>";
+  chip.innerHTML = '<span class="t"></span><button type="button" class="x" title="Do not schedule">' + svgIcon("chipCancel") + "</button>";
   chip.querySelector(".t").onclick = () => openScheduleSheet((ms) => setScheduledAt(ms));
   chip.querySelector(".x").onclick = () => setScheduledAt(null);
   bar.parentNode.insertBefore(chip, bar);
@@ -5156,7 +5203,7 @@ function setupTabletChrome() {
 function updateSendIcon() {
   const send = el("send-btn"), input = el("compose-input");
   if (!send || !input) return;
-  const hasIt = input.value.trim().length > 0 || (typeof stagedAttachments !== "undefined" && stagedAttachments.length > 0) || !!pendingAttachmentFile;
+  const hasIt = input.value.trim().length > 0 || !!editingScheduled || (typeof stagedAttachments !== "undefined" && stagedAttachments.length > 0) || !!pendingAttachmentFile;
   const later = hasIt && !!scheduledAt;
   const want = later ? "sendSchedule" : hasIt ? "send" : "micWave";
   send.classList.toggle("later", later);

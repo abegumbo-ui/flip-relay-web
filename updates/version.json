@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "5515cfeca2de1def6cb4404015f77962ee78e2d5",
-    "publishedAt": "2026-11-08T18:48:49Z",
-    "build": 695,
-    "notes": "You can now schedule pictures, videos, voice messages and contacts, not just text.\nNew look like Google Messages: pick a time and it shows above the message box with an X, and the send button turns into send-later.\nWaiting messages sit under the chat in \"Scheduled messages (N)\". Tap one to update it, send it now, reschedule it or delete it.\nScheduled pictures and voice messages need the flip's Message+ updated to the newest build."
+    "sha": "4d62f7339e9ef54647b70b00301fdc1692cf77b5",
+    "publishedAt": "2026-11-08T19:15:41Z",
+    "build": 696,
+    "notes": "Schedule send now looks like Google Messages: the same dialog, icons and the time with your time zone.\nThe send-later button has the outlined paper plane with a clock.\n\"Update message\" puts the text back in the message box with its time on top.\nSearching puts a contact whose name matches first."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
