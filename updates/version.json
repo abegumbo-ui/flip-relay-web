@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "412738b491163d3599229b812f9da152459b076c",
-    "publishedAt": "2026-11-08T07:26:59Z",
-    "build": 691,
-    "notes": "Group pictures now look like Google Messages: two people are two circles on a diagonal, three people are a triangle, and four or more are a 2 by 2 grid."
+    "sha": "63cbd0a7ef2bcef734c400e0dc54927b344d7adb",
+    "publishedAt": "2026-11-08T07:36:55Z",
+    "build": 692,
+    "notes": "Group pictures: the circles never overlap, like Google Messages (two on a diagonal, three in a triangle, four or more in a 2 by 2 grid).\nA group's card has a search button for the people (type a name or a number), and you can drag its top (the picture, the name or the N people line) up to the top of the screen to see more people without scrolling; drag it back down to shrink it, or pull it far down to close it."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",

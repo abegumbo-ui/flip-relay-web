@@ -445,14 +445,14 @@ body.gm-tablet .tl-vm .tl-panel-top, body.gm-tablet .tl-vm > .tl-dock, body.gm-t
 
 /* a group's picture, like the tablet's: up to three small circles, the first on top */
 body.gm .gm-cluster { position: relative; background: none !important; }
-body.gm .gm-cluster .gm-mini { position: absolute; width: 60% !important; height: 60% !important; margin: 0 !important; border: 0 !important; font-size: .6em !important; line-height: 1 !important; }
+body.gm .gm-cluster .gm-mini { position: absolute; width: 50% !important; height: 50% !important; margin: 0 !important; border: 0 !important; font-size: .6em !important; line-height: 1 !important; }
 body.gm .gm-cluster .gm-mini svg { width: 60% !important; height: 60% !important; }
-body.gm .gm-cluster .gm-mini0 { left: 20%; top: 0; z-index: 3; }
-body.gm .gm-cluster .gm-mini1 { left: 0; top: 40%; z-index: 2; }
-body.gm .gm-cluster .gm-mini2 { left: 40%; top: 40%; z-index: 1; }
-body.gm .gm-cluster.gm-n2 .gm-mini0 { left: 0; top: 0; z-index: 2; }
-body.gm .gm-cluster.gm-n2 .gm-mini1 { left: 40%; top: 40%; z-index: 1; }
-body.gm .gm-cluster.gm-n4 .gm-mini { width: 50% !important; height: 50% !important; }
+body.gm .gm-cluster .gm-mini0 { left: 25%; top: 3%; z-index: 1; }
+body.gm .gm-cluster .gm-mini1 { left: 0; top: 46%; z-index: 1; }
+body.gm .gm-cluster .gm-mini2 { left: 50%; top: 46%; z-index: 1; }
+body.gm .gm-cluster.gm-n1 .gm-mini0 { left: 20%; top: 20%; width: 60% !important; height: 60% !important; }
+body.gm .gm-cluster.gm-n2 .gm-mini0 { left: 0; top: 0; z-index: 1; }
+body.gm .gm-cluster.gm-n2 .gm-mini1 { left: 50%; top: 50%; z-index: 1; }
 body.gm .gm-cluster.gm-n4 .gm-mini0 { left: 0; top: 0; z-index: 1; }
 body.gm .gm-cluster.gm-n4 .gm-mini1 { left: 50%; top: 0; z-index: 1; }
 body.gm .gm-cluster.gm-n4 .gm-mini2 { left: 0; top: 50%; z-index: 1; }
