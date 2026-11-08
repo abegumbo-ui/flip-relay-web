@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "5a8cc604f9dce1948fdea1d6e9ac6fdffcf950c1",
-    "publishedAt": "2026-11-08T00:57:21Z",
-    "build": 669,
-    "notes": "A person's card has a WhatsApp button next to Message, Call and Info: it opens their chat in WhatsApp, or in your browser if WhatsApp is not installed.\nCall is for calling: the list is Android's own and only shows apps this device really has. WhatsApp appears in it only when it can start a real voice call (the person is in your contacts with WhatsApp)."
+    "sha": "6e874cdc1d1831dc2548c34fda2a6aeb6d11c8c9",
+    "publishedAt": "2026-11-08T01:05:46Z",
+    "build": 670,
+    "notes": "The WhatsApp button on a person's card now shows the WhatsApp logo (green circle, white logo).\nCalls, split screen: the details pane has a WhatsApp button too, next to Call, Message and Quick replies. It opens their chat in WhatsApp, or in your browser if WhatsApp is not installed.\nA person's card and the Calls details row slide sideways when the buttons do not all fit, instead of being cut off."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
