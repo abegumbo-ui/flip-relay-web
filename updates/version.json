@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "6e874cdc1d1831dc2548c34fda2a6aeb6d11c8c9",
-    "publishedAt": "2026-11-08T01:05:46Z",
-    "build": 670,
-    "notes": "The WhatsApp button on a person's card now shows the WhatsApp logo (green circle, white logo).\nCalls, split screen: the details pane has a WhatsApp button too, next to Call, Message and Quick replies. It opens their chat in WhatsApp, or in your browser if WhatsApp is not installed.\nA person's card and the Calls details row slide sideways when the buttons do not all fit, instead of being cut off."
+    "sha": "5be30705c13c98ef47b0f80e4882259dea88d31d",
+    "publishedAt": "2026-11-08T01:17:21Z",
+    "build": 671,
+    "notes": "The WhatsApp button on a person's card and in Calls' details now looks like the other buttons: the same grey circle and dark icon."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
