@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "aa0e18f4edea50b983c03f8c46c31fd12e84331a",
-    "publishedAt": "2026-11-08T04:20:43Z",
-    "build": 685,
-    "notes": "New: a greeting plays where it says Message+ each time you open the app or turn the screen back on (Good morning, Good evening and so on). Your first letter is the round picture at the top; tap it and the greeting plays there too. The name, the picture's color and the wording are set on the dashboard.\nChats shows one chat bubble, Groups the two-bubble icon, Contacts the people icon.\nOn a wide screen, Calls, Contacts and Voicemail now have the search and the round picture in the same place as Chats; refresh and settings are at the top right, and the Calls details start at the same height as a chat.\nA person's card and the Calls details have a WhatsApp button (it opens their chat), and all the buttons fit."
+    "sha": "d8a786939d31d6bdea41c762a148d6a2e0871d61",
+    "publishedAt": "2026-11-08T04:41:58Z",
+    "build": 687,
+    "notes": "When you swipe between screens, the round picture and the search icon at the top now stay where they are while the rest of the screen slides.\nThe greeting hours are now: late night 1 am to 6:30 am, early morning 6:30 to 9, morning 9 to 12, afternoon 12 to 5, evening 5 pm to 1 am. The picture's color can be a fixed color, a new color every day, or three colors blended, set on the dashboard, and it updates on every screen at once.\nCalls details: Call, Message, Quick replies and WhatsApp all fit."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
