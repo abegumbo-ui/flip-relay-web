@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "1ec2b7191a9fa9fa9afa83df4357fa0c5059730c",
-    "publishedAt": "2026-11-07T23:23:17Z",
-    "build": 667,
-    "notes": "The Message+ circle is back in the top row like before (it slides with the screen). It opens the same card on every screen: the flip phone's connection and battery, then Messages, features and settings.\nCalls, Contacts and Voicemail: a search icon at the top shows the search box, tap it again to hide it.\nDisplay size (DPI): there is now a Reset to default, and Chats, Groups and Calls split exactly 50-50 (or the size you chose in Resize screens) at any size.\nCalls split screen works whenever it is switched on. The two Call and Message settings now say clearly what each one does."
+    "sha": "dca257b7c7d45ecbf3bff2e87584ba0e1cc18aea",
+    "publishedAt": "2026-11-08T00:34:48Z",
+    "build": 668,
+    "notes": "Call now has WhatsApp in its list: a WhatsApp voice call when WhatsApp has that person in your contacts, otherwise their chat in WhatsApp. If WhatsApp is not installed it opens the same chat in the browser.\nThe list is still Android's own, so it only shows apps this device really has, each with its own icon."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
