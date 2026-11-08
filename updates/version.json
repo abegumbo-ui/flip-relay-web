@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "4d62f7339e9ef54647b70b00301fdc1692cf77b5",
-    "publishedAt": "2026-11-08T19:15:41Z",
-    "build": 696,
-    "notes": "Schedule send now looks like Google Messages: the same dialog, icons and the time with your time zone.\nThe send-later button has the outlined paper plane with a clock.\n\"Update message\" puts the text back in the message box with its time on top.\nSearching puts a contact whose name matches first."
+    "sha": "12a973b96e7befd7ee65393c95bb7d9298c6fda9",
+    "publishedAt": "2026-11-08T19:26:00Z",
+    "build": 697,
+    "notes": "Scheduled messages now match Google Messages more closely: the options sheet, the waiting bubbles, the clock badge and the open/close arrow.\nTimes follow your phone's 12 or 24-hour setting."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",

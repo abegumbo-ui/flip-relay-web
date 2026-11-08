@@ -2661,6 +2661,8 @@ function openPhoneButtons() {
 
 // ---------- Settings laid out like the tablet: a list of sections (icon, title, what is inside); each opens its own page ----------
 const ICONS = {
+  dropUp: "M7,14l5,-5 5,5z",
+  dropDown: "M7,10l5,5 5,-5z",
   schedToday: "M20,8.69V4h-4.69L12,0.69 8.69,4H4v4.69L0.69,12 4,15.31V20h4.69L12,23.31 15.31,20H20v-4.69L23.31,12 20,8.69zM12,18c-3.31,0 -6,-2.69 -6,-6s2.69,-6 6,-6 6,2.69 6,6 -2.69,6 -6,6zM12,8v8c2.21,0 4,-1.79 4,-4s-1.79,-4 -4,-4z",
   schedTonight: "M20,8.69V4h-4.69L12,0.69 8.69,4H4v4.69L0.69,12 4,15.31V20h4.69L12,23.31 15.31,20H20v-4.69L23.31,12 20,8.69zM12,18c-0.89,0 -1.74,-0.2 -2.5,-0.55C11.56,16.5 13,14.42 13,12s-1.44,-4.5 -3.5,-5.45C10.26,6.2 11.11,6 12,6c3.31,0 6,2.69 6,6s-2.69,6 -6,6z",
   schedTomorrow: "M12,3c-4.97,0 -9,4.03 -9,9s4.03,9 9,9 9,-4.03 9,-9c0,-0.46 -0.04,-0.92 -0.1,-1.36 -0.98,1.37 -2.58,2.26 -4.4,2.26 -2.98,0 -5.4,-2.42 -5.4,-5.4 0,-1.81 0.89,-3.42 2.26,-4.4 -0.44,-0.06 -0.9,-0.1 -1.36,-0.1z",
@@ -3465,7 +3467,8 @@ function schedZone(ms) {
 }
 function schedWhenText(ms) {
   const d = new Date(ms), now = new Date();
-  const time = d.toLocaleTimeString("en-US", d.getMinutes() === 0 ? { hour: "numeric" } : { hour: "numeric", minute: "2-digit" }) + " " + schedZone(ms);
+  const h12 = (new Intl.DateTimeFormat([], { hour: "numeric" }).resolvedOptions().hour12) !== false; // follows the computer's 12/24-hour setting
+  const time = (h12 ? d.toLocaleTimeString("en-US", d.getMinutes() === 0 ? { hour: "numeric" } : { hour: "numeric", minute: "2-digit" }) : d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })) + " " + schedZone(ms);
   const same = (a, b) => a.toDateString() === b.toDateString();
   const tomorrow = new Date(now.getTime() + 86400000);
   if (same(d, now)) return "Today at " + time;
@@ -3537,6 +3540,23 @@ function googleListDialog(title, note, rows) {
     const c = document.createElement("button");
     c.type = "button"; c.className = "g-cancel"; c.textContent = "Cancel"; c.onclick = () => done(null);
     card.appendChild(c);
+    dim.onclick = (e) => { if (e.target === dim) done(null); };
+    dim.appendChild(card);
+    document.body.appendChild(dim);
+  });
+}
+// the plain bottom sheet Google Messages opens from a scheduled message: a big title, the time in grey, plain rows
+function googleSheet(title, sub, rows) {
+  return new Promise((resolve) => {
+    const dim = document.createElement("div");
+    dim.className = "g-sheet-dim";
+    const card = document.createElement("div");
+    card.className = "g-sheet";
+    card.innerHTML = '<div class="g-title"></div><div class="g-sub"></div><div style="height:24px"></div>';
+    card.firstChild.textContent = title;
+    card.children[1].textContent = sub;
+    const done = (v) => { dim.remove(); resolve(v); };
+    for (const r of rows) { const b = document.createElement("button"); b.type = "button"; b.className = "g-srow"; b.textContent = r.label; b.onclick = () => done(r.value); card.appendChild(b); }
     dim.onclick = (e) => { if (e.target === dim) done(null); };
     dim.appendChild(card);
     document.body.appendChild(dim);
@@ -3615,7 +3635,7 @@ async function sendScheduledNow(m) {
   await deleteScheduledNow(m.id);
 }
 async function scheduledOptions(m) {
-  const c = await showActionSheet("Scheduled message \u2014 " + schedWhenText(m.sendAt), [
+  const c = await googleSheet("Scheduled message", schedWhenText(m.sendAt), [
     { label: "Update message", value: "update" }, { label: "Send now", value: "now" },
     { label: "Reschedule message", value: "move" }, { label: "Delete message", value: "delete" }]);
   if (c === "update") {
@@ -3630,7 +3650,7 @@ async function scheduledOptions(m) {
   } else if (c === "move") {
     openScheduleSheet((ms) => repostScheduled(m, m.body, ms));
   } else if (c === "delete") {
-    if (await gmConfirm("It won't be sent, on any device.", "Delete this scheduled message?", "Delete")) await deleteScheduledNow(m.id);
+    if (await gmConfirm("This action cannot be undone.", "Delete this message?", "Delete")) await deleteScheduledNow(m.id);
   }
 }
 function schedOpen(number) { try { return localStorage.getItem("flip_relay_web_sched_open_" + number) !== "0"; } catch (e) { return true; } }
@@ -3649,9 +3669,8 @@ function renderScheduledSection(number) {
       const kind = m.imageUrl ? "Picture" : m.attachmentKind === "video" ? "Video" : m.attachmentKind === "audio" ? "Voice message" : m.attachmentKind ? "Contact" + (m.attachmentName ? ": " + m.attachmentName : "") : "";
       holder.innerHTML = '<div class="sched-bubble"></div><button type="button" class="sched-badge" title="Scheduled message options">' + svgIcon("sendSchedule", 22) + "</button>";
       const b = holder.querySelector(".sched-bubble");
-      if (kind) { const k = document.createElement("div"); k.textContent = kind; b.appendChild(k); }
+      if (kind) { const k = document.createElement("div"); k.className = "sched-kind"; if (m.attachmentKind === "audio") k.innerHTML = '<span class="sched-play"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M8,5v14l11,-7z" fill="#1b1b1f"/></svg></span>'; k.appendChild(document.createTextNode(kind)); b.appendChild(k); }
       if (m.body) { const t = document.createElement("div"); t.className = "sched-text"; t.textContent = m.body; b.appendChild(t); }
-      const w = document.createElement("div"); w.className = "sched-when"; w.textContent = schedWhenText(m.sendAt); b.appendChild(w);
       b.onclick = holder.querySelector(".sched-badge").onclick = () => scheduledOptions(m);
       box.appendChild(holder);
     }
@@ -3659,7 +3678,8 @@ function renderScheduledSection(number) {
   const head = document.createElement("button");
   head.type = "button";
   head.className = "sched-head";
-  head.textContent = "Scheduled messages (" + waiting.length + ")   " + (open ? "\u25B2" : "\u25BC");
+  head.innerHTML = "<span></span>" + svgIcon(open ? "dropUp" : "dropDown", 24);
+  head.firstChild.textContent = "Scheduled messages (" + waiting.length + ")";
   head.onclick = () => { try { localStorage.setItem("flip_relay_web_sched_open_" + number, open ? "0" : "1"); } catch (e) { /* storage blocked */ } renderScheduledSection(number); };
   box.appendChild(head);
 }

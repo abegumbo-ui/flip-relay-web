@@ -500,12 +500,14 @@ body.gm #gm-settings-btn .tl-initial { width: 32px; height: 32px; }
 #send-btn.later svg { width: 30px; height: 30px; }
 #sched-section { display: flex; flex-direction: column; align-items: flex-end; padding: 0 8px 0 0; }
 #sched-section.hidden { display: none; }
-#sched-section .sched-item { position: relative; display: flex; justify-content: flex-end; width: 100%; padding: 6px 16px 16px 72px; box-sizing: border-box; }
-#sched-section .sched-bubble { background: #4A5C8C; color: #fff; border-radius: 24px; padding: 12px 18px; font-size: 16px; cursor: pointer; max-width: 100%; word-break: break-word; }
+#sched-section .sched-item { position: relative; display: flex; justify-content: flex-end; width: 100%; padding: 6px 8px 24px 72px; box-sizing: border-box; }
+#sched-section .sched-bubble { background: #4A5E8C; color: #fff; border-radius: 28px; padding: 12px 18px; font-size: 16px; cursor: pointer; max-width: 100%; word-break: break-word; }
 #sched-section .sched-text { font-style: italic; font-size: 17px; margin-top: 2px; }
 #sched-section .sched-when { font-size: 12px; opacity: .8; margin-top: 4px; }
-#sched-section .sched-badge { position: absolute; right: 10px; bottom: 0; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--bg, #fbf8ff); background: #4A5C8C; color: #fff; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
-#sched-section .sched-head { border: 0; background: none; color: #4A5C8C; font-size: 16px; font-weight: 500; padding: 8px 24px 8px 16px; cursor: pointer; }
+#sched-section .sched-badge { position: absolute; right: 8px; bottom: 2px; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--bg, #fbf8ff); background: #4A5C8C; color: #fff; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+#sched-section .sched-head { display: flex; align-items: center; min-height: 48px; border: 0; background: none; color: #4A5C8C; font-size: 15px; font-weight: 500; padding: 0 12px 0 16px; cursor: pointer; }
+#sched-section .sched-kind { display: flex; align-items: center; gap: 12px; }
+#sched-section .sched-play { width: 48px; height: 48px; border-radius: 50%; background: #fff; display: inline-flex; align-items: center; justify-content: center; }
 body.theme-dark #sched-chip { background: #2B3552; color: #C5D0F5; }
 body.theme-dark #sched-chip .x, body.theme-dark #sched-section .sched-head { color: #C5D0F5; }
 body.theme-dark #sched-section .sched-bubble { background: #3A4A78 !important; }
@@ -526,3 +528,13 @@ body.theme-dark .g-dialog .g-note { color: #CAC4D0; }
 body.theme-dark .g-dialog .g-line { background: #49454F; }
 body.theme-dark .g-dialog .g-row svg { color: #CAC4D0; }
 body.theme-dark .g-dialog .g-cancel { color: #B6C4F5; }
+
+/* Google Messages' bottom sheet for a scheduled message */
+.g-sheet-dim { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.32); display: flex; align-items: flex-end; justify-content: center; }
+.g-sheet { background: #E9E7EF; color: #1B1B1F; border-radius: 28px 28px 0 0; width: min(560px, 100%); padding: 24px 0 40px; box-sizing: border-box; }
+.g-sheet .g-title { font-size: 24px; line-height: 32px; padding: 0 24px; }
+.g-sheet .g-sub { font-size: 14px; line-height: 20px; color: #45464F; padding: 16px 24px 0; }
+.g-sheet .g-srow { display: block; width: 100%; height: 56px; padding: 0 24px; border: 0; background: none; color: inherit; font: inherit; font-size: 16px; text-align: left; cursor: pointer; }
+.g-sheet .g-srow:hover { background: rgba(0,0,0,.06); }
+body.theme-dark .g-sheet { background: #2B2930; color: #E6E0E9; }
+body.theme-dark .g-sheet .g-sub { color: #CAC4D0; }
