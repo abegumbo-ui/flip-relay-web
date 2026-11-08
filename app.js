@@ -1927,7 +1927,9 @@ function openStream(path, upsertFn, deleteFn, onConnectedChange, onSingleItemUps
           }
         } else {
           const key = parsed.path.slice(1);
-          if (parsed.data === null) {
+          if (path === "messages/sent" && key.includes("/")) {
+            changed = updateSentLeaf(key, null, parsed.data);
+          } else if (parsed.data === null) {
             changed = deleteFn(key);
           } else {
             changed = upsertFn(key, parsed.data);
@@ -2010,7 +2012,15 @@ function upsertIncoming(key, data) {
 // app (a message this tablet never knew about until now).
 function upsertSent(key, data) {
   if (!data) return false;
-  if (seenSentKeys.has(key)) return false;
+  if (seenSentKeys.has(key)) { // already shown: the phone may have updated it (queued -> sent, or failed)
+    const known = messages.find((m) => m.direction === "out" && m.id === key);
+    if (!known) return false;
+    const p = !!data.pending, f = !!data.failed;
+    const changed = !!known.pending !== p || !!known.failed !== f;
+    known.pending = p;
+    known.failed = f;
+    return changed;
+  }
   seenSentKeys.add(key);
 
   const number = groupKeyFromAddress(data.to);
@@ -2055,8 +2065,19 @@ function upsertSent(key, data) {
     attachmentKind: data.attachmentType || null,
     attachmentName: data.attachmentName || null,
     source: matchedEcho ? "web" : "phone",
+    pending: !!data.pending,
+    failed: !!data.failed,
     timestamp,
   });
+  return true;
+}
+// one leaf of a sent record changed (the phone writes pending / failed as separate values): "<key>/failed" = true
+function updateSentLeaf(path, field, value) {
+  const [key, leaf] = path.split("/");
+  if (leaf !== "pending" && leaf !== "failed") return false;
+  const known = messages.find((m) => m.direction === "out" && m.id === key);
+  if (!known || !!known[leaf] === !!value) return false;
+  known[leaf] = !!value;
   return true;
 }
 
@@ -4079,8 +4100,8 @@ function renderChat(number) {
     // asking "did this actually reach the phone, or are we still in
     // limbo" at a glance. Past PENDING_TIMEOUT_MS with no confirmation,
     // says so instead of silently staying "Sending..." forever.
-    const stillPending = m.id.startsWith("local-");
-    const stuck = stillPending && (Date.now() - m.timestamp) > PENDING_TIMEOUT_MS;
+    const stillPending = !m.failed && (m.id.startsWith("local-") || !!m.pending);
+    const stuck = !!m.failed || (stillPending && (Date.now() - m.timestamp) > PENDING_TIMEOUT_MS); // the phone said it failed, or nothing confirmed it for 3 minutes
     const deliveryStatus = isOut && !isScheduled
         ? (stuck ? " · Not delivered" : stillPending ? " · Sending..." : " · ✓ Sent")
         : "";
