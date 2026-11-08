@@ -497,7 +497,7 @@ body.gm #gm-settings-btn .tl-initial { width: 32px; height: 32px; }
 #sched-chip .t { flex: 1; cursor: pointer; }
 #sched-chip .x { border: 0; background: none; color: #3A4A7A; padding: 10px; cursor: pointer; display: flex; }
 #send-btn.later { background: #4A5C8C !important; color: #fff !important; }
-#send-btn.later svg { width: 30px; height: 30px; }
+#send-btn.later svg { width: 28px; height: 28px; }
 #sched-section { display: flex; flex-direction: column; align-items: flex-end; padding: 0 8px 0 0; }
 #sched-section.hidden { display: none; }
 #sched-section .sched-item { position: relative; display: flex; justify-content: flex-end; width: 100%; padding: 6px 8px 24px 72px; box-sizing: border-box; }

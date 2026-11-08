@@ -3468,7 +3468,7 @@ function schedZone(ms) {
 function schedWhenText(ms) {
   const d = new Date(ms), now = new Date();
   const h12 = (new Intl.DateTimeFormat([], { hour: "numeric" }).resolvedOptions().hour12) !== false; // follows the computer's 12/24-hour setting
-  const time = (h12 ? d.toLocaleTimeString("en-US", d.getMinutes() === 0 ? { hour: "numeric" } : { hour: "numeric", minute: "2-digit" }) : d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })) + " " + schedZone(ms);
+  const time = (h12 ? d.toLocaleTimeString("en-US", d.getMinutes() === 0 ? { hour: "numeric" } : { hour: "numeric", minute: "2-digit" }) : d.toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit" })) + " " + schedZone(ms);
   const same = (a, b) => a.toDateString() === b.toDateString();
   const tomorrow = new Date(now.getTime() + 86400000);
   if (same(d, now)) return "Today at " + time;
@@ -4590,7 +4590,7 @@ Object.assign(ICONS, {
   search: "M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14z",
   attach: "M16.5,6v11.5c0,2.21 -1.79,4 -4,4s-4,-1.79 -4,-4V5c0,-1.38 1.12,-2.5 2.5,-2.5s2.5,1.12 2.5,2.5v10.5c0,0.55 -0.45,1 -1,1s-1,-0.45 -1,-1V6H10v9.5c0,1.38 1.12,2.5 2.5,2.5s2.5,-1.12 2.5,-2.5V5c0,-2.21 -1.79,-4 -4,-4S7,2.79 7,5v12.5c0,3.04 2.46,5.5 5.5,5.5s5.5,-2.46 5.5,-5.5V6h-1.5z",
   micWave: "M7,18h2V6H7v12zM11,22h2V2h-2v20zM3,14h2v-4H3v4zM15,18h2V6h-2v12zM19,10v4h2v-4h-2z",
-  send: "M2.01,21L23,12 2.01,3 2,10l15,2 -15,2z",
+  send: "M4.01,6.03l7.51,3.22 -7.52,-1 0.01,-2.22m7.5,8.72L4,17.97v-2.22l7.51,-1M2.01,3L2,10l15,2 -15,2 0.01,7L23,12 2.01,3z",
   back: "M20,11H7.83l5.59,-5.59L12,4l-8,8 8,8 1.41,-1.41L7.83,13H20v-2z",
   play: "M8,5v14l11,-7z",
   pause: "M6,19h4V5H6v14zM14,5v14h4V5h-4z",
@@ -5226,7 +5226,7 @@ function updateSendIcon() {
   const hasIt = input.value.trim().length > 0 || !!editingScheduled || (typeof stagedAttachments !== "undefined" && stagedAttachments.length > 0) || !!pendingAttachmentFile;
   const later = hasIt && !!scheduledAt;
   const want = later ? "sendSchedule" : hasIt ? "send" : "micWave";
-  send.classList.toggle("later", later);
+  send.classList.toggle("later", hasIt); // something to send: the dark indigo circle with the outlined plane, like Google Messages
   if (send.dataset.icon !== want) { send.dataset.icon = want; send.innerHTML = svgIcon(want, 26); send.title = later ? "Schedule send" : hasIt ? "Send (hold to schedule)" : "Voice message: hold and talk, or click"; }
 }
 async function attachFrom(pick) {
