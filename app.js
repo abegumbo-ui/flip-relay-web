@@ -388,6 +388,7 @@ function init() {
   addGmHeader();
   addTabBars();
   setupTabletChrome();
+  greetStart();
   const savedRoom = localStorage.getItem(ROOM_KEY);
   if (savedRoom) {
     connectToRoom(savedRoom, false);
@@ -4748,8 +4749,9 @@ function setupTabletChrome() {
     if (b.textContent.trim() === "←") { b.innerHTML = svgIcon("back"); b.classList.add("tl-back"); }
   }
   const gear = el("gm-settings-btn");
-  if (gear && !gear.querySelector("img")) {
-    gear.innerHTML = '<img src="app-icon.png" alt="Message+ menu">';
+  if (gear && !gear.dataset.tl) {
+    gear.dataset.tl = "1";
+    gear.innerHTML = greetIconHtml();
     gear.title = "Message+ menu";
     gear.addEventListener("click", (e) => { e.stopImmediatePropagation(); openTabletMenu(); }, { capture: true });
   }
@@ -5070,10 +5072,154 @@ async function callNumber(number, name) {
   if (app) openAppLink(app.url(n, apps));
 }
 
+// ---------- Opening greeting: the same as the tablet's (set on the dashboard: rooms/<room>/greetings) ----------
+// The greeting plays where a screen's title is (Message+, Calls, ...): the title slides out to the left, the greeting slides in and stays a moment, and the title comes back.
+// The first letter of the name is the round picture. Late night 1:00-6:30, early morning 6:30-9:00, morning 9:00-12:00, afternoon 12:00-17:00, evening 17:00-1:00.
+const GREET_KEY = "flip_relay_greeting";
+const GREET_PALETTE = ["#7B4FD6", "#8E24AA", "#AD1457", "#E53935", "#F4511E", "#FB8C00", "#F9A825", "#7CB342", "#2E7D32", "#00897B", "#00ACC1", "#039BE5",
+  "#1E88E5", "#3949AB", "#5E35B1", "#6D4C41", "#546E7A", "#37474F", "#D81B60", "#C0CA33", "#26A69A", "#5C6BC0", "#EF6C00", "#455A64"];
+const GREET_DEFAULTS = { night: "Up late, {name}?", earlymorning: "Rise and shine, {name}", morning: "Good morning, {name}", afternoon: "Good afternoon, {name}", evening: "Good evening, {name}" };
+let greetJson = null;
+try { greetJson = JSON.parse(localStorage.getItem(GREET_KEY) || "null"); } catch (e) { greetJson = null; }
+
+function greetName() {
+  if (greetJson && typeof greetJson.name === "string") return greetJson.name.trim();
+  return typeof roomId !== "undefined" && roomId === "AR6H4H" ? "Abe" : ""; // the owner's own room until the dashboard sets a name; any other room has none
+}
+function greetColors() {
+  const c = (greetJson && greetJson.color) || "";
+  if (c === "gradient") return ["#7B4FD6", "#E53935", "#FB8C00"];
+  if (c === "daily") { const d = new Date(); const day = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000); return [GREET_PALETTE[(d.getFullYear() * 366 + day) % GREET_PALETTE.length]]; }
+  if (/^#[0-9a-f]{6}$/i.test(c)) return [c];
+  if (!c && !greetJson) return [GREET_PALETTE[0]];
+  let i = NaN;
+  try { i = parseInt(localStorage.getItem(GREET_KEY + "_rand"), 10); } catch (e) { /* storage blocked */ }
+  if (!(i >= 0 && i < GREET_PALETTE.length)) { i = Math.floor(Math.random() * GREET_PALETTE.length); try { localStorage.setItem(GREET_KEY + "_rand", String(i)); } catch (e) { /* storage blocked */ } }
+  return [GREET_PALETTE[i]];
+}
+function greetIconHtml() {
+  const n = greetName();
+  if (!n) return '<img src="app-icon.png" alt="Message+ menu">';
+  const cs = greetColors();
+  const bg = cs.length > 1 ? `linear-gradient(135deg,${cs.join(",")})` : cs[0];
+  return `<span class="tl-initial" style="background:${bg}">${escapeHtml(Array.from(n)[0].toUpperCase())}</span>`;
+}
+function refreshGreetIcons() {
+  document.querySelectorAll(".tl-menu-btn, #gm-settings-btn").forEach((b) => { b.innerHTML = greetIconHtml(); });
+  document.querySelectorAll(".tl-menu .head > img, .tl-menu .head > .tl-initial").forEach((x) => { x.outerHTML = greetIconHtml(); });
+}
+function greetFill(text) {
+  const name = greetName();
+  const out = name ? String(text).replace(/\{name\}/g, name) : String(text).replace(", {name}", "").replace(" {name}", "").replace("{name}", "");
+  return out.replace(/\s+/g, " ").trim();
+}
+function greetPart(d) {
+  const h = d.getHours() + d.getMinutes() / 60;
+  if (h >= 1 && h < 6.5) return "night";
+  if (h >= 6.5 && h < 9) return "earlymorning";
+  if (h >= 9 && h < 12) return "morning";
+  if (h >= 12 && h < 17) return "afternoon";
+  return "evening";
+}
+function greetText(d) {
+  const part = greetPart(d || new Date());
+  let text = GREET_DEFAULTS[part];
+  const m = greetJson && Array.isArray(greetJson.messages) ? greetJson.messages.find((x) => x && x.when === part && String(x.text || "").trim()) : null;
+  if (m) text = m.text;
+  return greetFill(text);
+}
+// the message typed on the dashboard: shown first, for its own number of seconds, and only a set number of times (5 unless set)
+function greetTakeNow() {
+  const g = greetJson || {};
+  const t = String(g.now || "").trim();
+  if (!t) return null;
+  const key = GREET_KEY + "_now_" + (g.nowAt || 0);
+  let n = 0;
+  try { n = parseInt(localStorage.getItem(key), 10) || 0; } catch (e) { /* storage blocked */ }
+  if (n >= Math.max(1, Number(g.nowTimes) || 5)) return null;
+  try { localStorage.setItem(key, String(n + 1)); } catch (e) { /* storage blocked */ }
+  return { text: greetFill(t), ms: Math.max(500, Math.min(30000, (Number(g.nowSeconds) || 3) * 1000)) };
+}
+let greetRun = 0;
+async function greetPlay(h, main) {
+  if (!h || !document.body.contains(h) || !h.animate) return;
+  const my = ++greetRun;
+  const normal = h.dataset.greetNormal || h.textContent;
+  h.dataset.greetNormal = normal;
+  if (h.parentElement) h.parentElement.style.overflow = "hidden";
+  const fs0 = h.style.fontSize;
+  const fit = () => { // a long message gets smaller instead of being cut off
+    h.style.whiteSpace = "nowrap";
+    let fs = parseFloat(getComputedStyle(h).fontSize) || 20;
+    while (h.parentElement && h.scrollWidth > h.parentElement.clientWidth && fs > 12) { fs -= 1; h.style.fontSize = fs + "px"; }
+  };
+  const swap = async (text) => {
+    await h.animate([{ transform: "translateX(0)", opacity: 1 }, { transform: "translateX(-100%)", opacity: 0 }], { duration: 240, easing: "ease-in", fill: "forwards" }).finished;
+    if (my !== greetRun) return false;
+    h.style.fontSize = fs0; h.textContent = text; fit();
+    await h.animate([{ transform: "translateX(100%)", opacity: 0 }, { transform: "translateX(0)", opacity: 1 }], { duration: 340, easing: "ease-out", fill: "forwards" }).finished;
+    return my === greetRun;
+  };
+  const seq = [];
+  const now = main ? greetTakeNow() : null;
+  if (now) seq.push([now.text, now.ms]);
+  seq.push([greetText(), 2400]);
+  try {
+    for (const [t, ms] of seq) {
+      if (!(await swap(t))) return;
+      await new Promise((r) => setTimeout(r, ms));
+      if (my !== greetRun) return;
+    }
+    await swap(normal);
+  } finally {
+    if (my === greetRun) { h.getAnimations().forEach((a) => a.cancel()); h.style.fontSize = fs0; h.style.whiteSpace = ""; if (h.textContent !== normal) h.textContent = normal; }
+  }
+}
+// the title of whatever is showing: an open panel (Voicemail, Contacts, ...), the Calls screen, or Chats
+function greetTitleNow() {
+  const panels = document.querySelectorAll(".tl-panel");
+  if (panels.length) return panels[panels.length - 1].querySelector(".tl-panel-top h2");
+  return document.querySelector(currentScreenName === "calls" ? "#screen-calls .topbar h2" : "#screen-conversations .topbar h2");
+}
+async function greetRefresh() {
+  try {
+    const r = await fetch(roomUrl("greetings"));
+    if (!r.ok) return false;
+    const j = await r.json();
+    const before = localStorage.getItem(GREET_KEY);
+    if (j && typeof j === "object" && Object.keys(j).length) {
+      const raw = JSON.stringify(j);
+      greetJson = j;
+      try { localStorage.setItem(GREET_KEY, raw); } catch (e) { /* storage blocked */ }
+      refreshGreetIcons();
+      return raw !== before;
+    }
+    if (j == null && before != null) { greetJson = null; try { localStorage.removeItem(GREET_KEY); } catch (e) { /* storage blocked */ } refreshGreetIcons(); return true; }
+  } catch (e) { /* offline: the last copy stays */ }
+  return false;
+}
+async function greetAuto() {
+  if (typeof roomId === "undefined" || !roomId || document.hidden) return;
+  const h = greetTitleNow();
+  if (h) greetPlay(h, true);
+  const changed = await greetRefresh(); // the dashboard may have changed something since last time: play again with the new settings
+  if (changed) { const h2 = greetTitleNow(); if (h2) greetPlay(h2, true); }
+}
+let greetLeftAt = 0;
+function greetStart() {
+  const gone = () => { if (!greetLeftAt) greetLeftAt = Date.now(); };
+  const back = () => { if (greetLeftAt && Date.now() - greetLeftAt > 3000) setTimeout(greetAuto, 300); greetLeftAt = 0; };
+  document.addEventListener("visibilitychange", () => { if (document.hidden) gone(); else back(); });
+  window.addEventListener("blur", gone);
+  window.addEventListener("focus", back);
+  setTimeout(greetAuto, 1800); // when the page or the app is opened
+  setTimeout(refreshGreetIcons, 300);
+}
+
 function tlMenuButton() {
   const b = document.createElement("button");
   b.className = "tl-chat-btn tl-menu-btn"; b.title = "Message+ menu";
-  b.innerHTML = '<img src="app-icon.png" alt="Message+ menu">';
+  b.innerHTML = greetIconHtml();
   b.onclick = () => openTabletMenu();
   return b;
 }
@@ -5086,7 +5232,7 @@ function openTabletMenu() {
   const dim = document.createElement("div");
   dim.className = "tl-dim tl-menu-dim";
   dim.innerHTML = `<div class="tl-menu">
-    <div class="head"><img src="app-icon.png" alt=""><div class="col"><div class="t">Message+</div><div class="s">Paired with your flip phone</div></div><button class="tl-chat-btn" title="Close">${svgIcon("close")}</button></div>
+    <div class="head">${greetIconHtml()}<div class="col"><div class="t">Message+</div><div class="s">Paired with your flip phone</div></div><button class="tl-chat-btn" title="Close">${svgIcon("close")}</button></div>
     <div class="card stat">
       <div class="st"><span class="ic">${svgIcon("tablet")}</span><div class="col"><div>This page</div>${okLine(navigator.onLine)}</div><i class="${navigator.onLine ? "on" : ""}"></i></div>
       <div class="st"><span class="ic">${svgIcon("call")}</span><div class="col"><div>Flip phone</div>${okLine(!!f.connected)}</div><i class="${f.connected ? "on" : ""}"></i></div>
