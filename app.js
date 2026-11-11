@@ -2024,6 +2024,7 @@ function upsertSent(key, data) {
   seenSentKeys.add(key);
 
   const number = groupKeyFromAddress(data.to);
+  if (data.body && Date.now() - (data.timestamp || 0) < 86400000 && draftGet(number).trim() === String(data.body).trim()) draftSet(number, "");
   const body = data.body || "";
   const timestamp = data.timestamp || Date.now();
 
@@ -2182,6 +2183,7 @@ async function onSendClick() {
   if (!currentChatNumber) return;
   if (scheduledAt) { await scheduleAll(rawBody, items); return; } // a time is chosen: it waits for it instead of going now
   stagedAttachments = [];
+  draftSent(currentChatNumber, rawBody);
   input.value = "";
   clearAttachment();
   if (undoSendOn()) { // 5 seconds to take it back (Settings > Undo send)
@@ -3607,6 +3609,7 @@ async function scheduleAll(rawBody, items) {
   }
   const to = currentChatNumber;
   const editing = editingScheduled; // "Update message": what is in the box replaces this waiting message
+  if (!editing) draftSent(to, rawBody);
   stagedAttachments = [];
   el("compose-input").value = "";
   clearAttachment();
@@ -3761,6 +3764,108 @@ function renderScheduledSection(number) {
   head.onclick = () => { try { localStorage.setItem("flip_relay_web_sched_open_" + number, open ? "0" : "1"); } catch (e) { /* storage blocked */ } renderScheduledSection(number); };
   box.appendChild(head);
 }
+
+// ---------- Drafts (like the tablet): what is typed in a chat stays there; "Draft" in the chat list; shared about every 10 minutes ----------
+// rooms/<room>/drafts/tab/<key> = {n, t, at} (tablets and this page share it; the newest wins), drafts/phone/<key> = what is typed on the flip
+// (shown on its own, "Draft from the flip phone"), drafts/phoneClear/<key> = asks the flip to delete its draft. Sending clears the draft everywhere.
+const DRAFT_SYNC_EVERY = 10 * 60 * 1000;
+let phoneDrafts = {}, draftLastSync = 0, draftSyncing = false, usedPhoneDraft = false;
+function draftKey(number) {
+  if (!number) return null;
+  if (!isMulti(number)) { const d = String(number).replace(/[^0-9]/g, ""); if (d.length >= 7) return d.length > 10 ? d.slice(-10) : d; }
+  return String(number).replace(/[.$#\[\]\/]/g, "_");
+}
+function draftStoreKey() { return "flip_relay_web_drafts_" + roomId; }
+function draftAll() { try { return JSON.parse(localStorage.getItem(draftStoreKey()) || "{}"); } catch (e) { return {}; } }
+function draftSave(all) { try { localStorage.setItem(draftStoreKey(), JSON.stringify(all)); } catch (e) { /* storage blocked */ } }
+function draftGet(number) { const k = draftKey(number); const d = k && draftAll()[k]; return d && d.t && d.t.trim() ? d.t : ""; }
+function draftSet(number, text) {
+  const k = draftKey(number);
+  if (!k) return;
+  const all = draftAll(), t = text || "";
+  const had = all[k] && all[k].t || "";
+  if ((t.trim() ? t : "") === had) return;
+  if (t.trim()) all[k] = { n: number, t, at: Date.now(), dirty: true };
+  else all[k] = { n: number, t: "", at: Date.now(), dirty: true, gone: true };
+  draftSave(all);
+  clearTimeout(draftSet.listTimer);
+  draftSet.listTimer = setTimeout(renderConversationList, 400);
+}
+async function draftPush() {
+  if (!roomId) return;
+  const all = draftAll();
+  for (const [k, d] of Object.entries(all)) {
+    if (!d.dirty) continue;
+    try {
+      const r = d.gone ? await fetch(roomUrl("drafts/tab/" + k), { method: "DELETE" })
+        : await fetch(roomUrl("drafts/tab/" + k), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ n: d.n, t: d.t, at: d.at }) });
+      if (r.ok) { const now = draftAll(); if (now[k] && now[k].at === d.at) { if (d.gone) delete now[k]; else now[k].dirty = false; draftSave(now); } }
+    } catch (e) { /* offline: next time */ }
+  }
+}
+async function draftSync(force) {
+  if (!roomId || draftSyncing || (!force && Date.now() - draftLastSync < DRAFT_SYNC_EVERY)) return;
+  draftSyncing = true;
+  try {
+    await draftPush();
+    const [a, b] = await Promise.all([fetch(roomUrl("drafts/tab")), fetch(roomUrl("drafts/phone"))]);
+    if (!a.ok || !b.ok) return;
+    const tabs = (await a.json()) || {}, phones = (await b.json()) || {};
+    draftLastSync = Date.now();
+    const all = draftAll();
+    for (const [k, d] of Object.entries(tabs)) { if (d && !(all[k] && all[k].dirty) && (!all[k] || (d.at || 0) > (all[k].at || 0))) all[k] = { n: d.n, t: d.t || "", at: d.at || 0 }; }
+    for (const k of Object.keys(all)) if (!tabs[k] && !all[k].dirty) delete all[k]; // sent or cleared on another device
+    draftSave(all);
+    phoneDrafts = {};
+    for (const [k, d] of Object.entries(phones)) if (d && d.t && d.t.trim()) phoneDrafts[k] = d;
+    renderConversationList();
+    if (currentChatNumber) {
+      renderPhoneDraft(currentChatNumber);
+      const input = el("compose-input");
+      if (input && document.activeElement !== input && !input.value.trim()) input.value = draftGet(currentChatNumber);
+    }
+  } catch (e) { /* offline: next time */ } finally { draftSyncing = false; }
+}
+function draftSent(number, text) {
+  const k = draftKey(number);
+  draftSet(number, "");
+  draftPush();
+  const ph = k && phoneDrafts[k];
+  if (ph && (usedPhoneDraft || (text && ph.t.trim() === text.trim()))) clearPhoneDraft(number);
+  usedPhoneDraft = false;
+}
+function clearPhoneDraft(number) {
+  const k = draftKey(number), ph = k && phoneDrafts[k];
+  if (!ph) return;
+  delete phoneDrafts[k];
+  fetch(roomUrl("drafts/phoneClear/" + k), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tid: ph.tid || 0, at: Date.now() }) }).catch(() => { });
+  fetch(roomUrl("drafts/phone/" + k), { method: "DELETE" }).catch(() => { });
+  renderConversationList();
+  if (currentChatNumber === number) renderPhoneDraft(number);
+}
+function renderPhoneDraft(number) {
+  let card = el("phone-draft");
+  if (!card) { card = document.createElement("div"); card.id = "phone-draft"; const anchor = el("sched-section") || el("message-list"); anchor.after(card); }
+  const k = draftKey(number), d = k && phoneDrafts[k];
+  card.innerHTML = "";
+  card.classList.toggle("hidden", !d || usedPhoneDraft);
+  if (!d || usedPhoneDraft) return;
+  card.innerHTML = '<div class="pd-head"><svg viewBox="0 0 24 24"><path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 20h-4v-1h4v1zm3.25-3H6.75V4h10.5v14z"/></svg><span></span></div><div class="pd-text"></div><div class="pd-actions"><button type="button" class="pd-del">Delete</button><button type="button" class="pd-use">Use draft</button></div>';
+  card.querySelector(".pd-head span").textContent = "Draft from the flip phone · " + formatGm(d.at || Date.now());
+  card.querySelector(".pd-text").textContent = d.t;
+  card.querySelector(".pd-del").onclick = async () => { if (await gmConfirm("It will be removed from the flip phone too.", "Delete the flip phone's draft?", "Delete")) clearPhoneDraft(number); };
+  card.querySelector(".pd-use").onclick = () => {
+    const input = el("compose-input");
+    input.value = input.value.trim() ? input.value.trim() + " " + d.t : d.t;
+    usedPhoneDraft = true;
+    draftSet(number, input.value);
+    card.classList.add("hidden");
+    input.focus();
+    if (typeof updateSendIcon === "function") updateSendIcon();
+  };
+}
+setInterval(() => { if (!document.hidden) draftSync(false); }, 15000);
+document.addEventListener("visibilitychange", () => { if (document.hidden) draftPush(); else draftSync(false); });
 
 // ---------- rendering ----------
 
@@ -4004,7 +4109,11 @@ function renderConversationList() {
     item.className = "conversation-item" + (unread ? " unread" : "") + (selected ? " selected" : "") + (number === currentChatNumber ? " open" : "");
     const prefix = last.direction === "out" ? "You: " : last.direction === "scheduled" ? "Scheduled: "
       : (isMulti(number) && last.fromNumber ? displayName(last.fromNumber) + ": " : "");
-    const preview = last.imageUrl ? "📷 Picture" + (last.body ? ": " + last.body : "") : last.body;
+    let preview = last.imageUrl ? "📷 Picture" + (last.body ? ": " + last.body : "") : last.body;
+    const myDraft = draftGet(number), flipDraft = phoneDrafts[draftKey(number)];
+    const hasDraft = !!myDraft || !!flipDraft;
+    let draftPrefix = prefix;
+    if (hasDraft) { draftPrefix = myDraft ? "You: " : "Flip phone: "; preview = (myDraft || flipDraft.t).replace(/\n/g, " "); }
     const checkHtml = conversationSelectionMode
         ? `<div class="select-circle${selected ? " checked" : ""}"></div>` : "";
     const pinHtml = pinned ? '<span class="pin-mark">📌</span>' : "";
@@ -4014,8 +4123,8 @@ function renderConversationList() {
       ${checkHtml}
       ${selected ? `<div class="tl-check">${svgIcon("check", 28)}</div>` : gmAvatarHtml(number)}
       <div class="conversation-item-body">
-        <div class="tl-row-top"><div class="name">${pinHtml}${unread ? '<span class="unread-dot">●</span>' : ""}${escapeHtml(displayName(number))}</div>${muteHtml}<div class="time">${formatGm(last.timestamp)}</div></div>
-        <div class="preview">${locked ? "Locked chat" : prefix + escapeHtml(preview)}</div>
+        <div class="tl-row-top"><div class="name">${pinHtml}${unread ? '<span class="unread-dot">●</span>' : ""}${escapeHtml(displayName(number))}</div>${muteHtml}<div class="time${hasDraft ? " draft" : ""}">${hasDraft ? "Draft" : formatGm(last.timestamp)}</div></div>
+        <div class="preview${hasDraft && !locked ? " draft" : ""}">${locked ? "Locked chat" : draftPrefix + escapeHtml(preview)}</div>${hasDraft && myDraft && flipDraft && !locked ? `<div class="preview draft">Flip phone: ${escapeHtml(flipDraft.t.replace(/\n/g, " "))}</div>` : ""}
       </div>
       ${unread && unreadCount > 0 ? `<div class="unread-badge">${unreadCount > 999 ? "999+" : unreadCount}</div>` : ""}
     `;
@@ -4066,6 +4175,8 @@ function openChat(number) {
     return;
   }
   currentChatNumber = number;
+  usedPhoneDraft = false;
+  el("compose-input").value = draftGet(number);
   el("chat-title").textContent = displayName(number);
   tlChatChrome(number);
   el("chat-subtitle").textContent = isMulti(number) ? (number.startsWith("m:") ? "Mass text - tap the name to rename" : "Group - tap the name to rename") : number;
@@ -4074,6 +4185,7 @@ function openChat(number) {
   el("chat-title").onclick = isMulti(number) ? () => renameGroup(number) : null;
   showScreen("chat");
   renderChat(number);
+  renderPhoneDraft(number);
   markRead(number);
   renderConversationList();
   updateChatConnectionWarning();
@@ -5294,6 +5406,7 @@ function setupTabletChrome() {
   input.placeholder = input.placeholder || "Text message";
   const grow = () => { input.style.height = "48px"; input.style.height = Math.min(110, Math.max(48, input.scrollHeight)) + "px"; updateSendIcon(); };
   input.addEventListener("input", grow);
+  input.addEventListener("input", () => { if (currentChatNumber && !editingScheduled) draftSet(currentChatNumber, input.value); });
   send.addEventListener("click", () => setTimeout(grow, 0));
   setInterval(updateSendIcon, 800);
   updateSendIcon();

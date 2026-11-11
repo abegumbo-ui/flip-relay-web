@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "a8996fccc5115ef7ecdc8000e8327d381f5e9d2c",
-    "publishedAt": "2026-11-08T20:14:58Z",
-    "build": 699,
-    "notes": "The send button is now drawn exactly like Google Messages: outlined triangle, SMS or MMS under it, and a clock when it will wait.\nSend now on a scheduled message shows the message in the chat right away, and Delete stays deleted.\nThe list of waiting messages scrolls instead of cutting off the chat."
+    "sha": "fec8703ca487a520297efe0e306f566ed7025bd0",
+    "publishedAt": "2026-11-11T19:35:32Z",
+    "build": 700,
+    "notes": "Drafts: what you type in a chat stays there when you leave it, and the chat list says \"Draft\", like Google Messages.\nA draft typed on the flip phone shows in its chat as \"Draft from the flip phone\": tap Use draft to send it from here, or Delete.\nSending a draft removes it on every device. Drafts reach your other tablets and the computer about every 10 minutes."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26142292,
+    "versionName": "6.4.5-FR GOLOMBECK (build 174)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142292/messageplus-26142292.apk",
+    "at": 1794425732945,
+    "notes": "Drafts you leave in a chat now show on the tablet, marked as from the flip phone. If the tablet sends or deletes one, it is removed here too.\nDrafts are now kept even in chats that \"Approved chats only\" does not let you send to."
+  },
+  "messageplus_previous": {
     "versionCode": 26137927,
     "versionName": "6.4.5-FR GOLOMBECK (build 173)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26137927/messageplus-26137927.apk",
     "at": 1794163870445,
     "notes": "Scheduled pictures, videos, voice messages and contacts now go out at their time, like scheduled texts."
-  },
-  "messageplus_previous": {
-    "versionCode": 26132782,
-    "versionName": "6.4.5-FR GOLOMBECK (build 172)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26132782/messageplus-26132782.apk",
-    "at": 1793854862117,
-    "notes": "The home-screen buttons now keep working even if Message+ is not the default texting app. Settings > Home Screen Shortcut has a switch to turn that off."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
