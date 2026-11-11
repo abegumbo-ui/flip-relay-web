@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "fec8703ca487a520297efe0e306f566ed7025bd0",
-    "publishedAt": "2026-11-11T19:35:32Z",
-    "build": 700,
-    "notes": "Drafts: what you type in a chat stays there when you leave it, and the chat list says \"Draft\", like Google Messages.\nA draft typed on the flip phone shows in its chat as \"Draft from the flip phone\": tap Use draft to send it from here, or Delete.\nSending a draft removes it on every device. Drafts reach your other tablets and the computer about every 10 minutes."
+    "sha": "b5b41ae48eafc748a994610d9f5fd78b121f6f8c",
+    "publishedAt": "2026-11-11T19:47:50Z",
+    "build": 701,
+    "notes": "New: Settings > Flip phone and sync > What syncs. Turn read status, notifications or drafts syncing on or off for the flip phone and every tablet.\nFixed: a new text sometimes came in without a notification, when it reached the tablet more than 10 minutes late (for example while the tablet was asleep).\nThe app asks once to stay connected while the tablet sleeps, so notifications come on time (also in Settings > Flip phone and sync > Notifications on time)."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26142310,
+    "versionName": "6.4.5-FR GOLOMBECK (build 175)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142310/messageplus-26142310.apk",
+    "at": 1794426470314,
+    "notes": "The Mic/voice button now opens Message+ with a regular press. No need to hold it.\nFollows the tablet's new What syncs switches for read status, notifications and drafts."
+  },
+  "messageplus_previous": {
     "versionCode": 26142292,
     "versionName": "6.4.5-FR GOLOMBECK (build 174)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142292/messageplus-26142292.apk",
     "at": 1794425732945,
     "notes": "Drafts you leave in a chat now show on the tablet, marked as from the flip phone. If the tablet sends or deletes one, it is removed here too.\nDrafts are now kept even in chats that \"Approved chats only\" does not let you send to."
-  },
-  "messageplus_previous": {
-    "versionCode": 26137927,
-    "versionName": "6.4.5-FR GOLOMBECK (build 173)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26137927/messageplus-26137927.apk",
-    "at": 1794163870445,
-    "notes": "Scheduled pictures, videos, voice messages and contacts now go out at their time, like scheduled texts."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",

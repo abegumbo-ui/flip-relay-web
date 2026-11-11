@@ -1638,7 +1638,7 @@ async function toggleMuted(number) {
 // ---------- read marks: tell the flip phone a conversation was read here, so it is marked read there too ----------
 const readMarkSent = {};
 function sendReadMark(number, ts) {
-  if (!roomId || !number || (readMarkSent[number] || 0) >= ts) return;
+  if (!roomId || !number || (readMarkSent[number] || 0) >= ts || !syncPrefs.read) return; // read status not shared (What syncs, on a tablet)
   readMarkSent[number] = ts;
   fetch(roomUrl(`readMarks/${number}`), { method: "PUT", body: JSON.stringify(ts) }).catch(() => { readMarkSent[number] = 0; });
   putReadBy([number], ts);
@@ -1648,7 +1648,7 @@ async function markAllRead() {
   for (const c of filteredConversations()) { readState[c.number] = now; patch[c.number] = now; readMarkSent[c.number] = now; }
   saveReadState();
   renderConversationList();
-  try { await fetch(roomUrl("readMarks"), { method: "PATCH", body: JSON.stringify(patch) }); } catch (e) { /* the flip catches up next time */ }
+  if (syncPrefs.read) try { await fetch(roomUrl("readMarks"), { method: "PATCH", body: JSON.stringify(patch) }); } catch (e) { /* the flip catches up next time */ }
   putReadBy(Object.keys(patch), now);
 }
 
@@ -1774,7 +1774,7 @@ function startPhoneHeartbeatPoll() {
         if (ud && typeof ud.at === "number" && ud.at > 0) {
           const next = ud.counts || {};
           if (JSON.stringify(next) !== JSON.stringify(phoneUnread)) {
-            phoneUnread = next;
+            phoneUnread = syncPrefs.read ? next : null;
             renderConversationList();
           }
         }
@@ -2604,7 +2604,7 @@ function onSettingsClick() {
 // Settings > Flip phone buttons: the flip's home-screen button shortcuts (its accessibility service), the same as the tablet's screen.
 // rooms/<room>/buttons/config {on, keys, at} is applied on the flip within seconds; buttons/state is what the flip reports;
 // buttons/disable turns the accessibility service off (three confirmations; only a person on the flip can turn it back on).
-const PHONE_BUTTONS = [["DPAD_UP", "D-pad Up"], ["BACK", "Clear (C)"], ["SOFT_LEFT", "Left soft key"], ["SOFT_RIGHT", "Right soft key"], ["CALL", "Send/Call"], ["SPEAKER_IN", "Mic/voice (press and hold)"]];
+const PHONE_BUTTONS = [["DPAD_UP", "D-pad Up"], ["BACK", "Clear (C)"], ["SOFT_LEFT", "Left soft key"], ["SOFT_RIGHT", "Right soft key"], ["CALL", "Send/Call"], ["SPEAKER_IN", "Mic/voice"]];
 const PHONE_BUTTONS_DEFAULT = ["DPAD_UP", "BACK", "SOFT_RIGHT", "SPEAKER_IN"];
 function openPhoneButtons() {
   const pp = openPanel("Flip phone buttons");
@@ -3769,6 +3769,14 @@ function renderScheduledSection(number) {
 // rooms/<room>/drafts/tab/<key> = {n, t, at} (tablets and this page share it; the newest wins), drafts/phone/<key> = what is typed on the flip
 // (shown on its own, "Draft from the flip phone"), drafts/phoneClear/<key> = asks the flip to delete its draft. Sending clears the draft everywhere.
 const DRAFT_SYNC_EVERY = 10 * 60 * 1000;
+let syncPrefs = { read: true, notif: true, drafts: true }, syncPrefsAt = 0;
+async function refreshSyncPrefs() {
+  if (!roomId || Date.now() - syncPrefsAt < DRAFT_SYNC_EVERY) return;
+  try { const r = await fetch(roomUrl("syncPrefs")); if (!r.ok) return; const o = (await r.json()) || {}; syncPrefsAt = Date.now();
+    syncPrefs = { read: o.read !== false, notif: o.notif !== false, drafts: o.drafts !== false };
+    if (!syncPrefs.read) phoneUnread = null; // this page's own read state
+  } catch (e) { /* offline: next time */ }
+}
 let phoneDrafts = {}, draftLastSync = 0, draftSyncing = false, usedPhoneDraft = false;
 function draftKey(number) {
   if (!number) return null;
@@ -3792,7 +3800,7 @@ function draftSet(number, text) {
   draftSet.listTimer = setTimeout(renderConversationList, 400);
 }
 async function draftPush() {
-  if (!roomId) return;
+  if (!roomId || !syncPrefs.drafts) return;
   const all = draftAll();
   for (const [k, d] of Object.entries(all)) {
     if (!d.dirty) continue;
@@ -3804,6 +3812,8 @@ async function draftPush() {
   }
 }
 async function draftSync(force) {
+  await refreshSyncPrefs();
+  if (!syncPrefs.drafts) { if (Object.keys(phoneDrafts).length) { phoneDrafts = {}; renderConversationList(); } return; } // drafts stay on this device
   if (!roomId || draftSyncing || (!force && Date.now() - draftLastSync < DRAFT_SYNC_EVERY)) return;
   draftSyncing = true;
   try {
