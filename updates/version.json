@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "1921ffd4a202b03e2f6e1f592b8ddc2bcd9bf0e7",
-    "publishedAt": "2026-11-12T03:42:28Z",
-    "build": 702,
-    "notes": "Drafts typed on the flip phone now show here within about 30 seconds (before, up to 10 minutes)."
+    "sha": "dc13a6801ada196d1e299f040fcc375ebdc34ada",
+    "publishedAt": "2026-11-12T03:58:43Z",
+    "build": 703,
+    "notes": "New switch: Settings > Flip phone and sync > What syncs > Tablet drafts on the flip phone. Turn it on and a draft typed here shows up in the flip phone's message box when you open that chat there.\nPress and hold a message > Info now shows who read it, including \"Read on the flip phone\"."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
