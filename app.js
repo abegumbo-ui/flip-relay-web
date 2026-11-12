@@ -3777,7 +3777,7 @@ async function refreshSyncPrefs() {
     if (!syncPrefs.read) phoneUnread = null; // this page's own read state
   } catch (e) { /* offline: next time */ }
 }
-let phoneDrafts = {}, draftLastSync = 0, draftSyncing = false, usedPhoneDraft = false;
+let phoneDrafts = {}, draftLastSync = 0, draftSyncing = false, usedPhoneDraft = false, phoneDraftRead = 0;
 function draftKey(number) {
   if (!number) return null;
   if (!isMulti(number)) { const d = String(number).replace(/[^0-9]/g, ""); if (d.length >= 7) return d.length > 10 ? d.slice(-10) : d; }
@@ -3814,7 +3814,26 @@ async function draftPush() {
 async function draftSync(force) {
   await refreshSyncPrefs();
   if (!syncPrefs.drafts) { if (Object.keys(phoneDrafts).length) { phoneDrafts = {}; renderConversationList(); } return; } // drafts stay on this device
-  if (!roomId || draftSyncing || (!force && Date.now() - draftLastSync < DRAFT_SYNC_EVERY)) return;
+  if (!roomId || draftSyncing) return;
+  if (!force && Date.now() - draftLastSync < DRAFT_SYNC_EVERY) {
+    // between full syncs: only the flip's drafts, every 30 seconds while the page is open (one tiny read)
+    if (Date.now() - phoneDraftRead < 30000) return;
+    phoneDraftRead = Date.now();
+    draftSyncing = true;
+    try {
+      const b = await fetch(roomUrl("drafts/phone"));
+      if (!b.ok) return;
+      const phones = (await b.json()) || {}, next = {};
+      for (const [k, d] of Object.entries(phones)) if (d && d.t && d.t.trim()) next[k] = d;
+      if (JSON.stringify(next) !== JSON.stringify(phoneDrafts)) {
+        phoneDrafts = next;
+        renderConversationList();
+        if (currentChatNumber) renderPhoneDraft(currentChatNumber);
+      }
+    } catch (e) { /* offline: next time */ } finally { draftSyncing = false; }
+    return;
+  }
+  phoneDraftRead = Date.now();
   draftSyncing = true;
   try {
     await draftPush();
