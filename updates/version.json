@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26142798,
+    "versionName": "6.4.5-FR GOLOMBECK (build 177)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142798/messageplus-26142798.apk",
+    "at": 1794455815599,
+    "notes": "Deleting a flip draft on the tablet now really deletes it on the flip. New: with What syncs > Tablet drafts on the flip phone turned on (on the tablet), a draft typed on the tablet appears in the flip message box when you open that chat."
+  },
+  "messageplus_previous": {
     "versionCode": 26142744,
     "versionName": "6.4.5-FR GOLOMBECK (build 176)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142744/messageplus-26142744.apk",
     "at": 1794452529197,
     "notes": "Drafts typed on the flip now show on the tablet and the web within 2 minutes, even ones typed before this update, and without leaving the chat. A draft you send or delete on the flip disappears there too."
-  },
-  "messageplus_previous": {
-    "versionCode": 26142310,
-    "versionName": "6.4.5-FR GOLOMBECK (build 175)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142310/messageplus-26142310.apk",
-    "at": 1794426470314,
-    "notes": "The Mic/voice button now opens Message+ with a regular press. No need to hold it.\nFollows the tablet's new What syncs switches for read status, notifications and drafts."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",

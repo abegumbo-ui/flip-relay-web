@@ -380,7 +380,7 @@ function addGmHeader() {
 function init() {
   if (location.hash === "#showreadby") { // hidden switch for this page only: a message's Info says who read it
     try {
-      const on = localStorage.getItem("flip_relay_show_read_by") !== "1";
+      const on = localStorage.getItem("flip_relay_show_read_by") === "0"; // shown unless switched off here
       localStorage.setItem("flip_relay_show_read_by", on ? "1" : "0");
       setTimeout(() => alert(on ? "Who read it: now shown in Message info on this page." : "Who read it: hidden on this page."), 500);
     } catch (e) { /* storage blocked */ }
@@ -2421,8 +2421,8 @@ function showMessageInfo(m) {
   if (m.direction === "out") lines.push("Sent from: " + (m.source === "web" ? "this page (through the phone)" : "the phone"));
   lines.push("Message ID: " + m.id, "Conversation: " + m.number);
   // "who read it" shows only on a page where it was switched on (open the page once with #showreadby); every page records it
-  let showReadBy = false;
-  try { showReadBy = localStorage.getItem("flip_relay_show_read_by") === "1"; } catch (e) { /* storage blocked */ }
+  let showReadBy = true;
+  try { showReadBy = localStorage.getItem("flip_relay_show_read_by") !== "0"; } catch (e) { showReadBy = true; } // shown unless switched off
   if (m.direction !== "in" || !showReadBy) { alert(lines.join("\n")); return; }
   // a received message: who read it (rooms/<room>/readBy/<number>); none of the tablets or web pages = read on the flip phone
   readByLine(m).then((line) => alert([line, ...lines].join("\n")));
