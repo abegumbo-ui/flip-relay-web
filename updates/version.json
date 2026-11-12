@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "ec719184657229421927bf65ab22659b22dd9469",
-    "publishedAt": "2026-11-12T04:12:30Z",
-    "build": 704,
-    "notes": "Tablet drafts on the flip phone is now on by default: a draft typed here becomes a draft on the flip too (Draft in its chat list, the words in its message box). Switch: Settings > Flip phone and sync > What syncs.\nPress and hold a message > Info shows who read it, including \"Read on the flip phone\"."
+    "sha": "db4226ff1540375f097e4716ad9450692ff99ec4",
+    "publishedAt": "2026-11-12T04:32:08Z",
+    "build": 706,
+    "notes": "A long draft from the flip phone now takes 2 lines, with See more to read all of it.\nDrafts typed here now show up on the flip phone (with Message+ 179 on the flip)."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
