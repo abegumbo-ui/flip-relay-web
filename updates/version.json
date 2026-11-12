@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "b5b41ae48eafc748a994610d9f5fd78b121f6f8c",
-    "publishedAt": "2026-11-11T19:47:50Z",
-    "build": 701,
-    "notes": "New: Settings > Flip phone and sync > What syncs. Turn read status, notifications or drafts syncing on or off for the flip phone and every tablet.\nFixed: a new text sometimes came in without a notification, when it reached the tablet more than 10 minutes late (for example while the tablet was asleep).\nThe app asks once to stay connected while the tablet sleeps, so notifications come on time (also in Settings > Flip phone and sync > Notifications on time)."
+    "sha": "1921ffd4a202b03e2f6e1f592b8ddc2bcd9bf0e7",
+    "publishedAt": "2026-11-12T03:42:28Z",
+    "build": 702,
+    "notes": "Drafts typed on the flip phone now show here within about 30 seconds (before, up to 10 minutes)."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
