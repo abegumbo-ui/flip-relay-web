@@ -550,7 +550,7 @@ body.theme-dark .g-sheet .g-sub { color: #CAC4D0; }
 #phone-draft.hidden { display: none; }
 #phone-draft .pd-head { display: flex; align-items: center; gap: 8px; color: #0B57D0; font-size: 13px; font-weight: 600; }
 #phone-draft .pd-head svg { width: 18px; height: 18px; fill: currentColor; flex: none; }
-#phone-draft .pd-text { font-style: italic; font-size: 16px; padding: 6px 8px 2px 0; white-space: pre-wrap; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+#phone-draft .pd-text { font-style: italic; font-size: 16px; padding: 6px 8px 2px 0; white-space: pre-wrap; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 #phone-draft .pd-actions { display: flex; justify-content: flex-end; gap: 4px; }
 #phone-draft .pd-del { border: 0; background: none; color: #44474F; font-size: 14px; padding: 10px 14px; cursor: pointer; }
 #phone-draft .pd-use { border: 0; background: #0B57D0; color: #fff; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 18px; cursor: pointer; margin: 4px 0 6px; }
@@ -558,3 +558,8 @@ body.theme-dark #phone-draft { background: #2A2C33; border-color: #3A3D46; color
 body.theme-dark #phone-draft .pd-head { color: #ADC6FF; }
 body.theme-dark #phone-draft .pd-del { color: #C4C6D0; }
 body.theme-dark #phone-draft .pd-use { background: #ADC6FF; color: #0A305F; }
+
+#phone-draft .pd-text.open { -webkit-line-clamp: unset; display: block; }
+#phone-draft .pd-more { border: 0; background: none; color: #0B57D0; font-size: 14px; font-weight: 600; padding: 2px 0 4px; cursor: pointer; }
+#phone-draft .pd-more[hidden] { display: none; }
+body.theme-dark #phone-draft .pd-more { color: #ADC6FF; }

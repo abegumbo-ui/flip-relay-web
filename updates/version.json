@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26142830,
+    "versionName": "6.4.5-FR GOLOMBECK (build 179)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142830/messageplus-26142830.apk",
+    "at": 1794457774836,
+    "notes": "Fixed: drafts typed on the tablet now really show up on the flip (Draft in the chat list, the words in the message box)."
+  },
+  "messageplus_previous": {
     "versionCode": 26142812,
     "versionName": "6.4.5-FR GOLOMBECK (build 178)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142812/messageplus-26142812.apk",
     "at": 1794456626776,
     "notes": "A draft typed on the tablet now becomes a real draft on the flip: Draft shows in the chat list and the words are in the message box. Turn it off in the tablet: What syncs > Tablet drafts on the flip phone."
-  },
-  "messageplus_previous": {
-    "versionCode": 26142798,
-    "versionName": "6.4.5-FR GOLOMBECK (build 177)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142798/messageplus-26142798.apk",
-    "at": 1794455815599,
-    "notes": "Deleting a flip draft on the tablet now really deletes it on the flip. New: with What syncs > Tablet drafts on the flip phone turned on (on the tablet), a draft typed on the tablet appears in the flip message box when you open that chat."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",

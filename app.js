@@ -3882,6 +3882,13 @@ function renderPhoneDraft(number) {
   card.innerHTML = '<div class="pd-head"><svg viewBox="0 0 24 24"><path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 20h-4v-1h4v1zm3.25-3H6.75V4h10.5v14z"/></svg><span></span></div><div class="pd-text"></div><div class="pd-actions"><button type="button" class="pd-del">Delete</button><button type="button" class="pd-use">Use draft</button></div>';
   card.querySelector(".pd-head span").textContent = "Draft from the flip phone · " + formatGm(d.at || Date.now());
   card.querySelector(".pd-text").textContent = d.t;
+  { // a long draft takes 2 lines; "See more" shows all of it
+    const txt = card.querySelector(".pd-text"), more = document.createElement("button");
+    more.type = "button"; more.className = "pd-more"; more.textContent = "See more"; more.hidden = true;
+    more.onclick = () => { const open = txt.classList.toggle("open"); more.textContent = open ? "See less" : "See more"; };
+    txt.after(more);
+    requestAnimationFrame(() => { if (txt.scrollHeight > txt.clientHeight + 2) more.hidden = false; });
+  }
   card.querySelector(".pd-del").onclick = async () => { if (await gmConfirm("It will be removed from the flip phone too.", "Delete the flip phone's draft?", "Delete")) clearPhoneDraft(number); };
   card.querySelector(".pd-use").onclick = () => {
     const input = el("compose-input");
