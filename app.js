@@ -2211,6 +2211,23 @@ async function sendAll(rawBody, items) {
   }
 }
 
+// A big batch goes to the flip phone a few at a time: 60 pictures at once left it "Sending..." and then "Not Sent" on most of them.
+const MAX_IN_FLIGHT = 4;
+const reservedSends = new Map(); // a place in line, taken before the upload and given back once the item is posted
+async function waitForRoomOnFlip(id) {
+  const give = Date.now() + 20 * 60000;
+  for (;;) {
+    const now = Date.now();
+    for (const [k, t] of reservedSends) if (now - t > 10 * 60000) reservedSends.delete(k); // one that never finished uploading
+    let cloud = 0;
+    if (reservedSends.size < MAX_IN_FLIGHT) { // how many already wait for the flip (it removes each from messages/outgoing once sent); only the keys are read
+      try { const r = await fetch(roomUrl("messages/outgoing").replace(".json?", ".json?shallow=true&")); if (r.ok) { const j = await r.json(); cloud = j ? Object.keys(j).length : 0; } } catch (e) { /* no answer counts as none */ }
+    }
+    if (reservedSends.size + cloud < MAX_IN_FLIGHT || Date.now() > give) { reservedSends.set(id, Date.now()); return; }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+}
+
 async function sendOne(rawBody, file, kind, attachmentName) {
   const timestamp = Math.max(Date.now(), lastSendTs + 1);
   lastSendTs = timestamp;
@@ -2249,6 +2266,7 @@ async function sendOne(rawBody, file, kind, attachmentName) {
   }, PENDING_TIMEOUT_MS + 1000);
 
   try {
+    if (file) await waitForRoomOnFlip(msg.id);
     let imageUrl = null;
     let imagePath = null;
     let attachmentType = null;
@@ -2275,6 +2293,8 @@ async function sendOne(rawBody, file, kind, attachmentName) {
     });
   } catch (e) {
     console.error("send failed", e);
+  } finally {
+    reservedSends.delete(msg.id); // posted (the flip's waiting line counts it now) or given up
   }
 }
 

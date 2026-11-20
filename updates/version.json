@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "d46c2ca89ac3501b7a39c93ea71851ea39990180",
-    "publishedAt": "2026-11-20T13:56:32Z",
-    "build": 708,
-    "notes": "Settings > Flip phone buttons: the home-screen buttons are back the way they were. Below them is a new \"Back to conversations button\" section: pick the microphone key, Send key or Camera key to go back to all conversations from inside a conversation on the flip."
+    "sha": "29653096b8685b5ab68d596557e1bf03e3d810cc",
+    "publishedAt": "2026-11-20T14:30:49Z",
+    "build": 709,
+    "notes": "Sending a lot of pictures at once now works better: they go to the flip phone a few at a time instead of all together, so they are not left on \"Sending...\" and then \"Not Sent\". Also, Resend no longer sends a second copy of a message the flip phone still has waiting to send."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
