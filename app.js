@@ -1112,7 +1112,12 @@ function buildAndAttachVcard(name, tel) {
   setPendingAttachment(file, "contact", name);
 }
 
+const MAX_ATTACHMENTS = 10; // one message carries at most this many: more at once overloads the flip phone when it sends them
 function setPendingAttachment(file, kind, name) {
+  if (stagedAttachments.length + (pendingAttachmentFile ? 1 : 0) >= MAX_ATTACHMENTS) {
+    gmNotice("A message can carry up to " + MAX_ATTACHMENTS + " pictures or videos. Send these first, then add the rest.");
+    return;
+  }
   if (pendingAttachmentFile) stagedAttachments.push({ file: pendingAttachmentFile, kind: pendingAttachmentKind, name: pendingAttachmentName });
   pendingAttachmentFile = file;
   pendingAttachmentKind = kind;
@@ -2610,7 +2615,7 @@ function openPhoneButtons() {
   const pp = openPanel("Flip phone buttons");
   const ov = pp.body;
   ov.innerHTML = `
-    <p class="settings-hint">On the flip phone's home screen, these buttons open Message+. Turn each one on or off here; the flip follows within a few seconds.</p>
+    <p class="settings-hint">These buttons on the flip phone can open Message+ from the home screen, and go back to all conversations from inside a conversation. Turn each one on or off here; the flip follows within a few seconds.</p>
     <div style="border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"><div class="settings-hint" style="margin:0">Status on the flip</div><div data-x="state" style="font-size:18px;font-weight:600">Checking...</div></div>
     <div data-x="switches" style="border-radius:20px;padding:6px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"></div>
     <div style="border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"><h3 style="margin:0 0 6px">Troubleshooting</h3>
@@ -2622,7 +2627,7 @@ function openPhoneButtons() {
     <p class="settings-hint">This switches the flip's accessibility service off. It can only be turned back on by hand on the flip (Settings &gt; Accessibility &gt; Message+).</p>`;
   const q = (k) => ov.querySelector(`[data-x="${k}"]`);
   const box = q("switches");
-  const rows = [["master", "Button shortcuts", "All of them on or off"], ["anyDefault", "Work even if Message+ is not the default", "Off: while another app is the flip's default texting app, every button does what it normally does"], ...PHONE_BUTTONS.map(([id, label]) => [id, label, ""])];
+  const rows = [["master", "Button shortcuts", "All of them on or off"], ["anyDefault", "Work even if Message+ is not the default", "Off: while another app is the flip's default texting app, every button does what it normally does"], ...PHONE_BUTTONS.flatMap(([id, label]) => [[id, label + " \u2014 on the home screen", "Opens Message+"], ["chat_" + id, label + " \u2014 inside a conversation", "Goes back to all conversations; what you typed stays as a draft." + (id === "CALL" ? " (While on, it does not call from inside a conversation.)" : "") + (id === "BACK" || id === "DPAD_UP" ? " (Replaces what this button normally does inside a conversation.)" : "")]]), ["leave", "When you leave the app: reopen on all conversations", "Press End or Home while a conversation is open, and the next time you open Message+ it shows all conversations (the draft stays), like the regular Verizon Messages app. Off: it stays inside that conversation."]];
   const inputs = {};
   for (const [id, label, sub] of rows) {
     const r = document.createElement("label");
@@ -2635,15 +2640,15 @@ function openPhoneButtons() {
   pp.onClose(() => { alive = false; clearTimeout(timer); });
   const save = async () => {
     if (filling) return;
-    const keys = {};
-    for (const [id] of PHONE_BUTTONS) keys[id] = inputs[id].checked;
+    const keys = {}, chatKeys = {};
+    for (const [id] of PHONE_BUTTONS) { keys[id] = inputs[id].checked; chatKeys[id] = inputs["chat_" + id].checked; }
     try {
-      const r = await fetch(roomUrl("buttons/config"), { method: "PUT", body: JSON.stringify({ on: inputs.master.checked, anyDefault: inputs.anyDefault.checked, keys, by: "web", at: { ".sv": "timestamp" } }) });
+      const r = await fetch(roomUrl("buttons/config"), { method: "PUT", body: JSON.stringify({ on: inputs.master.checked, anyDefault: inputs.anyDefault.checked, keys, chatKeys, leaveChat: inputs.leave.checked, by: "web", at: { ".sv": "timestamp" } }) });
       if (!r.ok) throw new Error(r.status);
     } catch (e) { alert("Not saved: no connection. Try again."); }
   };
   for (const id in inputs) inputs[id].onchange = () => {
-    if (id === "master") { for (const [k] of PHONE_BUTTONS) inputs[k].disabled = !inputs.master.checked; inputs.anyDefault.disabled = !inputs.master.checked; }
+    if (id === "master") { for (const [k] of PHONE_BUTTONS) { inputs[k].disabled = !inputs.master.checked; inputs["chat_" + k].disabled = !inputs.master.checked; } inputs.anyDefault.disabled = !inputs.master.checked; }
     save();
   };
   q("off").onclick = async () => {
@@ -2673,7 +2678,12 @@ function openPhoneButtons() {
         inputs.master.checked = !cfg || cfg.on !== false;
         inputs.anyDefault.checked = !cfg || cfg.anyDefault !== false;
         inputs.anyDefault.disabled = !inputs.master.checked;
-        for (const [id] of PHONE_BUTTONS) { inputs[id].checked = keys ? !!keys[id] : PHONE_BUTTONS_DEFAULT.includes(id); inputs[id].disabled = !inputs.master.checked; }
+        const ck = cfg && cfg.chatKeys;
+        for (const [id] of PHONE_BUTTONS) {
+          inputs[id].checked = keys ? !!keys[id] : PHONE_BUTTONS_DEFAULT.includes(id); inputs[id].disabled = !inputs.master.checked;
+          inputs["chat_" + id].checked = !!(ck && ck[id]); inputs["chat_" + id].disabled = !inputs.master.checked;
+        }
+        inputs.leave.checked = !cfg || cfg.leaveChat !== false;
         filling = false;
       }
     }
