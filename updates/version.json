@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "db4226ff1540375f097e4716ad9450692ff99ec4",
-    "publishedAt": "2026-11-12T04:32:08Z",
-    "build": 706,
-    "notes": "A long draft from the flip phone now takes 2 lines, with See more to read all of it.\nDrafts typed here now show up on the flip phone (with Message+ 179 on the flip)."
+    "sha": "c07707b5f8856d28d4ad4519863ac5de5f81c3dd",
+    "publishedAt": "2026-11-20T06:26:05Z",
+    "build": 707,
+    "notes": "Flip phone buttons (Settings): each button now has two choices, on the home screen it opens Message+, and inside a conversation it goes back to all conversations.\nNew switch: after you leave the flip's app, it reopens on all conversations and keeps what you typed as a draft.\nA message can now carry up to 10 pictures or videos."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
