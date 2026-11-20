@@ -2615,9 +2615,10 @@ function openPhoneButtons() {
   const pp = openPanel("Flip phone buttons");
   const ov = pp.body;
   ov.innerHTML = `
-    <p class="settings-hint">These buttons on the flip phone can open Message+ from the home screen, and go back to all conversations from inside a conversation. Turn each one on or off here; the flip follows within a few seconds.</p>
+    <p class="settings-hint">On the flip phone's home screen, these buttons open Message+. Turn each one on or off here; the flip follows within a few seconds.</p>
     <div style="border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"><div class="settings-hint" style="margin:0">Status on the flip</div><div data-x="state" style="font-size:18px;font-weight:600">Checking...</div></div>
     <div data-x="switches" style="border-radius:20px;padding:6px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"></div>
+    <div style="border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"><h3 style="margin:0 0 6px">Back to conversations button</h3><p class="settings-hint" style="margin:0">Inside a conversation, the button you turn on here goes back to all your conversations. What you typed stays as a draft. You can also change this on the flip: Settings &gt; Home Screen Shortcut, at the bottom.</p><div data-x="back"></div></div>
     <div style="border-radius:20px;padding:14px 18px;margin:12px 0;background:var(--gm-card,rgba(127,127,127,.12))"><h3 style="margin:0 0 6px">Troubleshooting</h3>
       <p class="settings-hint">"Paused: Message+ is not the default texting app" - turn on "Work even if Message+ is not the default" above. Or on the flip open Settings &gt; Apps &gt; Default apps &gt; SMS app and choose Message+. The buttons come back by themselves.</p>
       <p class="settings-hint">"Not turned on in the flip's Accessibility settings" - this step has to be done on the flip itself: Settings &gt; Accessibility &gt; Message+ &gt; On, then OK. No app or tablet can do it.</p>
@@ -2627,28 +2628,31 @@ function openPhoneButtons() {
     <p class="settings-hint">This switches the flip's accessibility service off. It can only be turned back on by hand on the flip (Settings &gt; Accessibility &gt; Message+).</p>`;
   const q = (k) => ov.querySelector(`[data-x="${k}"]`);
   const box = q("switches");
-  const rows = [["master", "Button shortcuts", "All of them on or off"], ["anyDefault", "Work even if Message+ is not the default", "Off: while another app is the flip's default texting app, every button does what it normally does"], ...PHONE_BUTTONS.flatMap(([id, label]) => [[id, label + " \u2014 on the home screen", "Opens Message+"], ["chat_" + id, label + " \u2014 inside a conversation", "Goes back to all conversations; what you typed stays as a draft." + (id === "CALL" ? " (While on, it does not call from inside a conversation.)" : "") + (id === "BACK" || id === "DPAD_UP" ? " (Replaces what this button normally does inside a conversation.)" : "")]]), ["leave", "When you leave the app: reopen on all conversations", "Press End or Home while a conversation is open, and the next time you open Message+ it shows all conversations (the draft stays), like the regular Verizon Messages app. Off: it stays inside that conversation."]];
+  const rows = [["master", "Button shortcuts", "All of them on or off"], ["anyDefault", "Work even if Message+ is not the default", "Off: while another app is the flip's default texting app, every button does what it normally does"], ...PHONE_BUTTONS.map(([id, label]) => [id, label, ""])];
+  const BACK_KEYS = [["SPEAKER_IN", "Microphone key", "Under the right soft key"], ["CALL", "Send key", "While on, it does not call from inside a conversation"], ["CAMERA", "Camera key", "Under the left soft key"]];
+  for (const [id, label, sub] of BACK_KEYS) rows.push(["back_" + id, label, sub]);
   const inputs = {};
   for (const [id, label, sub] of rows) {
     const r = document.createElement("label");
     r.style.cssText = "display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer";
     r.innerHTML = `<span style="flex:1;min-width:0"><span style="display:block;font-size:16px">${label}</span>${sub ? `<span class="settings-hint" style="margin:0">${sub}</span>` : ""}</span><input type="checkbox" style="width:22px;height:22px">`;
     inputs[id] = r.querySelector("input");
-    box.appendChild(r);
+    (id.startsWith("back_") ? q("back") : box).appendChild(r);
   }
   let alive = true, timer = 0, filling = false;
   pp.onClose(() => { alive = false; clearTimeout(timer); });
   const save = async () => {
     if (filling) return;
-    const keys = {}, chatKeys = {};
-    for (const [id] of PHONE_BUTTONS) { keys[id] = inputs[id].checked; chatKeys[id] = inputs["chat_" + id].checked; }
+    const keys = {}, backKeys = {};
+    for (const [id] of PHONE_BUTTONS) keys[id] = inputs[id].checked;
+    for (const [id] of BACK_KEYS) backKeys[id] = inputs["back_" + id].checked;
     try {
-      const r = await fetch(roomUrl("buttons/config"), { method: "PUT", body: JSON.stringify({ on: inputs.master.checked, anyDefault: inputs.anyDefault.checked, keys, chatKeys, leaveChat: inputs.leave.checked, by: "web", at: { ".sv": "timestamp" } }) });
+      const r = await fetch(roomUrl("buttons/config"), { method: "PUT", body: JSON.stringify({ on: inputs.master.checked, anyDefault: inputs.anyDefault.checked, keys, backKeys, by: "web", at: { ".sv": "timestamp" } }) });
       if (!r.ok) throw new Error(r.status);
     } catch (e) { alert("Not saved: no connection. Try again."); }
   };
   for (const id in inputs) inputs[id].onchange = () => {
-    if (id === "master") { for (const [k] of PHONE_BUTTONS) { inputs[k].disabled = !inputs.master.checked; inputs["chat_" + k].disabled = !inputs.master.checked; } inputs.anyDefault.disabled = !inputs.master.checked; }
+    if (id === "master") { for (const [k] of PHONE_BUTTONS) inputs[k].disabled = !inputs.master.checked; inputs.anyDefault.disabled = !inputs.master.checked; }
     save();
   };
   q("off").onclick = async () => {
@@ -2678,12 +2682,9 @@ function openPhoneButtons() {
         inputs.master.checked = !cfg || cfg.on !== false;
         inputs.anyDefault.checked = !cfg || cfg.anyDefault !== false;
         inputs.anyDefault.disabled = !inputs.master.checked;
-        const ck = cfg && cfg.chatKeys;
-        for (const [id] of PHONE_BUTTONS) {
-          inputs[id].checked = keys ? !!keys[id] : PHONE_BUTTONS_DEFAULT.includes(id); inputs[id].disabled = !inputs.master.checked;
-          inputs["chat_" + id].checked = !!(ck && ck[id]); inputs["chat_" + id].disabled = !inputs.master.checked;
-        }
-        inputs.leave.checked = !cfg || cfg.leaveChat !== false;
+        for (const [id] of PHONE_BUTTONS) { inputs[id].checked = keys ? !!keys[id] : PHONE_BUTTONS_DEFAULT.includes(id); inputs[id].disabled = !inputs.master.checked; }
+        const bk = cfg && cfg.backKeys; // until the flip has said which: the microphone key
+        for (const [id] of BACK_KEYS) inputs["back_" + id].checked = bk ? !!bk[id] : id === "SPEAKER_IN";
         filling = false;
       }
     }

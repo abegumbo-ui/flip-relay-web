@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "c07707b5f8856d28d4ad4519863ac5de5f81c3dd",
-    "publishedAt": "2026-11-20T06:26:05Z",
-    "build": 707,
-    "notes": "Flip phone buttons (Settings): each button now has two choices, on the home screen it opens Message+, and inside a conversation it goes back to all conversations.\nNew switch: after you leave the flip's app, it reopens on all conversations and keeps what you typed as a draft.\nA message can now carry up to 10 pictures or videos."
+    "sha": "d46c2ca89ac3501b7a39c93ea71851ea39990180",
+    "publishedAt": "2026-11-20T13:56:32Z",
+    "build": 708,
+    "notes": "Settings > Flip phone buttons: the home-screen buttons are back the way they were. Below them is a new \"Back to conversations button\" section: pick the microphone key, Send key or Camera key to go back to all conversations from inside a conversation on the flip."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
@@ -22,18 +22,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26154916,
+    "versionName": "6.4.5-FR GOLOMBECK (build 181)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26154916/messageplus-26154916.apk",
+    "at": 1795182992809,
+    "notes": "New \"Back to conversations\" button: inside a conversation, press the microphone key (under the right soft key) to go back to all your conversations. What you typed stays as a draft. You can also use the Send key or the Camera key: choose in Settings > Home Screen Shortcut, at the bottom, or on the tablet."
+  },
+  "messageplus_previous": {
     "versionCode": 26154462,
     "versionName": "6.4.5-FR GOLOMBECK (build 180)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26154462/messageplus-26154462.apk",
     "at": 1795155729644,
     "notes": "Leaving a chat now works like the regular Verizon Messages: press End or Home while a conversation is open, and the next time you open Message+ it shows all your conversations. What you typed stays as a draft.\nNew: on the tablet, Settings > Flip phone buttons has two choices for each button. The new one goes back to all conversations from inside a conversation."
-  },
-  "messageplus_previous": {
-    "versionCode": 26142830,
-    "versionName": "6.4.5-FR GOLOMBECK (build 179)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26142830/messageplus-26142830.apk",
-    "at": 1794457774836,
-    "notes": "Fixed: drafts typed on the tablet now really show up on the flip (Draft in the chat list, the words in the message box)."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
