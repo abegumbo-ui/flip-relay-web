@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "70772f2366775780ac487977083ea10b96a78951",
-    "publishedAt": "2026-11-22T18:02:48Z",
-    "build": 711,
-    "notes": "The red unread dots on Chats and Groups are gone. Contacts now has the round arrow that takes you back to the top after scrolling down. Quick replies are one tap: each call in the Calls list has its own Quick replies button (it can be switched off in the Calls settings), and the contact card has one too. A chat's Info screen now has \"Call history\": every call with that person, with when and how long."
+    "sha": "c7edd4cf19b4f2bcc9afba0402309e067b5031dc",
+    "publishedAt": "2026-11-22T18:23:25Z",
+    "build": 713,
+    "notes": "When you swipe between Chats, Groups, Calls, Contacts and Voicemail, the top row (title, search, the A, refresh, settings) now stays still, like WhatsApp: only what is under it slides, and the next screen's own top row appears when it opens. The Call info pop-up has a Call history button. Also: no red unread dots on Chats and Groups, a round back-to-top arrow on Contacts, one-tap Quick replies buttons on calls and the contact card, and Call history in a chat's Info screen."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
