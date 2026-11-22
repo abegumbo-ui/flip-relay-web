@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "c7edd4cf19b4f2bcc9afba0402309e067b5031dc",
-    "publishedAt": "2026-11-22T18:23:25Z",
-    "build": 713,
-    "notes": "When you swipe between Chats, Groups, Calls, Contacts and Voicemail, the top row (title, search, the A, refresh, settings) now stays still, like WhatsApp: only what is under it slides, and the next screen's own top row appears when it opens. The Call info pop-up has a Call history button. Also: no red unread dots on Chats and Groups, a round back-to-top arrow on Contacts, one-tap Quick replies buttons on calls and the contact card, and Call history in a chat's Info screen."
+    "sha": "68eb48b057cd0c91083448ea047fbe3437b8b1c6",
+    "publishedAt": "2026-11-22T18:40:55Z",
+    "build": 714,
+    "notes": "Fixes the update button: a phone that had saved a wrong download kept installing it again and again. It now checks the saved file against the one on the update site, and downloads again if they differ. This build also has: the top row stays still while swiping between Chats, Groups, Calls, Contacts and Voicemail; no red unread dots on Chats and Groups; a round back-to-top arrow on Contacts; one-tap Quick replies buttons on calls and the contact card; Call history in a chat's Info screen and in the Call info pop-up."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
