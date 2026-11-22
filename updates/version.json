@@ -4,11 +4,11 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "47e9bfeaaafc4112630dc933ddf1ae5ea687c439",
-    "publishedAt": "2026-11-22T19:06:52Z",
-    "build": 716,
-    "notes": "Updating no longer needs any waiting: the app now asks for the update file under an address that is unique to each version, and checks the downloaded file against the fingerprint in the update note, downloading again if it is wrong. This build also has: no Quick replies on the avatar card, the flip phone status line on Calls, Contacts and Voicemail, the top row staying still while swiping, no red unread dots on Chats and Groups, a back-to-top arrow on Contacts, and Call history in a chat's Info screen.",
-    "apkSha256": "9a088f6522e9471307cfad931d72949784d8766eed39239018d4fb6e5f705537"
+    "sha": "a2fb4bd47e59cab004a103cf785177f7726fe409",
+    "publishedAt": "2026-11-22T19:12:56Z",
+    "build": 717,
+    "notes": "Calls settings: every button beside a call (Quick replies, Message, WhatsApp, Call) now has its own switch, so a narrow screen can turn off the ones it does not need. The setting that only makes sense with the split screen is hidden while the split screen is off. Updating no longer needs any waiting: the update file has an address unique to each version and is checked against its fingerprint. Also: no Quick replies on the avatar card, the flip phone status line on Calls, Contacts and Voicemail, the top row staying still while swiping, no red unread dots on Chats and Groups, a back-to-top arrow on Contacts, and Call history in a chat's Info screen.",
+    "apkSha256": "ea5217e36a48599709f32d99b9cae2ede6670eaa0da7a7d45999c193ba079380"
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
