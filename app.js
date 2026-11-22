@@ -5522,7 +5522,6 @@ function tlChatChrome(number) {
   const btn = (icon, t, fn) => { const b = document.createElement("button"); b.className = "tl-chat-btn"; b.title = t; b.innerHTML = svgIcon(icon); b.onclick = fn; box.appendChild(b); };
   btn("search", "Search conversation", () => toggleChatSearch());
   if (!isMulti(number)) {
-    btn("reply", "Quick replies", () => quickReplySheet(number));
     btn("call", "Call (hold or right click for quick replies)", () => callNumber(number, displayName(number)));
     attachLongPress(box.lastElementChild, () => quickReplySheet(number));
   }
@@ -6061,7 +6060,6 @@ function tlProfileCard(number, knownName) {
     add("call", "Call", () => { callNumber(number, name); });
     add("whatsapp", "WhatsApp", () => { openWhatsAppChat(number); }, "wa");
   }
-  add("reply", "Quick replies", () => quickReplySheet(number));
   add("info", "Info", () => showConversationLongPressMenu(number, null, true));
   const people = dim.querySelector(".people");
   if (members.length) { const hd = document.createElement("div"); hd.className = "hd"; hd.textContent = "People in this conversation"; people.appendChild(hd); }

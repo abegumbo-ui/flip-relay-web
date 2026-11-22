@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "68eb48b057cd0c91083448ea047fbe3437b8b1c6",
-    "publishedAt": "2026-11-22T18:40:55Z",
-    "build": 714,
-    "notes": "Fixes the update button: a phone that had saved a wrong download kept installing it again and again. It now checks the saved file against the one on the update site, and downloads again if they differ. This build also has: the top row stays still while swiping between Chats, Groups, Calls, Contacts and Voicemail; no red unread dots on Chats and Groups; a round back-to-top arrow on Contacts; one-tap Quick replies buttons on calls and the contact card; Call history in a chat's Info screen and in the Call info pop-up."
+    "sha": "2968b575024d3064b9a03d17cd7d4e654e935363",
+    "publishedAt": "2026-11-22T18:57:10Z",
+    "build": 715,
+    "notes": "The Quick replies button is off the contact card that opens when you tap an avatar (it stays on the calls in the Calls list). The red line under the title that says \"Flip phone not connected\" or \"Flip phone battery low\" now also shows on Calls, Contacts and Voicemail, not only on Chats and Groups. This build also fixes the update button, keeps the top row still while swiping between main screens, and has Call history in a chat's Info screen."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
