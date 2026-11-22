@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "29653096b8685b5ab68d596557e1bf03e3d810cc",
-    "publishedAt": "2026-11-20T14:30:49Z",
-    "build": 709,
-    "notes": "Sending a lot of pictures at once now works better: they go to the flip phone a few at a time instead of all together, so they are not left on \"Sending...\" and then \"Not Sent\". Also, Resend no longer sends a second copy of a message the flip phone still has waiting to send."
+    "sha": "83e07fb787e0c81fc5e4543dfd896f6dffce5038",
+    "publishedAt": "2026-11-22T17:56:09Z",
+    "build": 710,
+    "notes": "Quick replies are now one tap: each call in the Calls list has its own Quick replies button (it can be switched off in the Calls settings), the contact card has a Quick replies button, and the web chat bar has one too. A chat's Info screen now has \"Call history\": every call with that person, with when and how long."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",

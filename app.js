@@ -4058,8 +4058,10 @@ async function showConversationLongPressMenu(number, forced, sheet) {
   if (isMulti(number)) options.splice(2, 0, { label: "✏️ Rename group", value: "rename" });
   else options.push({ label: "🚫 Block/Unblock", value: "block" });
   options.push({ label: "🖼️ Chat theme", value: "theme" });
+  if (!isMulti(number)) options.push({ label: "📞 Call history", value: "callhistory" });
   const choice = forced || await showActionSheet(displayName(number) || number, options);
   if (choice === "theme") { chatThemeMenu(number); return; }
+  if (choice === "callhistory") { showCallHistory(number); return; }
   if (choice === "archive") {
     const how = await showActionSheet("Archive", [
       { label: "Come back when a new message arrives", value: "back" },
@@ -5520,10 +5522,21 @@ function tlChatChrome(number) {
   const btn = (icon, t, fn) => { const b = document.createElement("button"); b.className = "tl-chat-btn"; b.title = t; b.innerHTML = svgIcon(icon); b.onclick = fn; box.appendChild(b); };
   btn("search", "Search conversation", () => toggleChatSearch());
   if (!isMulti(number)) {
+    btn("reply", "Quick replies", () => quickReplySheet(number));
     btn("call", "Call (hold or right click for quick replies)", () => callNumber(number, displayName(number)));
     attachLongPress(box.lastElementChild, () => quickReplySheet(number));
   }
   closeChatSearch();
+}
+// every call with this person (received, dialed, missed), newest first: when and how long
+async function showCallHistory(number) {
+  if (!allCalls.length) await loadCalls();
+  const n = normalizeNumber(number);
+  const mine = allCalls.filter((c) => normalizeNumber(c.number) === n).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  const name = displayName(number) || number;
+  if (!mine.length) { await showActionSheet("Call history \u2014 " + name, [{ label: "No calls with this number are kept yet", value: "x" }]); return; }
+  const rows = mine.slice(0, 80).map((c) => ({ label: callWords(c) + ((c.type === "incoming" || c.type === "outgoing") && c.duration ? " \u00b7 " + formatCallDuration(c.duration) : "") + "  \u2014  " + new Date(c.timestamp || 0).toLocaleString([], { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }), value: "x" }));
+  await showActionSheet("Call history \u2014 " + name + " (" + mine.length + ")", rows);
 }
 async function quickReplySheet(number) {
   const name = displayName(number) || number;
@@ -6048,6 +6061,7 @@ function tlProfileCard(number, knownName) {
     add("call", "Call", () => { callNumber(number, name); });
     add("whatsapp", "WhatsApp", () => { openWhatsAppChat(number); }, "wa");
   }
+  add("reply", "Quick replies", () => quickReplySheet(number));
   add("info", "Info", () => showConversationLongPressMenu(number, null, true));
   const people = dim.querySelector(".people");
   if (members.length) { const hd = document.createElement("div"); hd.className = "hd"; hd.textContent = "People in this conversation"; people.appendChild(hd); }
