@@ -4,10 +4,11 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "2968b575024d3064b9a03d17cd7d4e654e935363",
-    "publishedAt": "2026-11-22T18:57:10Z",
-    "build": 715,
-    "notes": "The Quick replies button is off the contact card that opens when you tap an avatar (it stays on the calls in the Calls list). The red line under the title that says \"Flip phone not connected\" or \"Flip phone battery low\" now also shows on Calls, Contacts and Voicemail, not only on Chats and Groups. This build also fixes the update button, keeps the top row still while swiping between main screens, and has Call history in a chat's Info screen."
+    "sha": "47e9bfeaaafc4112630dc933ddf1ae5ea687c439",
+    "publishedAt": "2026-11-22T19:06:52Z",
+    "build": 716,
+    "notes": "Updating no longer needs any waiting: the app now asks for the update file under an address that is unique to each version, and checks the downloaded file against the fingerprint in the update note, downloading again if it is wrong. This build also has: no Quick replies on the avatar card, the flip phone status line on Calls, Contacts and Voicemail, the top row staying still while swiping, no red unread dots on Chats and Groups, a back-to-top arrow on Contacts, and Call history in a chat's Info screen.",
+    "apkSha256": "9a088f6522e9471307cfad931d72949784d8766eed39239018d4fb6e5f705537"
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
