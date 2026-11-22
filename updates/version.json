@@ -4,10 +4,10 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "83e07fb787e0c81fc5e4543dfd896f6dffce5038",
-    "publishedAt": "2026-11-22T17:56:09Z",
-    "build": 710,
-    "notes": "Quick replies are now one tap: each call in the Calls list has its own Quick replies button (it can be switched off in the Calls settings), the contact card has a Quick replies button, and the web chat bar has one too. A chat's Info screen now has \"Call history\": every call with that person, with when and how long."
+    "sha": "70772f2366775780ac487977083ea10b96a78951",
+    "publishedAt": "2026-11-22T18:02:48Z",
+    "build": 711,
+    "notes": "The red unread dots on Chats and Groups are gone. Contacts now has the round arrow that takes you back to the top after scrolling down. Quick replies are one tap: each call in the Calls list has its own Quick replies button (it can be switched off in the Calls settings), and the contact card has one too. A chat's Info screen now has \"Call history\": every call with that person, with when and how long."
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",

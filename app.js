@@ -4117,7 +4117,7 @@ function updateGroupsButton() {
   b.textContent = groupsView ? "All chats" : (unread ? "Groups \u25CF" : "Groups");
   b.style.color = unread && !groupsView ? "#e53935" : "";
   const g = document.getElementById("gm-groups-btn");
-  if (g) { g.classList.toggle("hidden", groupsHidden()); g.style.position = "relative"; g.style.color = groupsView ? "var(--accent, #0b57d0)" : ""; g.dataset.dot = unread && !groupsView ? "1" : "0"; }
+  if (g) { g.classList.toggle("hidden", groupsHidden()); g.style.position = "relative"; g.style.color = groupsView ? "var(--accent, #0b57d0)" : ""; g.dataset.dot = "0"; /* the red dot on Groups is off */ }
   updateTabs();
 }
 // "Show groups in Messages" (like the tablet): groups sit in the Chats list and there is no Groups tab
@@ -4966,7 +4966,7 @@ function updateTabs() {
   const unreadGroups = groupsTab && conversationsByNumber().some((c) => isMulti(c.number) && c.unread && !archived.has(c.number));
   for (const b of document.querySelectorAll(".tl-dock-item")) {
     b.classList.toggle("on", b.dataset.tab === currentTab);
-    if (b.dataset.tab === "groups") { b.hidden = !groupsTab; b.dataset.dot = unreadGroups && currentTab !== "groups" ? "1" : "0"; }
+    if (b.dataset.tab === "groups") { b.hidden = !groupsTab; b.dataset.dot = "0"; /* the red dot on Groups is off */ }
     if (b.dataset.tab === "voicemail") { b.hidden = !vmTabShown(); b.dataset.dot = voicemailUnread > 0 ? "1" : "0"; }
     if (b.dataset.tab === "calls") b.hidden = !callsTabShown();
     if (b.dataset.tab === "contacts") b.hidden = !screenShown("contacts");
