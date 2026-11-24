@@ -761,6 +761,24 @@ async function phoneNote(room, kind) {
   alert("Sent. The phone picks it up the next time Message+ opens (or within a minute while it is open).");
 }
 
+// ---------- "Update available" as the first conversation on a flip (rooms/<room>/updateRow {mode, at}) ----------
+// waiting = shown while a newer Message+ is published than the phone has (goes away by itself after updating); test = always shown; off = removed
+const UPDATE_ROW_TEXT = { waiting: "shown while an update is waiting", test: "shown now (test)" };
+async function setUpdateRow(codes, mode) {
+  for (const c of codes) {
+    if (mode === "off") await db("DELETE", `rooms/${c}/updateRow`);
+    else await db("PUT", `rooms/${c}/updateRow`, { mode, at: Date.now() });
+  }
+}
+async function chooseUpdateRow(codes, label) {
+  const a = prompt(`"Update available" conversation at the top of the flip's list of conversations (${label}).\n\n1 = Show it while an update is waiting (goes away by itself after updating)\n2 = Show it now, even without a newer build (to see how it looks)\n3 = Turn it off\n\nPhones on Message+ build 184 or newer. Type 1, 2 or 3:`, "");
+  const mode = { "1": "waiting", "2": "test", "3": "off" }[(a || "").trim()];
+  if (!mode) return false;
+  await setUpdateRow(codes, mode);
+  alert(mode === "off" ? "Turned off. It goes away the next time the list of conversations opens." : "Done. It shows the next time the list of conversations opens on the phone (within a minute).");
+  return true;
+}
+
 /** Registry entries of rooms that no longer exist (the room was deleted): removed, so Phones and Tablets show only real rooms. */
 async function dropDeletedRooms(reg) {
   const rooms = await dbq("rooms", "&shallow=true");
@@ -785,12 +803,13 @@ async function screenPhones() {
     if (!min || !confirm(`All ${codes.length} phones will show "Please update" until they are on build ${min} or newer, and stop relaying one hour after it first shows. Phones older than build 163 do not show it (block them instead). Continue?`)) return;
     for (const c of codes) await db("PUT", `rooms/${c}/phoneNotice`, { kind: "warn", id: "warn-" + Date.now(), minBuild: min, createdAt: Date.now() });
     alert(`Done: ${codes.length} phones asked to reach build ${min}.`);
-  } })).add(item({ icon: "phone", title: "Clear the notes on every phone", sub: "Removes every phone's note; Flip Relay comes back on where a note had turned it off", onclick: async () => {
+  } })).add(item({ icon: "phone", title: "\"Update available\" conversation on every phone", sub: "A conversation at the top of the flip's list; selecting it opens the update screen. It cannot be deleted. Off, while an update is waiting, or now (test)", onclick: () => chooseUpdateRow(codes, `all ${codes.length} phones`) })).add(item({ icon: "phone", title: "Clear the notes on every phone", sub: "Removes every phone's note; Flip Relay comes back on where a note had turned it off", onclick: async () => {
     if (!confirm(`Clear the notes on all ${codes.length} phones?`)) return;
     for (const c of codes) await db("DELETE", `rooms/${c}/phoneNotice`);
     alert("Done.");
   } })));
   const notes = await Promise.all(codes.map((c) => dbq(`rooms/${c}/phoneNotice`)));
+  const updRows = await Promise.all(codes.map((c) => dbq(`rooms/${c}/updateRow`).catch(() => null)));
   // a phone blocked until an update, now on that build: approved again
   for (const code of codes) {
     const r = reg[code] || {};
@@ -807,11 +826,13 @@ async function screenPhones() {
     const pn = notes[ci];
     const b = buildOf(r.app);
     const done = pn && pn.minBuild && b && b >= pn.minBuild;
+    const ur = updRows[ci];
+    const urLine = ur && UPDATE_ROW_TEXT[ur.mode] ? "update conversation " + UPDATE_ROW_TEXT[ur.mode] : "";
     const noteLine = !pn ? "" : pn.kind === "message" ? "note sent" : done ? `updated to build ${b}: the note can go` : pn.kind === "off" ? `relay off until build ${pn.minBuild}` : `asked to update to build ${pn.minBuild}`;
     const parts = [];
     parts.push(item({
       icon: "phone", title: names[code] ? `${names[code]} (${code})` : code,
-      sub: [buildOf(r.app) ? "build " + buildOf(r.app) : "old build", (r.phoneNumber && /\d{7}/.test(r.phoneNumber)) ? r.phoneNumber : hand[code] || "", "seen " + ago(r.lastSeen), r.blockUntilBuild ? `blocked until build ${r.blockUntilBuild}` : "", noteLine].filter(Boolean).join(" · "),
+      sub: [buildOf(r.app) ? "build " + buildOf(r.app) : "old build", (r.phoneNumber && /\d{7}/.test(r.phoneNumber)) ? r.phoneNumber : hand[code] || "", "seen " + ago(r.lastSeen), r.blockUntilBuild ? `blocked until build ${r.blockUntilBuild}` : "", noteLine, urLine].filter(Boolean).join(" · "),
       pill: waiting ? "blocked / waiting" : "approved", warn: waiting || (!!pn && !done),
     }));
     if (done) parts.push(actions([{ label: "Updated - remove the note", onclick: async () => { await db("DELETE", `rooms/${code}/phoneNotice`); render(); } }]));
@@ -832,6 +853,11 @@ async function screenPhones() {
       { label: "Relay off", cls: "danger", onclick: () => phoneNote(code, "off") },
       { label: "Send a note", cls: "ghost", onclick: () => phoneNote(code, "message") },
       { label: "Clear note", cls: "ghost", onclick: async () => { await db("DELETE", `rooms/${code}/phoneNotice`); render(); } },
+    ]));
+    parts.push(actions([
+      { label: "Update conversation: test", cls: ur && ur.mode === "test" ? "" : "ghost", onclick: async () => { await setUpdateRow([code], "test"); alert("Shown on this phone the next time its list of conversations opens."); render(); } },
+      { label: "While update waiting", cls: ur && ur.mode === "waiting" ? "" : "ghost", onclick: async () => { await setUpdateRow([code], "waiting"); render(); } },
+      { label: "Update conversation off", cls: "ghost", onclick: async () => { await setUpdateRow([code], "off"); render(); } },
     ]));
     g.add(deviceCard(...parts));
   }
