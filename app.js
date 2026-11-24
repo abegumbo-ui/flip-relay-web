@@ -2909,6 +2909,89 @@ function openSyncPanel() {
   load();
 }
 
+// Settings > Flip phone settings: the flip's own Settings > Flip Relay list (same groups, names and order as FrMenu in Message+).
+// Selecting a row writes openScreen/request {id, ts, path}; the flip (Message+ 185+) opens Settings there and answers in openScreen/result
+// {id, state: opened | waiting | off}. "off" = turned off on the flip under Settings > Flip Relay > Controls. Nothing streams from here.
+const FLIP_SETTINGS = ["Flip Relay", null, [
+  ["Pairing Code"],
+  ["Sync", "Messages and calls", [["Messages"], ["Sync progress"], ["Split sync"], ["Calls"], ["Save all calls"]]],
+  ["Apps and Home Screen", "Message+, Home app, Voicemail", [
+    ["Message+", "Permissions, shortcut, default texting app, notification, location requests", [["App Permissions"], ["Home Screen Shortcut"], ["Make Default Texting App"], ["Message+ notification"], ["Clear when read on tablet"], ["Location requests"], ["Location mode"]]],
+    ["Home app", "Install or open the Home App (Message+), its permissions", [["Home App (Message+)"], ["Home buttons"], ["App Permissions"]]],
+    ["Voicemail", "Voicemail app, its permissions, sending to the tablet, sync", [["Voicemail app"], ["App Permissions"], ["Send to tablet"], ["Keep saved voicemails"], ["Sync voicemails now"]]]]],
+  ["Updates", "Check, progress and history", [["Check for Update"], ["Update History"]]],
+  ["Controls", "What the tablet can do on this phone", [["Tablet opens settings"]]],
+  ["Troubleshooting", "Crash log, restart, turn off, uninstall", [["Crash log"], ["Restart App"], ["Turn Flip Relay On/Off"], ["Uninstall Flip Relay"]]]]];
+const FLIP_JUST_SHOWN = ["Messages", "Calls", "Home Screen Shortcut", "Home App (Message+)", "Sync voicemails now", "Restart App", "Turn Flip Relay On/Off", "Uninstall Flip Relay"];
+function openFlipSettingsPanel() {
+  const p = openPanel("Flip phone settings");
+  const OFF = "Turned off on the flip. To turn it back on, on the flip: Settings > Flip Relay > Controls > Tablet opens settings.";
+  const stack = [];
+  let cur = FLIP_SETTINGS, gen = 0;
+  p.body.innerHTML = `<p class="settings-hint">The same list as on the flip phone (Settings &gt; Flip Relay). Select a setting and it opens on the flip, so the person only has to look at it. If the flip is closed or in a call, it opens when they open the phone.</p>
+    <div data-x="st" style="display:none;font-weight:600;margin:8px 0"></div>
+    <div data-x="where" class="settings-hint" style="margin:8px 0 4px"></div>
+    <div data-x="list" style="${panelCard};padding:4px 0"></div>`;
+  const q = (k) => p.body.querySelector(`[data-x="${k}"]`);
+  const say = (t, bad) => { const e = q("st"); e.style.display = ""; e.textContent = t; e.style.color = bad ? "var(--red, #b3261e)" : ""; };
+  const pathOf = (leaf) => stack.slice(1).concat(cur === FLIP_SETTINGS ? [] : [cur]).map((n) => n[0]).concat(leaf ? [leaf[0]] : []).join("/");
+  const rowEl = (title, sub, right, onclick) => {
+    const b = document.createElement("button");
+    b.className = "settings-row";
+    b.style.cssText = "display:flex;align-items:center;width:100%;text-align:left;background:none;border:0;padding:12px 20px;cursor:pointer;color:inherit;font:inherit";
+    b.innerHTML = `<span style="flex:1"><span style="display:block;font-size:16px"></span><span class="settings-hint" style="display:block;font-size:13px"></span></span><span style="margin-left:12px"></span>`;
+    b.children[0].children[0].textContent = title;
+    b.children[0].children[1].textContent = sub || "";
+    b.children[1].textContent = right;
+    b.onclick = onclick;
+    return b;
+  };
+  const send = async (path, name) => {
+    const my = ++gen, id = Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+    say(`Sending "${name}" to the flip...`);
+    try {
+      const r = await fetch(roomUrl("openScreen/request"), { method: "PUT", body: JSON.stringify({ id, path, ts: Date.now() }) });
+      if (!r.ok) throw new Error();
+    } catch (e) { if (my === gen) say("Not sent: no connection. Try again.", true); return; }
+    say("Sent. Waiting for the flip to answer...");
+    let waiting = false;
+    for (let i = 0; i < 15 && p.alive() && my === gen; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      try {
+        const res = await (await fetch(roomUrl("openScreen/result"))).json();
+        if (!res || res.id !== id || my !== gen) continue;
+        if (res.state === "opened") { say(`"${name}" is open on the flip.`); return; }
+        if (res.state === "off") { say(OFF, true); return; }
+        if (res.state === "waiting" && !waiting) { waiting = true; say(`The flip got it. It opens "${name}" as soon as the phone is opened (or the call is over).`); }
+      } catch (e) { /* keep waiting */ }
+    }
+    if (p.alive() && my === gen && !waiting) say("The flip did not answer. It may be off or without signal, or it needs Message+ build 185 or newer (Settings > Flip Relay > Updates).", true);
+  };
+  const show = () => {
+    q("where").textContent = cur === FLIP_SETTINGS ? "Flip Relay" : ["Flip Relay"].concat(stack.slice(1).map((n) => n[0]), [cur[0]]).join(" › ");
+    const list = q("list");
+    list.innerHTML = "";
+    if (cur !== FLIP_SETTINGS) {
+      list.appendChild(rowEl("‹ Back", "", "", () => { cur = stack.pop(); show(); }));
+      const here = pathOf(null), nm = cur[0];
+      const o = rowEl("Open this list on the flip", "", "", () => send(here, nm));
+      o.children[0].children[0].style.color = "var(--accent, #0b57d0)";
+      list.appendChild(o);
+    }
+    for (const n of cur[2]) {
+      const isGroup = !!n[2];
+      const sub = isGroup ? n[1] : FLIP_JUST_SHOWN.includes(n[0]) ? "Shown on the flip; they choose it there" : "";
+      const r = rowEl(n[0], sub, isGroup ? "›" : "Open on flip", () => {
+        if (isGroup) { stack.push(cur); cur = n; show(); } else send(pathOf(n), n[0]);
+      });
+      if (!isGroup) r.children[1].style.cssText = "margin-left:12px;font-size:13px;color:var(--accent, #0b57d0)";
+      list.appendChild(r);
+    }
+  };
+  show();
+  fetch(roomUrl("openScreen/enabled")).then((r) => r.ok ? r.json() : null).then((v) => { if (v === false && p.alive()) say(OFF, true); }).catch(() => {});
+}
+
 // Settings > Where is the phone?: asks the flip for its location (locate/request), waits for locate/result.
 function openLocatePanel() {
   const p = openPanel("Where is the phone?");
@@ -5215,6 +5298,7 @@ function tlRowsFor(key) {
         def, info,
         tlRow({ icon: "sync", title: "Sync messages and attachments", sub: "Progress from the flip phone, and Sync now", onclick: openSyncPanel }),
         tlRow({ icon: "history", title: "Sync log", sub: "Recent syncs from the phone", onclick: () => clickOld("sync-log-btn") }),
+        tlRow({ icon: "phone", title: "Flip phone settings", sub: "The flip's Settings > Flip Relay list: select one and it opens on the flip", onclick: openFlipSettingsPanel }),
         tlRow({ icon: "phone", title: "Flip phone buttons", sub: "Which home-screen buttons open Message+, one switch each, and troubleshooting", onclick: openPhoneButtons }),
         tlRow({ icon: "voicemail", title: "Voicemail", sub: "Play, delete, check for new voicemail", onclick: openVoicemailPanel }),
       ];
