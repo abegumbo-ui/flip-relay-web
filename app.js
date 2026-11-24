@@ -2920,12 +2920,12 @@ const FLIP_SETTINGS = ["Flip Relay", null, [
     ["Home app", "Install or open the Home App (Message+), its permissions", [["Home App (Message+)"], ["Home buttons"], ["App Permissions"]]],
     ["Voicemail", "Voicemail app, its permissions, sending to the tablet, sync", [["Voicemail app"], ["App Permissions"], ["Send to tablet"], ["Keep saved voicemails"], ["Sync voicemails now"]]]]],
   ["Updates", "Check, progress and history", [["Check for Update"], ["Update History"]]],
-  ["Controls", "What the tablet can do on this phone", [["Tablet opens settings"]]],
+  ["Controls", "What the tablet can do on this phone", [["Tablet opens screens"]]],
   ["Troubleshooting", "Crash log, restart, turn off, uninstall", [["Crash log"], ["Restart App"], ["Turn Flip Relay On/Off"], ["Uninstall Flip Relay"]]]]];
 const FLIP_JUST_SHOWN = ["Messages", "Calls", "Home Screen Shortcut", "Home App (Message+)", "Sync voicemails now", "Restart App", "Turn Flip Relay On/Off", "Uninstall Flip Relay"];
 function openFlipSettingsPanel() {
   const p = openPanel("Flip phone settings");
-  const OFF = "Turned off on the flip. To turn it back on, on the flip: Settings > Flip Relay > Controls > Tablet opens settings.";
+  const OFF = "Turned off on the flip. To turn it back on, on the flip: Settings > Flip Relay > Controls > Tablet opens screens.";
   const stack = [];
   let cur = FLIP_SETTINGS, gen = 0;
   p.body.innerHTML = `<p class="settings-hint">The same list as on the flip phone (Settings &gt; Flip Relay). Select a setting and it opens on the flip, so the person only has to look at it. If the flip is closed or in a call, it opens when they open the phone.</p>
@@ -6058,6 +6058,29 @@ async function tlSelectionAct(choice) {
   exitConversationSelectionMode();
   for (const n of nums) await showConversationLongPressMenu(n, choice);
 }
+// Holding a conversation > More > Open on flip phone: the flip (Message+ 186+) opens that conversation (openScreen/request {id, chat, ts}).
+async function openChatOnFlip(key) {
+  if (!key || String(key).startsWith("m:")) return;
+  const id = Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  tlToast("Opening it on the flip...");
+  try {
+    const r = await fetch(roomUrl("openScreen/request"), { method: "PUT", body: JSON.stringify({ id, chat: key, ts: Date.now() }) });
+    if (!r.ok) throw new Error();
+  } catch (e) { tlToast("Not sent: no connection. Try again."); return; }
+  let said = "";
+  for (let i = 0; i < 15; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      const res = await (await fetch(roomUrl("openScreen/result"))).json();
+      if (!res || res.id !== id) continue;
+      const t = res.state === "opened" ? "The conversation is open on the flip." : res.state === "off" ? "Turned off on the flip (Settings > Flip Relay > Controls)."
+        : res.state === "waiting" ? "The flip got it. It opens as soon as the phone is opened (or the call is over)." : "";
+      if (t && t !== said) { said = t; tlToast(t); }
+      if (res.state === "opened" || res.state === "off") return;
+    } catch (e) { /* keep waiting */ }
+  }
+  if (!said) tlToast("The flip did not answer. It may be off or without signal, or it needs Message+ build 186 or newer.");
+}
 async function tlSelectionMore() {
   const nums = Array.from(selectedConversationNumbers), one = nums.length === 1 ? nums[0] : null;
   const o = [];
@@ -6066,11 +6089,13 @@ async function tlSelectionMore() {
   if (one && isMulti(one)) o.push({ label: "Rename group", value: "rename" });
   if (!one || !isMulti(one)) o.push({ label: "Block", value: "block" });
   if (one) o.push({ label: "Chat theme", value: "theme" });
+  if (one && !String(one).startsWith("m:")) o.push({ label: "Open on flip phone", value: "onflip" });
   o.push({ label: "Select all", value: "all" });
   const c = await showActionSheet(one ? displayName(one) || one : nums.length + " selected", o);
   if (!c) return;
   if (c === "all") { toggleSelectAllConversations(); return; }
   if (c === "auto") { exitConversationSelectionMode(); openAutoRepliesPanel(); return; }
+  if (c === "onflip") { exitConversationSelectionMode(); openChatOnFlip(one); return; }
   tlSelectionAct(c);
 }
 function setupSelectionBar() {
