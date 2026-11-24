@@ -2462,8 +2462,9 @@ async function readByLine(m) {
   } catch (e) { return "Read: could not check (no connection)"; }
   const fmt = (t) => new Date(t).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   const who = Object.values(o).filter((d) => d && (d.at || 0) >= (m.timestamp || 0)).sort((a, b) => a.at - b.at)
-    .map((d) => (d.n || "a device") + (d.k === "web" ? "" : " (tablet)") + " at " + fmt(d.at));
-  if (who.length) return "Read on: " + who.join(", ");
+    .map((d) => (d.k === "flip" ? "The flip phone" : (d.n || "a device") + (d.k === "web" ? " (web)" : " (tablet)")) + " at " + fmt(d.at));
+  if (who.length === 1) return "Read on: " + who[0];
+  if (who.length) return "Read on:\n  \u2022 " + who.join("\n  \u2022 ");
   if (phoneUnread) {
     const n = phoneUnread[m.number] || 0;
     return n > 0 ? "Not read yet" : "Read on the flip phone";
