@@ -23,18 +23,18 @@
     "notes": "Hold a message: the whole screen goes soft, emoji reactions sit above it and a card of actions below (Forward, Copy, Delete, Select more, Info), like Google Messages. Select more and the Details page match too.\nThe keyboard closes after you send and when you swipe through the messages. The voice recorder is much smaller. The tablet icon on messages another tablet sent no longer goes missing.\nFixed a crash when opening a video that had been downloaded ahead.\nSince the last update: bubbles stop at about three quarters of the width."
   },
   "messageplus": {
+    "versionCode": 26160961,
+    "versionName": "6.4.5-FR GOLOMBECK (build 186)",
+    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26160961/messageplus-26160961.apk",
+    "at": 1795545531322,
+    "notes": "The tablet can open a conversation on this phone for you (on the tablet: hold down a conversation > Open on flip phone), and any Flip Relay settings screen (tablet: Settings > Flip phone settings). If the phone is closed or in a call, it opens when you open it. To turn this off: Settings > Flip Relay > Controls."
+  },
+  "messageplus_previous": {
     "versionCode": 26160941,
     "versionName": "6.4.5-FR GOLOMBECK (build 185)",
     "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26160941/messageplus-26160941.apk",
     "at": 1795544563763,
     "notes": "The tablet can now open a Flip Relay settings screen on this phone for you (on the tablet: Settings > Flip phone settings). If the phone is closed or in a call, it opens when you open it. To turn this off: Settings > Flip Relay > Controls."
-  },
-  "messageplus_previous": {
-    "versionCode": 26160196,
-    "versionName": "6.4.5-FR GOLOMBECK (build 184)",
-    "url": "https://github.com/avrohomgolo-coder/flip-relay-web/releases/download/messageplus-26160196/messageplus-26160196.apk",
-    "at": 1795499954455,
-    "notes": "Press End inside a conversation, and the next time you open Messages (with the button shortcut too) it starts on your list of conversations. Whatever you typed stays there as a draft."
   },
   "tablet2": {
     "sha": "55994c8272e4c1f209e3e8bf15e1f3ace49cc61f",
