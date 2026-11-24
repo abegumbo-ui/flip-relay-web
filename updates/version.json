@@ -4,11 +4,11 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "77f20c2eb6b9e4fd22fbf8d9b2c31badacd4fbda",
-    "publishedAt": "2026-11-24T18:40:15Z",
-    "build": 719,
-    "notes": "New: hold down a conversation > Open on flip phone, and the flip opens that conversation (the flip needs Message+ build 186). Also Settings > Flip phone settings: the flip's Settings > Flip Relay list; select one and it opens on the flip. Both can be turned off on the flip under Settings > Flip Relay > Controls.",
-    "apkSha256": "e32ccf54319e28aab78fa9dd56242fed5cdab49e2634bb43cc5d8b7096bc4c6e"
+    "sha": "8dfcae61cafb27c798dc562b43356f97224eee14",
+    "publishedAt": "2026-11-24T18:56:17Z",
+    "build": 720,
+    "notes": "Hold a message > Info > Read on: now also shows when it was read on the flip phone (flip needs Message+ build 187), and lists the flip and each tablet or web page on its own line with the time. Also new: hold a conversation > Open on flip phone, and Settings > Flip phone settings.",
+    "apkSha256": "41653a4c2be2684f47d9b04ce364ff2456ceac1398c9245f174bba68128db12d"
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
