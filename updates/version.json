@@ -4,11 +4,11 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "a2fb4bd47e59cab004a103cf785177f7726fe409",
-    "publishedAt": "2026-11-22T19:12:56Z",
-    "build": 717,
-    "notes": "Calls settings: every button beside a call (Quick replies, Message, WhatsApp, Call) now has its own switch, so a narrow screen can turn off the ones it does not need. The setting that only makes sense with the split screen is hidden while the split screen is off. Updating no longer needs any waiting: the update file has an address unique to each version and is checked against its fingerprint. Also: no Quick replies on the avatar card, the flip phone status line on Calls, Contacts and Voicemail, the top row staying still while swiping, no red unread dots on Chats and Groups, a back-to-top arrow on Contacts, and Call history in a chat's Info screen.",
-    "apkSha256": "ea5217e36a48599709f32d99b9cae2ede6670eaa0da7a7d45999c193ba079380"
+    "sha": "2a1d5fcbf8968783223d0955d8081a7e8a78d512",
+    "publishedAt": "2026-11-24T18:23:33Z",
+    "build": 718,
+    "notes": "New: Settings > Flip phone settings. It shows the same list as the flip phone's Settings > Flip Relay; select one and it opens on the flip (the flip needs Message+ build 185). It can be turned off on the flip under Settings > Flip Relay > Controls.",
+    "apkSha256": "7dff70c9f17ca2afaaa01a4160c314c9d1e24da592e2b967086882bb89f83cef"
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
