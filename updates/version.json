@@ -4,11 +4,11 @@
     "publishedAt": "2026-09-30T14:44:00Z"
   },
   "tablet": {
-    "sha": "8dfcae61cafb27c798dc562b43356f97224eee14",
-    "publishedAt": "2026-11-24T18:56:17Z",
-    "build": 720,
-    "notes": "Hold a message > Info > Read on: now also shows when it was read on the flip phone (flip needs Message+ build 187), and lists the flip and each tablet or web page on its own line with the time. Also new: hold a conversation > Open on flip phone, and Settings > Flip phone settings.",
-    "apkSha256": "41653a4c2be2684f47d9b04ce364ff2456ceac1398c9245f174bba68128db12d"
+    "sha": "1f03ff47d248fc65c7b82301f68a385e1d3453d2",
+    "publishedAt": "2026-11-24T21:51:51Z",
+    "build": 722,
+    "notes": "The top of the main screens (Chats, Groups, Contacts, Calls, Voicemail) is shorter, like Google Messages, so the list starts higher.",
+    "apkSha256": "2a6a69336b513efd74a6677a0a7ffd55375d3074f9d0731343ca2c69ba44a6eb"
   },
   "tablet-regular": {
     "sha": "485df1c6475dfd0c79469b5437d6f2b9971812af",
